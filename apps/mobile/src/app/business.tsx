@@ -3,6 +3,7 @@ import { Image } from 'expo-image';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -70,6 +71,7 @@ interface EventRecord {
   readonly title: string;
   readonly description: string;
   readonly starts_at: string;
+  readonly address_text: string | null;
   readonly is_published: boolean;
   readonly publish_at: string | null;
 }
@@ -249,12 +251,31 @@ export function BusinessWorkspace({
   const [newOfferingName, setNewOfferingName] = useState('');
   const [newOfferingDescription, setNewOfferingDescription] = useState('');
   const [newOfferingPrice, setNewOfferingPrice] = useState('');
+  const [editingOfferingId, setEditingOfferingId] = useState<string | null>(null);
+  const [editOfferingName, setEditOfferingName] = useState('');
+  const [editOfferingDescription, setEditOfferingDescription] = useState('');
+  const [editOfferingPrice, setEditOfferingPrice] = useState('');
   const [newEventTitle, setNewEventTitle] = useState('');
   const [newEventDescription, setNewEventDescription] = useState('');
   const [newEventDate, setNewEventDate] = useState('');
   const [newEventTime, setNewEventTime] = useState('');
   const [newEventLocation, setNewEventLocation] = useState('');
-  const [eventSaveMode, setEventSaveMode] = useState<'draft' | 'publish'>('draft');
+  const [eventSaveMode, setEventSaveMode] = useState<'draft' | 'publish' | 'schedule'>('draft');
+  const [newEventPublishDate, setNewEventPublishDate] = useState('');
+  const [newEventPublishTime, setNewEventPublishTime] = useState('');
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [editEventTitle, setEditEventTitle] = useState('');
+  const [editEventDescription, setEditEventDescription] = useState('');
+  const [editEventDate, setEditEventDate] = useState('');
+  const [editEventTime, setEditEventTime] = useState('');
+  const [editEventLocation, setEditEventLocation] = useState('');
+  const [editEventSaveMode, setEditEventSaveMode] = useState<'draft' | 'publish' | 'schedule'>(
+    'draft',
+  );
+  const [editEventPublishDate, setEditEventPublishDate] = useState('');
+  const [editEventPublishTime, setEditEventPublishTime] = useState('');
+  const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
+  const [photoCaptionDraft, setPhotoCaptionDraft] = useState('');
 
   const canEdit = role === 'owner';
 
@@ -331,7 +352,7 @@ export function BusinessWorkspace({
         .order('display_order'),
       supabase
         .from('events')
-        .select('id, title, description, starts_at, is_published, publish_at')
+        .select('id, title, description, starts_at, address_text, is_published, publish_at')
         .eq('business_id', businessId)
         .is('archived_at', null)
         .order('starts_at'),
@@ -533,6 +554,51 @@ export function BusinessWorkspace({
     setNotice('Offering created.');
   }
 
+  function beginOfferingEdit(item: OfferingItem) {
+    setEditingOfferingId(item.id);
+    setEditOfferingName(item.name);
+    setEditOfferingDescription(item.description);
+    setEditOfferingPrice(item.price_minor === null ? '' : String(item.price_minor / 100));
+    setError(null);
+  }
+
+  async function saveOfferingEdit(item: OfferingItem) {
+    if (!canEdit || !editOfferingName.trim()) {
+      setError('Enter an offering name before saving.');
+      return;
+    }
+    const normalizedPrice = editOfferingPrice.trim().replace(/[$,]/g, '');
+    const numericPrice = normalizedPrice ? Number(normalizedPrice) : null;
+    if (numericPrice !== null && (!Number.isFinite(numericPrice) || numericPrice < 0)) {
+      setError('Enter a valid price, or leave it blank to show “Contact for price.”');
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    setNotice(null);
+    const updates = {
+      name: editOfferingName.trim(),
+      description: editOfferingDescription.trim(),
+      price_minor: numericPrice === null ? null : Math.round(numericPrice * 100),
+      price_text: numericPrice === null ? 'Contact for price' : null,
+    };
+    const { error: updateError } = await supabase
+      .from('offering_items')
+      .update(updates)
+      .eq('id', item.id)
+      .eq('business_id', businessId);
+    setSaving(false);
+    if (updateError) {
+      setError(userMessageFromError(updateError, 'We could not save that offering.'));
+      return;
+    }
+    setOfferings((current) =>
+      current.map((candidate) => (candidate.id === item.id ? { ...candidate, ...updates } : candidate)),
+    );
+    setEditingOfferingId(null);
+    setNotice('Offering changes saved.');
+  }
+
   async function archiveOffering(item: OfferingItem) {
     if (!canEdit) return;
     setError(null);
@@ -559,6 +625,18 @@ export function BusinessWorkspace({
       setError('Choose a valid event date and time in the future.');
       return;
     }
+    let publishAt: Date | null = null;
+    if (eventSaveMode === 'schedule') {
+      publishAt = parseLocalDateTime(newEventPublishDate, newEventPublishTime);
+      if (!publishAt || publishAt.getTime() <= Date.now()) {
+        setError('Choose a future date and time for scheduled publishing.');
+        return;
+      }
+      if (publishAt.getTime() >= startsAt.getTime()) {
+        setError('Schedule publishing before the event starts.');
+        return;
+      }
+    }
     setSaving(true);
     setError(null);
     setNotice(null);
@@ -573,9 +651,9 @@ export function BusinessWorkspace({
         starts_at: startsAt.toISOString(),
         address_text: newEventLocation.trim() || null,
         is_published: eventSaveMode === 'publish',
-        publish_at: null,
+        publish_at: publishAt?.toISOString() ?? null,
       })
-      .select('id, title, description, starts_at, is_published, publish_at')
+      .select('id, title, description, starts_at, address_text, is_published, publish_at')
       .single();
     setSaving(false);
     if (insertError) {
@@ -588,10 +666,111 @@ export function BusinessWorkspace({
     setNewEventDate('');
     setNewEventTime('');
     setNewEventLocation('');
+    setNewEventPublishDate('');
+    setNewEventPublishTime('');
     setEventSaveMode('draft');
     setNotice(
-      eventSaveMode === 'publish' ? 'Event created and published.' : 'Event saved as a draft.',
+      eventSaveMode === 'publish'
+        ? 'Event created and published.'
+        : eventSaveMode === 'schedule'
+          ? 'Event created and scheduled.'
+          : 'Event saved as a draft.',
     );
+  }
+
+  function beginEventEdit(item: EventRecord) {
+    const start = new Date(item.starts_at);
+    const publish = item.publish_at ? new Date(item.publish_at) : null;
+    setEditingEventId(item.id);
+    setEditEventTitle(item.title);
+    setEditEventDescription(item.description);
+    setEditEventDate(toDateInputValue(start));
+    setEditEventTime(toTimeInputValue(start));
+    setEditEventLocation(item.address_text ?? '');
+    setEditEventSaveMode(item.is_published ? 'publish' : publish ? 'schedule' : 'draft');
+    setEditEventPublishDate(publish ? toDateInputValue(publish) : '');
+    setEditEventPublishTime(publish ? toTimeInputValue(publish) : '');
+    setError(null);
+  }
+
+  async function saveEventEdit(item: EventRecord) {
+    if (!canEdit || !editEventTitle.trim() || !editEventDate || !editEventTime) {
+      setError('Event title, date, and start time are required.');
+      return;
+    }
+    const startsAt = parseLocalDateTime(editEventDate, editEventTime);
+    const now = new Date().getTime();
+    if (!startsAt || startsAt.getTime() <= now) {
+      setError('Choose a valid event date and time in the future.');
+      return;
+    }
+    let publishAt: Date | null = null;
+    if (editEventSaveMode === 'schedule') {
+      publishAt = parseLocalDateTime(editEventPublishDate, editEventPublishTime);
+      if (!publishAt || publishAt.getTime() <= now) {
+        setError('Choose a future date and time for scheduled publishing.');
+        return;
+      }
+      if (publishAt.getTime() >= startsAt.getTime()) {
+        setError('Schedule publishing before the event starts.');
+        return;
+      }
+    }
+    setSaving(true);
+    setError(null);
+    setNotice(null);
+    const updates = {
+      title: editEventTitle.trim(),
+      description: editEventDescription.trim(),
+      starts_at: startsAt.toISOString(),
+      address_text: editEventLocation.trim() || null,
+      is_published: editEventSaveMode === 'publish',
+      publish_at: publishAt?.toISOString() ?? null,
+    };
+    const { error: updateError } = await supabase
+      .from('events')
+      .update(updates)
+      .eq('id', item.id)
+      .eq('business_id', businessId);
+    setSaving(false);
+    if (updateError) {
+      setError(userMessageFromError(updateError, 'We could not save that event.'));
+      return;
+    }
+    setEvents((current) =>
+      current.map((candidate) => (candidate.id === item.id ? { ...candidate, ...updates } : candidate)),
+    );
+    setEditingEventId(null);
+    setNotice(
+      editEventSaveMode === 'publish'
+        ? 'Event changes saved and published.'
+        : editEventSaveMode === 'schedule'
+          ? 'Event changes saved and scheduled.'
+          : 'Event changes saved as a draft.',
+    );
+  }
+
+  function archiveEvent(item: EventRecord) {
+    Alert.alert('Archive event?', 'It will be removed from this business workspace and customer listings.', [
+      { text: 'Keep event', style: 'cancel' },
+      { text: 'Archive', style: 'destructive', onPress: () => void archiveEventConfirmed(item) },
+    ]);
+  }
+
+  async function archiveEventConfirmed(item: EventRecord) {
+    if (!canEdit) return;
+    setError(null);
+    const { error: archiveError } = await supabase
+      .from('events')
+      .update({ archived_at: new Date().toISOString(), is_published: false, publish_at: null })
+      .eq('id', item.id)
+      .eq('business_id', businessId);
+    if (archiveError) {
+      setError(userMessageFromError(archiveError, 'We could not archive that event.'));
+      return;
+    }
+    setEvents((current) => current.filter((candidate) => candidate.id !== item.id));
+    setNotice('Event archived.');
   }
 
   async function submitForReview() {
@@ -656,6 +835,79 @@ export function BusinessWorkspace({
       setEvents(previous);
       setError(userMessageFromError(updateError, 'We could not update that event.'));
     }
+  }
+
+  function beginPhotoEdit(photo: PhotoRecord) {
+    setEditingPhotoId(photo.id);
+    setPhotoCaptionDraft(photo.caption ?? '');
+    setError(null);
+  }
+
+  async function savePhotoCaption(photo: PhotoRecord) {
+    if (!canEdit) return;
+    const caption = photoCaptionDraft.trim() || null;
+    const { error: updateError } = await supabase
+      .from('business_photos')
+      .update({ caption })
+      .eq('id', photo.id)
+      .eq('business_id', businessId);
+    if (updateError) {
+      setError(userMessageFromError(updateError, 'We could not save that photo caption.'));
+      return;
+    }
+    setPhotos((current) =>
+      current.map((candidate) => (candidate.id === photo.id ? { ...candidate, caption } : candidate)),
+    );
+    setEditingPhotoId(null);
+    setNotice('Photo caption saved.');
+  }
+
+  async function movePhoto(photo: PhotoRecord, direction: -1 | 1) {
+    if (!canEdit) return;
+    const ordered = [...photos].sort((a, b) => a.display_order - b.display_order);
+    const index = ordered.findIndex((candidate) => candidate.id === photo.id);
+    const neighbor = ordered[index + direction];
+    if (!neighbor) return;
+    const currentOrder = photo.display_order;
+    const neighborOrder = neighbor.display_order;
+    const { error: updateError } = await Promise.all([
+      supabase.from('business_photos').update({ display_order: neighborOrder }).eq('id', photo.id),
+      supabase.from('business_photos').update({ display_order: currentOrder }).eq('id', neighbor.id),
+    ]).then((results) => ({ error: results.find((result) => result.error)?.error ?? null }));
+    if (updateError) {
+      setError(userMessageFromError(updateError, 'We could not reorder the photos.'));
+      return;
+    }
+    setPhotos((current) =>
+      current.map((candidate) => {
+        if (candidate.id === photo.id) return { ...candidate, display_order: neighborOrder };
+        if (candidate.id === neighbor.id) return { ...candidate, display_order: currentOrder };
+        return candidate;
+      }),
+    );
+    setNotice('Photo order saved.');
+  }
+
+  function removePhoto(photo: PhotoRecord) {
+    Alert.alert('Remove photo?', 'This removes the photo from the business page.', [
+      { text: 'Keep photo', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => void removePhotoConfirmed(photo) },
+    ]);
+  }
+
+  async function removePhotoConfirmed(photo: PhotoRecord) {
+    if (!canEdit) return;
+    const { error: deleteError } = await supabase
+      .from('business_photos')
+      .delete()
+      .eq('id', photo.id)
+      .eq('business_id', businessId);
+    if (deleteError) {
+      setError(userMessageFromError(deleteError, 'We could not remove that photo.'));
+      return;
+    }
+    setPhotos((current) => current.filter((candidate) => candidate.id !== photo.id));
+    setNotice('Photo removed.');
   }
 
   async function saveReward() {
@@ -978,41 +1230,82 @@ export function BusinessWorkspace({
                     .filter((item) => item.section_id === group.id)
                     .map((item) => (
                       <View key={item.id} style={styles.settingRow}>
-                        <View style={styles.rowText}>
-                          <ThemedText type="smallBold">{item.name}</ThemedText>
-                          <ThemedText themeColor="textSecondary" type="small">
-                            {formatPrice(item)}
-                          </ThemedText>
-                          {!!item.description && (
-                            <ThemedText themeColor="textSecondary" type="small">
-                              {item.description}
-                            </ThemedText>
-                          )}
-                        </View>
-                        <View style={styles.switches}>
-                          <LabeledSwitch
-                            label="Available"
-                            disabled={!canEdit}
-                            value={item.is_available}
-                            onValueChange={(value) =>
-                              void updateOffering(item, { is_available: value })
-                            }
-                          />
-                          <LabeledSwitch
-                            label="Visible"
-                            disabled={!canEdit}
-                            value={item.is_visible}
-                            onValueChange={(value) =>
-                              void updateOffering(item, { is_visible: value })
-                            }
-                          />
-                        </View>
-                        {canEdit && (
-                          <Pressable onPress={() => void archiveOffering(item)}>
-                            <ThemedText style={styles.destructiveText} type="smallBold">
-                              Archive offering
-                            </ThemedText>
-                          </Pressable>
+                        {editingOfferingId === item.id ? (
+                          <View style={styles.editForm}>
+                            <Field
+                              label="Name (required)"
+                              value={editOfferingName}
+                              onChangeText={setEditOfferingName}
+                              colors={colors}
+                            />
+                            <Field
+                              label="Description (optional)"
+                              value={editOfferingDescription}
+                              onChangeText={setEditOfferingDescription}
+                              colors={colors}
+                              multiline
+                              style={styles.multiline}
+                            />
+                            <Field
+                              label="Price in dollars (optional)"
+                              value={editOfferingPrice}
+                              onChangeText={setEditOfferingPrice}
+                              colors={colors}
+                              keyboardType="decimal-pad"
+                            />
+                            <View style={styles.inlineActions}>
+                              <PrimaryButton
+                                disabled={saving || !editOfferingName.trim()}
+                                label="Save changes"
+                                onPress={() => void saveOfferingEdit(item)}
+                              />
+                              <SecondaryButton label="Cancel" onPress={() => setEditingOfferingId(null)} />
+                            </View>
+                          </View>
+                        ) : (
+                          <>
+                            <View style={styles.rowText}>
+                              <ThemedText type="smallBold">{item.name}</ThemedText>
+                              <ThemedText themeColor="textSecondary" type="small">
+                                {formatPrice(item)}
+                              </ThemedText>
+                              {!!item.description && (
+                                <ThemedText themeColor="textSecondary" type="small">
+                                  {item.description}
+                                </ThemedText>
+                              )}
+                            </View>
+                            <View style={styles.switches}>
+                              <LabeledSwitch
+                                label="Available"
+                                disabled={!canEdit}
+                                value={item.is_available}
+                                onValueChange={(value) =>
+                                  void updateOffering(item, { is_available: value })
+                                }
+                              />
+                              <LabeledSwitch
+                                label="Visible"
+                                disabled={!canEdit}
+                                value={item.is_visible}
+                                onValueChange={(value) =>
+                                  void updateOffering(item, { is_visible: value })
+                                }
+                              />
+                            </View>
+                            {canEdit && (
+                              <View style={styles.inlineActions}>
+                                <Pressable onPress={() => beginOfferingEdit(item)}>
+                                  <ThemedText type="smallBold">Edit</ThemedText>
+                                </Pressable>
+                                <Pressable onPress={() => void archiveOffering(item)}>
+                                  <ThemedText style={styles.destructiveText} type="smallBold">
+                                    Archive
+                                  </ThemedText>
+                                </Pressable>
+                              </View>
+                            )}
+                          </>
                         )}
                       </View>
                     ))}
@@ -1103,23 +1396,139 @@ export function BusinessWorkspace({
               ) : (
                 events.map((item) => (
                   <View key={item.id} style={styles.settingRowCard}>
-                    <View style={styles.rowText}>
-                      <ThemedText type="smallBold">{item.title}</ThemedText>
-                      <ThemedText themeColor="textSecondary" type="small">
-                        {new Date(item.starts_at).toLocaleString()}
-                      </ThemedText>
-                      {item.publish_at && (
-                        <ThemedText themeColor="textSecondary" type="small">
-                          Scheduled to publish {new Date(item.publish_at).toLocaleString()}
-                        </ThemedText>
-                      )}
-                    </View>
-                    <LabeledSwitch
-                      label="Published"
-                      disabled={!canEdit}
-                      value={item.is_published}
-                      onValueChange={(value) => void updateEvent(item, value)}
-                    />
+                    {editingEventId === item.id ? (
+                      <View style={styles.editForm}>
+                        <Field
+                          label="Event title (required)"
+                          value={editEventTitle}
+                          onChangeText={setEditEventTitle}
+                          colors={colors}
+                        />
+                        <Field
+                          label="Description (optional)"
+                          value={editEventDescription}
+                          onChangeText={setEditEventDescription}
+                          colors={colors}
+                          multiline
+                          style={styles.multiline}
+                        />
+                        <View style={styles.inlineFields}>
+                          <View style={styles.inlineField}>
+                            <Field
+                              label="Date (required)"
+                              value={editEventDate}
+                              onChangeText={setEditEventDate}
+                              colors={colors}
+                              placeholder="YYYY-MM-DD"
+                              keyboardType="numbers-and-punctuation"
+                            />
+                          </View>
+                          <View style={styles.inlineField}>
+                            <Field
+                              label="Start time (required)"
+                              value={editEventTime}
+                              onChangeText={setEditEventTime}
+                              colors={colors}
+                              placeholder="18:00"
+                              keyboardType="numbers-and-punctuation"
+                            />
+                          </View>
+                        </View>
+                        <Field
+                          label="Location (optional)"
+                          value={editEventLocation}
+                          onChangeText={setEditEventLocation}
+                          colors={colors}
+                        />
+                        <ThemedText type="smallBold">Publishing</ThemedText>
+                        <View style={styles.choiceRow}>
+                          <ChoiceButton
+                            label="Draft"
+                            selected={editEventSaveMode === 'draft'}
+                            onPress={() => setEditEventSaveMode('draft')}
+                          />
+                          <ChoiceButton
+                            label="Publish now"
+                            selected={editEventSaveMode === 'publish'}
+                            onPress={() => setEditEventSaveMode('publish')}
+                          />
+                          <ChoiceButton
+                            label="Schedule"
+                            selected={editEventSaveMode === 'schedule'}
+                            onPress={() => setEditEventSaveMode('schedule')}
+                          />
+                        </View>
+                        {editEventSaveMode === 'schedule' && (
+                          <View style={styles.inlineFields}>
+                            <View style={styles.inlineField}>
+                              <Field
+                                label="Publish date (required)"
+                                value={editEventPublishDate}
+                                onChangeText={setEditEventPublishDate}
+                                colors={colors}
+                                placeholder="YYYY-MM-DD"
+                                keyboardType="numbers-and-punctuation"
+                              />
+                            </View>
+                            <View style={styles.inlineField}>
+                              <Field
+                                label="Publish time (required)"
+                                value={editEventPublishTime}
+                                onChangeText={setEditEventPublishTime}
+                                colors={colors}
+                                placeholder="09:00"
+                                keyboardType="numbers-and-punctuation"
+                              />
+                            </View>
+                          </View>
+                        )}
+                        <View style={styles.inlineActions}>
+                          <PrimaryButton
+                            disabled={saving || !editEventTitle.trim() || !editEventDate || !editEventTime}
+                            label="Save changes"
+                            onPress={() => void saveEventEdit(item)}
+                          />
+                          <SecondaryButton label="Cancel" onPress={() => setEditingEventId(null)} />
+                        </View>
+                      </View>
+                    ) : (
+                      <>
+                        <View style={styles.rowText}>
+                          <ThemedText type="smallBold">{item.title}</ThemedText>
+                          <ThemedText themeColor="textSecondary" type="small">
+                            {new Date(item.starts_at).toLocaleString()}
+                          </ThemedText>
+                          {!!item.address_text && (
+                            <ThemedText themeColor="textSecondary" type="small">
+                              {item.address_text}
+                            </ThemedText>
+                          )}
+                          {item.publish_at && (
+                            <ThemedText themeColor="textSecondary" type="small">
+                              Scheduled to publish {new Date(item.publish_at).toLocaleString()}
+                            </ThemedText>
+                          )}
+                        </View>
+                        <LabeledSwitch
+                          label="Published"
+                          disabled={!canEdit}
+                          value={item.is_published}
+                          onValueChange={(value) => void updateEvent(item, value)}
+                        />
+                        {canEdit && (
+                          <View style={styles.inlineActions}>
+                            <Pressable onPress={() => beginEventEdit(item)}>
+                              <ThemedText type="smallBold">Edit</ThemedText>
+                            </Pressable>
+                            <Pressable onPress={() => archiveEvent(item)}>
+                              <ThemedText style={styles.destructiveText} type="smallBold">
+                                Archive
+                              </ThemedText>
+                            </Pressable>
+                          </View>
+                        )}
+                      </>
+                    )}
                   </View>
                 ))
               )}
@@ -1184,10 +1593,51 @@ export function BusinessWorkspace({
                       selected={eventSaveMode === 'publish'}
                       onPress={() => setEventSaveMode('publish')}
                     />
+                    <ChoiceButton
+                      label="Schedule"
+                      selected={eventSaveMode === 'schedule'}
+                      onPress={() => setEventSaveMode('schedule')}
+                    />
                   </View>
+                  {eventSaveMode === 'schedule' && (
+                    <View style={styles.inlineFields}>
+                      <View style={styles.inlineField}>
+                        <Field
+                          label="Publish date (required)"
+                          value={newEventPublishDate}
+                          onChangeText={setNewEventPublishDate}
+                          colors={colors}
+                          placeholder="YYYY-MM-DD"
+                          keyboardType="numbers-and-punctuation"
+                        />
+                      </View>
+                      <View style={styles.inlineField}>
+                        <Field
+                          label="Publish time (required)"
+                          value={newEventPublishTime}
+                          onChangeText={setNewEventPublishTime}
+                          colors={colors}
+                          placeholder="09:00"
+                          keyboardType="numbers-and-punctuation"
+                        />
+                      </View>
+                    </View>
+                  )}
                   <PrimaryButton
-                    disabled={saving || !newEventTitle.trim() || !newEventDate || !newEventTime}
-                    label={eventSaveMode === 'publish' ? 'Create and publish' : 'Save as draft'}
+                    disabled={
+                      saving ||
+                      !newEventTitle.trim() ||
+                      !newEventDate ||
+                      !newEventTime ||
+                      (eventSaveMode === 'schedule' && (!newEventPublishDate || !newEventPublishTime))
+                    }
+                    label={
+                      eventSaveMode === 'publish'
+                        ? 'Create and publish'
+                        : eventSaveMode === 'schedule'
+                          ? 'Create and schedule'
+                          : 'Save as draft'
+                    }
                     onPress={() => void createEvent()}
                   />
                 </View>
@@ -1259,7 +1709,7 @@ export function BusinessWorkspace({
                   message="No photos have been added to this business."
                 />
               ) : (
-                photos.map((photo) => {
+                photos.map((photo, photoIndex) => {
                   const asset = Array.isArray(photo.media_assets)
                     ? photo.media_assets[0]
                     : photo.media_assets;
@@ -1274,17 +1724,70 @@ export function BusinessWorkspace({
                           transition={180}
                         />
                       )}
-                      <View style={styles.rowText}>
-                        <ThemedText type="smallBold">{photo.role.replaceAll('_', ' ')}</ThemedText>
-                        <ThemedText themeColor="textSecondary" type="small">
-                          {photo.caption || asset?.alt_text || 'No caption'}
-                        </ThemedText>
-                      </View>
-                      <View style={styles.statusBadge}>
-                        <ThemedText style={styles.statusText} type="smallBold">
-                          {asset?.status ?? 'linked'}
-                        </ThemedText>
-                      </View>
+                      {editingPhotoId === photo.id ? (
+                        <View style={styles.editForm}>
+                          <ThemedText type="smallBold">Photo caption (optional)</ThemedText>
+                          <TextInput
+                            accessibilityLabel="Photo caption"
+                            editable={canEdit}
+                            onChangeText={setPhotoCaptionDraft}
+                            placeholder="Describe this photo for customers"
+                            placeholderTextColor={colors.textSecondary}
+                            style={[styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.backgroundElement }]}
+                            value={photoCaptionDraft}
+                          />
+                          <View style={styles.inlineActions}>
+                            <PrimaryButton
+                              disabled={!canEdit}
+                              label="Save caption"
+                              onPress={() => void savePhotoCaption(photo)}
+                            />
+                            <SecondaryButton label="Cancel" onPress={() => setEditingPhotoId(null)} />
+                          </View>
+                        </View>
+                      ) : (
+                        <>
+                          <View style={styles.rowText}>
+                            <ThemedText type="smallBold">{photo.role.replaceAll('_', ' ')}</ThemedText>
+                            <ThemedText themeColor="textSecondary" type="small">
+                              {photo.caption || asset?.alt_text || 'No caption'}
+                            </ThemedText>
+                          </View>
+                          <View style={styles.statusBadge}>
+                            <ThemedText style={styles.statusText} type="smallBold">
+                              {asset?.status ?? 'linked'}
+                            </ThemedText>
+                          </View>
+                          {canEdit && (
+                            <View style={styles.inlineActions}>
+                              <Pressable
+                                accessibilityLabel="Move photo up"
+                                disabled={photoIndex === 0}
+                                onPress={() => void movePhoto(photo, -1)}
+                                style={photoIndex === 0 && styles.disabled}
+                              >
+                                <ThemedText type="smallBold">↑</ThemedText>
+                              </Pressable>
+                              <Pressable
+                                accessibilityLabel="Move photo down"
+                                disabled={photoIndex === photos.length - 1}
+                                onPress={() => void movePhoto(photo, 1)}
+                                style={photoIndex === photos.length - 1 && styles.disabled}
+                              >
+                                <ThemedText type="smallBold">↓</ThemedText>
+                              </Pressable>
+                              <Pressable onPress={() => beginPhotoEdit(photo)}>
+                                <ThemedText type="smallBold">Caption</ThemedText>
+                              </Pressable>
+                              <Pressable onPress={() => removePhoto(photo)}>
+                                <ThemedText style={styles.destructiveText} type="smallBold">
+                                  Remove
+                                </ThemedText>
+                              </Pressable>
+                            </View>
+                          )}
+                        </>
+                      )}
                     </View>
                   );
                 })
@@ -1414,6 +1917,14 @@ function PrimaryButton({
   );
 }
 
+function SecondaryButton({ label, onPress }: { readonly label: string; readonly onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={styles.secondaryButton}>
+      <ThemedText type="smallBold">{label}</ThemedText>
+    </Pressable>
+  );
+}
+
 function ChoiceButton({
   label,
   selected,
@@ -1490,6 +2001,23 @@ function slugify(value: string) {
   );
 }
 
+function parseLocalDateTime(date: string, time: string) {
+  if (!date || !time) return null;
+  const value = new Date(`${date}T${time}:00`);
+  return Number.isNaN(value.getTime()) ? null : value;
+}
+
+function toDateInputValue(value: Date) {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function toTimeInputValue(value: Date) {
+  return `${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}`;
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
@@ -1545,6 +2073,8 @@ const styles = StyleSheet.create({
   multiline: { minHeight: 104, textAlignVertical: 'top' },
   inlineFields: { flexDirection: 'row', gap: Spacing.two },
   inlineField: { flex: 1 },
+  inlineActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: Spacing.two },
+  editForm: { width: '100%', gap: Spacing.three },
   addRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   addInput: { flex: 1 },
   addButton: {
@@ -1572,6 +2102,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
   },
   primaryButtonText: { color: Brand.onPrimary },
+  secondaryButton: {
+    minHeight: 50,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Brand.border,
+    paddingHorizontal: 18,
+  },
   disabled: { opacity: 0.55 },
   settingRow: {
     borderTopWidth: StyleSheet.hairlineWidth,
