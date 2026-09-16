@@ -1,0 +1,39 @@
+{
+  "name": "@sds/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "clean": "rimraf .next",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "next typegen && tsc --noEmit"
+  },
+  "dependencies": {
+    "@sds/api-client": "workspace:*",
+    "@sds/business-logic": "workspace:*",
+    "@sds/design-tokens": "workspace:*",
+    "@sds/image-processing-config": "workspace:*",
+    "@sds/types": "workspace:*",
+    "@sds/validation": "workspace:*",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.116.0",
+    "next": "16.3.5",
+    "qrcode": "^1.5.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.5",
+    "rimraf": "^6.1.2",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

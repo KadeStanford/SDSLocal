@@ -1,0 +1,23 @@
+{
+  "name": "@sds/api-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "clean": "rimraf dist coverage",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.116.0"
+  },
+  "devDependencies": {
+    "rimraf": "^6.1.2",
+    "typescript": "~6.0.3",
+    "vitest": "^4.0.18"
+  }
+}

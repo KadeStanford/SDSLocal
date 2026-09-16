@@ -1,0 +1,38 @@
+# Dependencies and caches
+node_modules/
+.pnpm-store/
+.turbo/
+.expo/
+.next/
+dist/
+coverage/
+
+# Environment files (examples remain committed)
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Native and build output
+apps/mobile/android/
+apps/mobile/ios/
+apps/mobile/web-build/
+*.aab
+*.apk
+*.ipa
+
+# Supabase local state
+supabase/.branches/
+supabase/.temp/
+
+# Editors and OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Logs
+*.log
+pnpm-debug.log*
