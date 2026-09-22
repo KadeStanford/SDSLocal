@@ -2,7 +2,14 @@
 
 import { useActionState } from 'react';
 
-import { type AuthFormState, magicLinkAction, signInAction, signUpAction } from './actions';
+import {
+  appleSignInAction,
+  type AuthFormState,
+  googleSignInAction,
+  magicLinkAction,
+  signInAction,
+  signUpAction,
+} from './actions';
 
 const initialState: AuthFormState = {};
 
@@ -21,6 +28,11 @@ export function AuthForms({ next = '/account' }: { readonly next?: string }) {
   const [signInState, signIn, signInPending] = useActionState(signInAction, initialState);
   const [signUpState, signUp, signUpPending] = useActionState(signUpAction, initialState);
   const [magicState, magicLink, magicPending] = useActionState(magicLinkAction, initialState);
+  const [appleState, appleSignIn, applePending] = useActionState(appleSignInAction, initialState);
+  const [googleState, googleSignIn, googlePending] = useActionState(
+    googleSignInAction,
+    initialState,
+  );
 
   return (
     <div className="auth-grid">
@@ -43,6 +55,21 @@ export function AuthForms({ next = '/account' }: { readonly next?: string }) {
           </button>
         </form>
 
+        <div className="divider">or</div>
+        <form action={appleSignIn} className="form-stack">
+          <input type="hidden" name="next" value={next} />
+          <Feedback state={appleState} />
+          <button className="button button-secondary" disabled={applePending}>
+            {applePending ? 'Connecting…' : 'Continue with Apple'}
+          </button>
+        </form>
+        <form action={googleSignIn} className="form-stack">
+          <input type="hidden" name="next" value={next} />
+          <Feedback state={googleState} />
+          <button className="button button-secondary" disabled={googlePending}>
+            {googlePending ? 'Connecting…' : 'Continue with Google'}
+          </button>
+        </form>
         <div className="divider">or</div>
         <form action={magicLink} className="form-stack">
           <input type="hidden" name="next" value={next} />
@@ -84,11 +111,28 @@ export function AuthForms({ next = '/account' }: { readonly next?: string }) {
               minLength={10}
               required
             />
-            <span className="field-hint">10+ characters with upper/lowercase and a number.</span>
+            <span className="field-hint">
+              Email sign-in passwords need 10+ characters with upper/lowercase and a number.
+            </span>
           </label>
           <Feedback state={signUpState} />
           <button className="button" disabled={signUpPending}>
             {signUpPending ? 'Creating account…' : 'Create account'}
+          </button>
+        </form>
+        <div className="divider">or</div>
+        <form action={appleSignIn} className="form-stack">
+          <input type="hidden" name="next" value={next} />
+          <Feedback state={appleState} />
+          <button className="button button-secondary" disabled={applePending}>
+            {applePending ? 'Connecting…' : 'Create account with Apple'}
+          </button>
+        </form>
+        <form action={googleSignIn} className="form-stack">
+          <input type="hidden" name="next" value={next} />
+          <Feedback state={googleState} />
+          <button className="button button-secondary" disabled={googlePending}>
+            {googlePending ? 'Connecting…' : 'Create account with Google'}
           </button>
         </form>
       </section>

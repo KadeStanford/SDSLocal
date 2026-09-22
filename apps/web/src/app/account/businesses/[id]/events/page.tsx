@@ -78,6 +78,7 @@ export default async function EventsManagerPage({
         </Link>
         <div className="nav-actions">
           <Link href="/events">Discover events</Link>
+          <Link href={`/account/businesses/${id}/updates`}>Follower updates</Link>
           <Link href={`/b/${business.slug}`}>View page</Link>
         </div>
       </nav>

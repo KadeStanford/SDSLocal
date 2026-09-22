@@ -1,12 +1,25 @@
 import 'react-native-url-polyfill/auto';
-import 'expo-sqlite/localStorage/install';
+import './sqlite-storage';
 
 import { createPublicSupabaseClient, resolveDeviceDevelopmentUrl } from '@sds/api-client';
 import Constants from 'expo-constants';
 import { AppState, Platform } from 'react-native';
 
-const configuredUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? 'http://127.0.0.1:54321';
-const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? 'local-build-placeholder-key';
+import { authStorage } from '@/lib/auth-storage';
+
+const appEnvironment = process.env.EXPO_PUBLIC_APP_ENV ?? 'development';
+const isStaging = appEnvironment === 'staging';
+const configuredUrl = isStaging
+  ? process.env.EXPO_PUBLIC_STAGING_SUPABASE_URL
+  : process.env.EXPO_PUBLIC_SUPABASE_URL;
+const anonKey = isStaging
+  ? process.env.EXPO_PUBLIC_STAGING_SUPABASE_ANON_KEY
+  : process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const resolvedUrl =
+  configuredUrl ??
+  (isStaging ? 'https://staging-config-missing.invalid' : 'http://127.0.0.1:54321');
+const resolvedAnonKey =
+  anonKey ?? (isStaging ? 'staging-config-missing-key' : 'local-build-placeholder-key');
 
 function metroHostname() {
   const hostUri = Constants.expoConfig?.hostUri;
@@ -23,20 +36,24 @@ function metroHostname() {
 }
 
 export function resolveSupabaseUrl(value: string) {
-  if (Platform.OS === 'web' || process.env.EXPO_PUBLIC_APP_ENV !== 'development') return value;
+  if (Platform.OS === 'web' || appEnvironment !== 'development') return value;
   return resolveDeviceDevelopmentUrl(value, metroHostname());
 }
 
-const url = resolveSupabaseUrl(configuredUrl);
+const url = resolveSupabaseUrl(resolvedUrl);
 
 export const isSupabaseConfigured = Boolean(
-  process.env.EXPO_PUBLIC_SUPABASE_URL && process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+  isStaging
+    ? process.env.EXPO_PUBLIC_STAGING_SUPABASE_URL &&
+        process.env.EXPO_PUBLIC_STAGING_SUPABASE_ANON_KEY
+    : process.env.EXPO_PUBLIC_SUPABASE_URL && process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
 );
 
 export const supabase = createPublicSupabaseClient({
   url,
-  anonKey,
-  allowInsecureLocalNetwork: process.env.EXPO_PUBLIC_APP_ENV === 'development',
+  anonKey: resolvedAnonKey,
+  allowInsecureLocalNetwork: appEnvironment === 'development',
+  storage: authStorage,
 });
 
 if (Platform.OS !== 'web') {

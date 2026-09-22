@@ -9,6 +9,7 @@ import {
 } from 'react';
 
 import { supabase } from '@/lib/supabase';
+import { clearBiometricSignInRefreshToken } from '@/lib/biometric-auth';
 
 interface AuthContextValue {
   readonly session: Session | null;
@@ -22,6 +23,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Biometrics are intentionally disabled in the current product flow. Clear
+    // any credentials left by an older build before loading the session.
+    void clearBiometricSignInRefreshToken();
+
     void supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setLoading(false);

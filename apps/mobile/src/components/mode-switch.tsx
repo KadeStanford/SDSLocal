@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
+import { haptics } from '@/lib/haptics';
 import { useAppMode } from '@/providers/app-mode-provider';
 
 export function ModeSwitch() {
@@ -37,7 +38,10 @@ function ModeOption({
     <Pressable
       accessibilityRole="radio"
       accessibilityState={{ checked: active }}
-      onPress={onPress}
+      onPress={() => {
+        void haptics.selection();
+        onPress();
+      }}
       style={({ pressed }) => [
         styles.option,
         active && styles.optionActive,
@@ -61,7 +65,7 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
   },
   option: {
-    minHeight: 38,
+    minHeight: 44,
     minWidth: 96,
     alignItems: 'center',
     justifyContent: 'center',

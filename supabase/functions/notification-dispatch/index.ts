@@ -8,7 +8,7 @@ interface Delivery {
   id: string;
   user_id: string;
   business_id: string | null;
-  notification_type: 'events' | 'loyalty' | 'general_updates' | 'operational';
+  notification_type: 'events' | 'loyalty' | 'general_updates' | 'operational' | 'orders';
   title: string;
   body: string;
   url: string;
@@ -49,49 +49,132 @@ Deno.serve(async (request) => {
   const admin = createClient(Deno.env.get('SUPABASE_URL') ?? '', serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+  const input = await request.json().catch(() => ({}));
+  const ordersOnly = input?.scope === 'orders';
+
+  // Keep the run table bounded while retaining enough history to diagnose a
+  // missed schedule or a provider outage.
+  await admin
+    .from('notification_dispatch_runs')
+    .delete()
+    .lt('started_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
+
+  const triggerSource = request.headers.get('x-sds-dispatch-trigger') ?? 'scheduler';
+  const { data: run } = await admin
+    .from('notification_dispatch_runs')
+    .insert({ trigger_source: triggerSource.slice(0, 32) })
+    .select('id')
+    .maybeSingle();
+  const runId = run?.id ?? null;
+  const deliveryErrors: string[] = [];
+  type DeliveryState = {
+    status: 'queued' | 'sending' | 'sent' | 'failed' | 'skipped';
+    nextAttemptAt?: string | null;
+    lastError?: string | null;
+    expoTickets?: Array<{ id: string; tokenId: string }> | null;
+    sentAt?: string | null;
+  };
+  const updateDelivery = async (deliveryId: string, state: DeliveryState) => {
+    const { error } = await admin.rpc('set_notification_delivery_state', {
+      p_delivery: deliveryId,
+      p_status: state.status,
+      p_next_attempt_at: state.nextAttemptAt ?? null,
+      p_last_error: state.lastError ?? null,
+      p_expo_tickets: state.expoTickets ?? null,
+      p_sent_at: state.sentAt ?? null,
+    });
+    if (error) {
+      deliveryErrors.push(`${deliveryId}: ${error.message}`);
+      return false;
+    }
+    return true;
+  };
+  const finish = async (
+    result: {
+      readonly status: 'succeeded' | 'failed';
+      readonly claimed_count?: number;
+      readonly sent_count?: number;
+      readonly skipped_count?: number;
+      readonly retried_count?: number;
+      readonly error_message?: string;
+    },
+    payload: Record<string, unknown>,
+  ) => {
+    if (runId) {
+      await admin
+        .from('notification_dispatch_runs')
+        .update({
+          ...result,
+          error_message:
+            result.error_message ??
+            (deliveryErrors.length ? deliveryErrors.join('; ').slice(0, 500) : null),
+          finished_at: new Date().toISOString(),
+        })
+        .eq('id', runId);
+    }
+    return response(200, payload);
+  };
 
   const { data: deliveriesData, error: claimError } = await admin.rpc(
-    'claim_notification_deliveries',
+    ordersOnly ? 'claim_pickup_notifications' : 'claim_notification_deliveries',
     { p_limit: 25 },
   );
-  if (claimError) return response(500, { error: claimError.message });
+  if (claimError) {
+    if (runId) {
+      await admin
+        .from('notification_dispatch_runs')
+        .update({
+          status: 'failed',
+          error_message: claimError.message.slice(0, 500),
+          finished_at: new Date().toISOString(),
+        })
+        .eq('id', runId);
+    }
+    return response(500, { error: claimError.message });
+  }
   const deliveries = (deliveriesData ?? []) as Delivery[];
   let sent = 0;
   let skipped = 0;
   let retried = 0;
 
   for (const delivery of deliveries) {
+    if (delivery.notification_type === 'orders') {
+      const { data: allowed, error } = await admin.rpc('pickup_notification_sendable', {
+        p_delivery: delivery.id,
+      });
+      if (error || !allowed) {
+        await updateDelivery(delivery.id, {
+          status: error ? (delivery.attempt_count >= 5 ? 'failed' : 'queued') : 'skipped',
+          nextAttemptAt: new Date(Date.now() + 60000).toISOString(),
+          lastError: error ? 'Order access check unavailable' : 'Order changed or access removed',
+        });
+        skipped += 1;
+        continue;
+      }
+    }
     const { data: tokenData, error: tokenError } = await admin
       .from('push_tokens')
       .select('id, user_id, expo_push_token')
       .eq('user_id', delivery.user_id)
       .eq('is_active', true);
     if (tokenError) {
-      await admin
-        .from('notification_deliveries')
-        .update({
-          status: delivery.attempt_count >= 5 ? 'failed' : 'queued',
-          next_attempt_at: new Date(
-            Date.now() + retryDelay(delivery.attempt_count) * 1000,
-          ).toISOString(),
-          last_error: tokenError.message.slice(0, 500),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', delivery.id);
+      await updateDelivery(delivery.id, {
+        status: delivery.attempt_count >= 5 ? 'failed' : 'queued',
+        nextAttemptAt: new Date(
+          Date.now() + retryDelay(delivery.attempt_count) * 1000,
+        ).toISOString(),
+        lastError: tokenError.message.slice(0, 500),
+      });
       retried += 1;
       continue;
     }
 
     const tokens = (tokenData ?? []) as PushToken[];
     if (!tokens.length) {
-      await admin
-        .from('notification_deliveries')
-        .update({
-          status: 'skipped',
-          last_error: 'No active device token',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', delivery.id);
+      await updateDelivery(delivery.id, {
+        status: 'skipped',
+        lastError: 'No active device token',
+      });
       skipped += 1;
       continue;
     }
@@ -105,11 +188,15 @@ Deno.serve(async (request) => {
             to: token.expo_push_token,
             title: delivery.title,
             body: delivery.body,
-            data: { url: delivery.url, notificationType: delivery.notification_type },
+            data: {
+              url: delivery.url,
+              notificationType: delivery.notification_type,
+              deliveryId: delivery.id,
+            },
             sound: 'default',
-            channelId: 'updates',
-            priority: 'default',
-            ttl: 86400,
+            channelId: delivery.notification_type === 'orders' ? 'orders' : 'updates',
+            priority: delivery.notification_type === 'orders' ? 'high' : 'default',
+            ttl: delivery.notification_type === 'orders' ? 3600 : 86400,
           })),
         ),
       });
@@ -140,40 +227,28 @@ Deno.serve(async (request) => {
       }
 
       if (accepted.length) {
-        await admin
-          .from('notification_deliveries')
-          .update({
-            status: 'sent',
-            expo_tickets: accepted,
-            sent_at: new Date().toISOString(),
-            last_error: permanentErrors.length ? permanentErrors.join('; ').slice(0, 500) : null,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', delivery.id);
-        sent += 1;
+        const stateUpdated = await updateDelivery(delivery.id, {
+          status: 'sent',
+          expoTickets: accepted,
+          sentAt: new Date().toISOString(),
+          lastError: permanentErrors.length ? permanentErrors.join('; ').slice(0, 500) : null,
+        });
+        if (stateUpdated) sent += 1;
       } else {
-        await admin
-          .from('notification_deliveries')
-          .update({
-            status: 'failed',
-            last_error: (permanentErrors.join('; ') || 'Expo rejected every token.').slice(0, 500),
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', delivery.id);
+        await updateDelivery(delivery.id, {
+          status: 'failed',
+          lastError: (permanentErrors.join('; ') || 'Expo rejected every token.').slice(0, 500),
+        });
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Push delivery failed.';
-      await admin
-        .from('notification_deliveries')
-        .update({
-          status: delivery.attempt_count >= 5 ? 'failed' : 'queued',
-          next_attempt_at: new Date(
-            Date.now() + retryDelay(delivery.attempt_count) * 1000,
-          ).toISOString(),
-          last_error: message.slice(0, 500),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', delivery.id);
+      await updateDelivery(delivery.id, {
+        status: delivery.attempt_count >= 5 ? 'failed' : 'queued',
+        nextAttemptAt: new Date(
+          Date.now() + retryDelay(delivery.attempt_count) * 1000,
+        ).toISOString(),
+        lastError: message.slice(0, 500),
+      });
       retried += 1;
     }
   }
@@ -219,5 +294,14 @@ Deno.serve(async (request) => {
     }
   }
 
-  return response(200, { claimed: deliveries.length, sent, skipped, retried });
+  return finish(
+    {
+      status: 'succeeded',
+      claimed_count: deliveries.length,
+      sent_count: sent,
+      skipped_count: skipped,
+      retried_count: retried,
+    },
+    { claimed: deliveries.length, sent, skipped, retried },
+  );
 });

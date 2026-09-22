@@ -1,4 +1,6 @@
 import type { OwnedBusinessSummary } from '@sds/types';
+import { getBusinessStatusLabel, getOfferingTerminology } from '@sds/business-logic';
+import type { BusinessType } from '@sds/types';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
@@ -21,12 +23,14 @@ interface MembershipRow {
         id: string;
         name: string;
         slug: string;
+        business_type: BusinessType;
         status: OwnedBusinessSummary['status'];
       }
     | {
         id: string;
         name: string;
         slug: string;
+        business_type: BusinessType;
         status: OwnedBusinessSummary['status'];
       }[]
     | null;
@@ -34,7 +38,8 @@ interface MembershipRow {
 
 export const metadata = { title: 'Your account' };
 
-export default async function AccountPage() {
+export default async function AccountPage({ searchParams }: PageProps<'/account'>) {
+  const query = await searchParams;
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getUser();
   if (!authData.user) redirect('/auth');
@@ -47,7 +52,7 @@ export default async function AccountPage() {
       .single(),
     supabase
       .from('business_members')
-      .select('role, businesses(id, name, slug, status)')
+      .select('role, businesses(id, name, slug, business_type, status)')
       .eq('user_id', authData.user.id)
       .eq('is_active', true),
     supabase.rpc('is_platform_admin'),
@@ -81,7 +86,7 @@ export default async function AccountPage() {
           <Link href="/following">Following</Link>
           <Link href="/rewards">Rewards</Link>
           <Link href="/account/notifications">Notifications</Link>
-          {isAdmin === true && <Link href="/admin/reviews">Review queue</Link>}
+          {isAdmin === true && <Link href="/admin">Admin console</Link>}
           <form action={signOutAction}>
             <button className="text-button">Sign out</button>
           </form>
@@ -92,6 +97,13 @@ export default async function AccountPage() {
         <p className="eyebrow">Account</p>
         <h1>Hi, {profile.display_name ?? authData.user.email}.</h1>
       </div>
+
+      {typeof query.staffInviteAccepted === 'string' && (
+        <p className="notice-success">
+          Staff access added for {query.staffInviteAccepted}. Open the business workspace to get
+          started.
+        </p>
+      )}
 
       <div className="account-grid">
         <section className="panel">
@@ -123,17 +135,25 @@ export default async function AccountPage() {
                   <div>
                     <strong>{business.name}</strong>
                     <span>
-                      {business.role} · {business.status.replace('_', ' ')}
+                      {business.role} · {getBusinessStatusLabel(business.status)}
                     </span>
                   </div>
                   <details className="business-menu">
                     <summary>Manage</summary>
                     <div>
+                      <Link href={`/account/businesses/${business.id}/settings#readiness`}>
+                        Review &amp; submit
+                      </Link>
                       <Link href={`/account/businesses/${business.id}/settings`}>
                         Business details
                       </Link>
-                      <Link href={`/account/businesses/${business.id}/offerings`}>Offerings</Link>
+                      <Link href={`/account/businesses/${business.id}/offerings`}>
+                        {getOfferingTerminology(business.business_type).items}
+                      </Link>
                       <Link href={`/account/businesses/${business.id}/events`}>Events</Link>
+                      <Link href={`/account/businesses/${business.id}/updates`}>
+                        Follower updates
+                      </Link>
                       <Link href={`/account/businesses/${business.id}/loyalty`}>Rewards</Link>
                       <Link href={`/account/businesses/${business.id}/media`}>Photos</Link>
                       <Link href={`/b/${business.slug}`}>View public page</Link>

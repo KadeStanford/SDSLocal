@@ -81,6 +81,7 @@ export function BusinessForm({ categories }: { readonly categories: readonly Cat
             <option value="services">Services</option>
             <option value="retail">Retail</option>
             <option value="entertainment_venue">Entertainment or venue</option>
+            <option value="mobile">Mobile business (food truck, pop-up, traveling service)</option>
             <option value="general">General</option>
           </select>
         </label>
@@ -213,7 +214,7 @@ export function BusinessForm({ categories }: { readonly categories: readonly Cat
         {state.message ?? errors[0]}
       </div>
       <button className="button" disabled={pending}>
-        {pending ? 'Creating business…' : 'Create draft business'}
+        {pending ? 'Creating business…' : 'Create business profile'}
       </button>
     </form>
   );

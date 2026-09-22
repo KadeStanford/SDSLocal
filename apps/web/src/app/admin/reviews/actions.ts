@@ -43,5 +43,5 @@ export async function rejectBusinessAction(formData: FormData) {
   });
   if (error) redirect(destination('error', error.message));
   revalidatePath('/account');
-  redirect(destination('saved', 'Business returned to draft with feedback.'));
+  redirect(destination('saved', 'Business returned to setup with feedback.'));
 }

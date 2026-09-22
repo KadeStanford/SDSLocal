@@ -1,6 +1,7 @@
 export type AppEnvironment = 'development' | 'staging' | 'production';
 
-export type BusinessType = 'food_drink' | 'services' | 'retail' | 'entertainment_venue' | 'general';
+export type BusinessType =
+  'food_drink' | 'services' | 'retail' | 'entertainment_venue' | 'mobile' | 'general';
 
 export type BusinessStatus = 'draft' | 'pending_review' | 'active' | 'suspended';
 
@@ -13,7 +14,20 @@ export type OfferingPrice =
   | { kind: 'starting_at'; amountMinor: number; currency: string }
   | { kind: 'contact' };
 
-export type LoyaltyTransactionType = 'stamp' | 'redemption' | 'reversal';
+export type LoyaltyTransactionType = 'stamp' | 'redemption' | 'reversal' | 'points_earned';
+
+export type LoyaltyProgramType = 'visits' | 'points';
+
+export interface BusinessLocationStop {
+  readonly id: string;
+  readonly title: string;
+  readonly addressText: string | null;
+  readonly latitude: number;
+  readonly longitude: number;
+  readonly startsAt: string;
+  readonly endsAt: string;
+  readonly timezone: string;
+}
 
 export type AnalyticsEventName =
   | 'page_view'

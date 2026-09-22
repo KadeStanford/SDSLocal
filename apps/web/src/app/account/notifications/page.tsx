@@ -18,7 +18,7 @@ const preferences = [
     type: 'events',
     key: 'events_enabled',
     label: 'Events and reminders',
-    description: 'New events from followed businesses and reminders for events you save.',
+    description: 'New events from followed businesses and reminders you explicitly enable.',
   },
   {
     type: 'loyalty',
@@ -108,7 +108,9 @@ export default async function NotificationPreferencesPage({
         ) : (
           <div className="empty-state">
             <strong>No business notification choices yet</strong>
-            <span>Follow a business, save an event, or join a rewards program first.</span>
+            <span>
+              Follow a business, enable an event reminder, or join a rewards program first.
+            </span>
           </div>
         )}
       </section>

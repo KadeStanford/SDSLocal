@@ -58,6 +58,31 @@ max_frequency = "1m"
 otp_length = 6
 otp_expiry = 900
 
+# Native Sign in with Apple (iOS) uses the app's ID token, so the bundle ID is
+# the accepted audience. Browser Apple OAuth still needs a Services ID and a
+# generated client secret; keep those out of source control and add them when
+# the web flow is enabled.
+[auth.external.apple]
+enabled = true
+client_id = "com.stanforddevelopmentsolutions.sdslocal"
+secret = ""
+redirect_uri = ""
+
+# Google browser OAuth for local development. Keep the client secret in the
+# ignored root .env file rather than committing it to this configuration.
+[auth.external.google]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+# The native Google Sign-In SDK used by the iOS/Android app does not expose a
+# nonce option. Keep native ID-token linking usable in local development. The
+# hosted production Auth project should use a provider/SDK flow with nonce
+# validation enabled instead of copying this local setting.
+skip_nonce_check = true
+
+# Phone/SMS authentication is intentionally disabled. Do not add a provider
+# or test OTP here until phone auth is explicitly reintroduced.
+
 [auth.email.template.recovery]
 subject = "Your SDS Local password reset code"
 content_path = "./supabase/templates/recovery.html"
@@ -83,5 +108,36 @@ verify_jwt = true
 [functions.notification-dispatch]
 verify_jwt = true
 
+[functions.media-cleanup]
+verify_jwt = true
+
+[functions.delete-account]
+verify_jwt = true
+
+# RevenueCat signs this server-to-server request with a dedicated bearer
+# secret. Supabase JWT verification must stay off for this one endpoint.
+[functions.revenuecat-webhook]
+verify_jwt = false
+
 [analytics]
 enabled = false
+
+# Commerce performs user/owner authorization itself; guest status uses an
+# opaque capability. Callback state, webhook HMAC and maintenance bearer are
+# distinct verification boundaries. All are Sandbox-only and fail closed.
+[functions.square-commerce]
+verify_jwt = false
+[functions.square-oauth-callback]
+verify_jwt = false
+[functions.square-webhook]
+verify_jwt = false
+[functions.square-maintenance]
+verify_jwt = false
+
+[functions.stripe-oauth-callback]
+verify_jwt = false
+[functions.stripe-webhook]
+verify_jwt = false
+[functions.stripe-checkout-return]
+verify_jwt = false
+

@@ -7,6 +7,8 @@ export interface LoyaltyTokenClaims {
   membershipId: string;
   businessId: string;
   programId: string;
+  /** The signed program kind lets the scanner choose the transaction automatically. */
+  programType?: 'visits' | 'points';
   jti: string;
   iat: number;
   exp: number;

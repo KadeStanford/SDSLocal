@@ -3,6 +3,8 @@ import { createContext, type PropsWithChildren, useContext } from 'react';
 interface NotificationContextValue {
   readonly status: 'unsupported';
   readonly errorMessage: null;
+  readonly unreadCount: 0;
+  readonly refreshUnreadCount: () => Promise<void>;
   readonly enable: () => Promise<boolean>;
   readonly deactivate: () => Promise<void>;
 }
@@ -10,6 +12,8 @@ interface NotificationContextValue {
 const value: NotificationContextValue = {
   status: 'unsupported',
   errorMessage: null,
+  unreadCount: 0,
+  refreshUnreadCount: async () => undefined,
   enable: async () => false,
   deactivate: async () => undefined,
 };

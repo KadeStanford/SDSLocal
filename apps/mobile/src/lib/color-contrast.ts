@@ -1,3 +1,16 @@
+import { color } from '@sds/design-tokens';
+
+export function brandColor(value: string) {
+  const hex = value.trim().replace(/^#/, '');
+  if (/^[0-9a-f]{6}$/i.test(hex)) return `#${hex}`;
+  if (/^[0-9a-f]{3}$/i.test(hex))
+    return `#${hex
+      .split('')
+      .map((part) => part + part)
+      .join('')}`;
+  return color.brand;
+}
+
 function channelLuminance(channel: number) {
   const value = channel / 255;
   return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;

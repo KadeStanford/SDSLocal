@@ -73,7 +73,7 @@ try {
   $code = Invoke-RestMethod -Method Post -Uri "$apiUrl/functions/v1/loyalty-token" -Headers $functionHeaders -ContentType 'application/json' -Body (@{ membershipId = $membershipId } | ConvertTo-Json)
   if (-not $code.token) { throw 'Rotating loyalty token was not returned.' }
 
-  $stampBody = @{ token = $code.token; action = 'stamp'; idempotencyKey = [guid]::NewGuid().ToString() } | ConvertTo-Json
+  $stampBody = @{ token = $code.token; action = 'auto'; expectedBusinessId = $businessId; scanSource = 'manual'; idempotencyKey = [guid]::NewGuid().ToString() } | ConvertTo-Json
   $stamp = Invoke-RestMethod -Method Post -Uri "$apiUrl/functions/v1/loyalty-transact" -Headers $functionHeaders -ContentType 'application/json' -Body $stampBody
   if ($stamp.loyalty.progressStamps -ne 1) { throw 'Secure stamp integration result was incorrect.' }
 
@@ -86,11 +86,17 @@ try {
 
   $expiredToken = New-ExpiredLoyaltyToken $serviceKey $userId $membershipId $businessId $programId
   try {
-    Invoke-RestMethod -Method Post -Uri "$apiUrl/functions/v1/loyalty-transact" -Headers $functionHeaders -ContentType 'application/json' -Body (@{ token = $expiredToken; action = 'stamp'; idempotencyKey = [guid]::NewGuid().ToString() } | ConvertTo-Json) | Out-Null
+    Invoke-RestMethod -Method Post -Uri "$apiUrl/functions/v1/loyalty-transact" -Headers $functionHeaders -ContentType 'application/json' -Body (@{ token = $expiredToken; action = 'stamp'; expectedBusinessId = $businessId; scanSource = 'camera'; idempotencyKey = [guid]::NewGuid().ToString() } | ConvertTo-Json) | Out-Null
     throw 'Expired token was unexpectedly accepted.'
   } catch {
     if ($_.Exception.Response.StatusCode.value__ -ne 410) { throw }
   }
+
+  $stats = Invoke-RestMethod -Method Post -Uri "$apiUrl/rest/v1/rpc/get_business_scan_stats" -Headers $functionHeaders -ContentType 'application/json' -Body (@{ p_business_id = $businessId } | ConvertTo-Json)
+  $statsRow = @($stats)[0]
+  if ($statsRow.total_scans -ne 3 -or $statsRow.completed_scans -ne 1 -or $statsRow.failed_scans -ne 2 -or $statsRow.duplicate_scans -ne 1 -or $statsRow.visits_added -ne 1 -or $statsRow.unique_customers -ne 1) { throw 'Scan analytics statistics were incorrect.' }
+  $log = Invoke-RestMethod -Method Post -Uri "$apiUrl/rest/v1/rpc/list_business_scan_log" -Headers $functionHeaders -ContentType 'application/json' -Body (@{ p_business_id = $businessId; p_limit = 50 } | ConvertTo-Json)
+  if (@($log).Count -ne 3) { throw 'Scan analytics log did not include all attempts.' }
 
   Write-Output 'secure loyalty Edge Function checks passed'
 } finally {

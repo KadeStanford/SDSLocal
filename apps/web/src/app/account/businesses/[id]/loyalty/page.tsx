@@ -6,16 +6,21 @@ import { createClient } from '@/lib/supabase/server';
 import {
   addStaffAction,
   removeStaffAction,
+  revokeStaffInviteAction,
   reverseStampAction,
   saveLoyaltyProgramAction,
 } from './actions';
+import { InviteLinkActions } from './invite-link-actions';
 import { LoyaltyScanner } from './loyalty-scanner';
 
 interface ProgramRow {
   id: string;
   name: string;
   reward_description: string;
+  program_type: 'visits' | 'points';
   stamps_required: number;
+  points_per_dollar: number | null;
+  points_required: number | null;
   terms: string;
   is_active: boolean;
 }
@@ -24,6 +29,15 @@ interface StaffRow {
   member_id: string;
   display_name: string;
   is_active: boolean;
+}
+
+interface StaffInviteRow {
+  invite_id: string;
+  invited_email: string;
+  status: 'pending' | 'accepted' | 'revoked' | 'expired';
+  expires_at: string;
+  created_at: string;
+  accepted_at: string | null;
 }
 
 interface TransactionRow {
@@ -60,21 +74,30 @@ export default async function LoyaltyManagerPage({
   const [{ data: programData }, { data: memberData }, { data: transactionData }] =
     await Promise.all([
       supabase.from('loyalty_programs').select('*').eq('business_id', id).maybeSingle(),
-      supabase.rpc('list_business_loyalty_members', { p_business_id: id }),
+      supabase.rpc('list_business_loyalty_members_v2', { p_business_id: id }),
       supabase.rpc('list_business_loyalty_transactions', { p_business_id: id, p_limit: 50 }),
     ]);
   const program = programData as ProgramRow | null;
   const members = (memberData ?? []) as {
     membership_id: string;
     customer_name: string;
+    program_type: 'visits' | 'points';
+    progress_points: number;
+    available_points: number;
+    points_required: number | null;
     progress_stamps: number;
     stamps_required: number;
     rewards_ready: number;
   }[];
   let staff: StaffRow[] = [];
+  let staffInvites: StaffInviteRow[] = [];
   if (isOwner) {
-    const { data } = await supabase.rpc('list_business_staff', { p_business_id: id });
-    staff = (data ?? []) as StaffRow[];
+    const [{ data: staffData }, { data: inviteData }] = await Promise.all([
+      supabase.rpc('list_business_staff', { p_business_id: id }),
+      supabase.rpc('list_business_staff_invites', { p_business_id: id }),
+    ]);
+    staff = (staffData ?? []) as StaffRow[];
+    staffInvites = (inviteData ?? []) as StaffInviteRow[];
   }
   const transactions = (transactionData ?? []) as TransactionRow[];
 
@@ -92,7 +115,9 @@ export default async function LoyaltyManagerPage({
       <div className="page-heading compact-heading">
         <p className="eyebrow">Rewards</p>
         <h1>{business.name}</h1>
-        <p>Run a secure visit-based loyalty program and serve customers from one screen.</p>
+        <p>
+          Run a secure visit or spend-based loyalty program and serve customers from one screen.
+        </p>
       </div>
       {typeof query.saved === 'string' && <p className="notice-success">{query.saved}</p>}
       {typeof query.error === 'string' && <p className="notice-error">{query.error}</p>}
@@ -112,6 +137,13 @@ export default async function LoyaltyManagerPage({
           </div>
           <div className="form-row two-columns">
             <label>
+              Reward type <span className="required-marker">Required</span>
+              <select name="programType" defaultValue={program?.program_type ?? 'visits'}>
+                <option value="visits">Visit stamps</option>
+                <option value="points">Spend points</option>
+              </select>
+            </label>
+            <label>
               Program name <span className="required-marker">Required</span>
               <input name="name" defaultValue={program?.name ?? ''} maxLength={120} required />
             </label>
@@ -126,6 +158,33 @@ export default async function LoyaltyManagerPage({
               </select>
             </label>
           </div>
+          <div className="form-row two-columns">
+            <label>
+              Points earned per $1 <span className="optional-marker">For points programs</span>
+              <input
+                name="pointsPerDollar"
+                type="number"
+                min="0.01"
+                max="1000"
+                step="0.01"
+                defaultValue={program?.points_per_dollar ?? 1}
+              />
+            </label>
+            <label>
+              Points needed to redeem <span className="optional-marker">For points programs</span>
+              <input
+                name="pointsRequired"
+                type="number"
+                min="1"
+                max="1000000"
+                step="1"
+                defaultValue={program?.points_required ?? 100}
+              />
+            </label>
+          </div>
+          <p className="field-hint">
+            Points are earned from the purchase total staff enters at checkout.
+          </p>
           <label>
             Reward <span className="required-marker">Required</span>
             <input
@@ -169,7 +228,9 @@ export default async function LoyaltyManagerPage({
               <span>
                 {member.rewards_ready
                   ? `${member.rewards_ready} reward ready`
-                  : `${member.progress_stamps}/${member.stamps_required} visits`}
+                  : member.program_type === 'points'
+                    ? `${member.progress_points}/${member.points_required} points`
+                    : `${member.progress_stamps}/${member.stamps_required} visits`}
               </span>
             </div>
           ))}
@@ -180,15 +241,48 @@ export default async function LoyaltyManagerPage({
       {isOwner && (
         <section className="panel">
           <p className="eyebrow">Access</p>
-          <h2>Staff members</h2>
+          <h2>Invite staff</h2>
+          <p className="muted">
+            Send a single-use link. They can create an account or sign in first; the invite unlocks
+            Staff Scan only for this business.
+          </p>
           <form action={addStaffAction} className="inline-create-form loyalty-staff-form">
             <input type="hidden" name="businessId" value={id} />
             <label>
-              Staff account email
-              <input name="email" type="email" required />
+              Staff email
+              <input name="email" type="email" autoComplete="email" required />
             </label>
-            <button className="button button-small">Add staff</button>
+            <button className="button button-small">Create invite</button>
           </form>
+          {typeof query.inviteUrl === 'string' && (
+            <div className="notice-success">
+              <strong>
+                Invite ready for{' '}
+                {typeof query.inviteEmail === 'string' ? query.inviteEmail : 'your staff member'}.
+              </strong>
+              <span>Share this link; it expires in 7 days.</span>
+              <code>{query.inviteUrl}</code>
+              <InviteLinkActions url={query.inviteUrl} />
+            </div>
+          )}
+          {staffInvites.some((invite) => invite.status === 'pending') && (
+            <div className="loyalty-member-list">
+              {staffInvites
+                .filter((invite) => invite.status === 'pending')
+                .map((invite) => (
+                  <form action={revokeStaffInviteAction} key={invite.invite_id}>
+                    <input type="hidden" name="businessId" value={id} />
+                    <input type="hidden" name="inviteId" value={invite.invite_id} />
+                    <strong>{invite.invited_email}</strong>
+                    <span>
+                      Pending · expires {new Date(invite.expires_at).toLocaleDateString()}
+                    </span>
+                    <button className="text-button">Revoke invite</button>
+                  </form>
+                ))}
+            </div>
+          )}
+          <h3>Active staff</h3>
           <div className="loyalty-member-list">
             {staff.map((member) => (
               <form action={removeStaffAction} key={member.member_id}>

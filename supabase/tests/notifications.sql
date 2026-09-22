@@ -40,7 +40,7 @@ begin
     'notification-test-' || left(replace(gen_random_uuid()::text, '-', ''), 12),
     'Notification test event',
     'A temporary event used to verify notification queue behavior.',
-    now() + interval '3 days',
+    now() + interval '10 days',
     'America/Chicago',
     'business',
     true
@@ -56,8 +56,11 @@ begin
     raise exception 'Expected one deduplicated new-event notification, got %', queued_count;
   end if;
 
-  insert into public.event_saves (event_id, customer_id, reminder_enabled)
-  values (target_event_id, target_user_id, true);
+  insert into public.event_saves (
+    event_id, customer_id, reminder_enabled, reminder_minutes_before, reminder_frequency
+  ) values (
+    target_event_id, target_user_id, true, 2880, 'daily'
+  );
 
   select count(*) into queued_count
   from public.notification_deliveries delivery
@@ -65,8 +68,8 @@ begin
     and delivery.entity_id = target_event_id
     and delivery.dedupe_key like 'event-reminder:%'
     and delivery.status = 'queued';
-  if queued_count <> 1 then
-    raise exception 'Expected one saved-event reminder, got %', queued_count;
+  if queued_count < 2 then
+    raise exception 'Expected a daily reminder sequence, got % queued rows', queued_count;
   end if;
 
   perform set_config('request.jwt.claim.sub', target_user_id::text, true);
@@ -84,6 +87,26 @@ begin
       and delivery.status = 'queued'
   ) then
     raise exception 'Muted event deliveries remained queued';
+  end if;
+
+  insert into public.business_updates (
+    business_id, created_by, update_type, title, body
+  ) values (
+    target_business_id,
+    target_user_id,
+    'announcement',
+    'Notification test update',
+    'A temporary announcement used to verify follower update fan-out.'
+  ) returning id into target_event_id;
+
+  select count(*) into queued_count
+  from public.notification_deliveries delivery
+  where delivery.user_id = target_user_id
+    and delivery.entity_id = target_event_id
+    and delivery.entity_type = 'business_update'
+    and delivery.status = 'queued';
+  if queued_count <> 1 then
+    raise exception 'Expected one follower update notification, got %', queued_count;
   end if;
 end;
 $$;

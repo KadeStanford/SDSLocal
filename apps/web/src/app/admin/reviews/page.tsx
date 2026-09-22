@@ -99,7 +99,7 @@ export default async function ReviewQueuePage({ searchParams }: PageProps<'/admi
                     Correction requested
                     <textarea name="feedback" minLength={10} maxLength={1000} rows={3} required />
                   </label>
-                  <button className="button button-secondary">Return to draft</button>
+                  <button className="button button-secondary">Return to setup</button>
                 </form>
               </div>
             </article>

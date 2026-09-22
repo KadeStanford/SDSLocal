@@ -35,7 +35,7 @@ export default async function NewBusinessPage() {
       <div className="page-heading compact-heading">
         <p className="eyebrow">Business onboarding</p>
         <h1>Create your business page.</h1>
-        <p>It starts as a private draft. Photos and the final page preview come next.</p>
+        <p>Start a private, unpublished profile. Finish the page, then submit it for approval.</p>
       </div>
       <section className="panel">
         <BusinessForm categories={(data ?? []) as CategoryRow[]} />

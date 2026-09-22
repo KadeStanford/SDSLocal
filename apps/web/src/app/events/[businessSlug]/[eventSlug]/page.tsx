@@ -6,7 +6,7 @@ import { cache } from 'react';
 import { formatEventTime } from '@/lib/event-time';
 import { createClient } from '@/lib/supabase/server';
 
-import { removeEventSaveAction, saveEventAction, setEventReminderAction } from './actions';
+import { saveEventAction, setEventReminderAction } from './actions';
 import { EventShareButton } from './event-share-button';
 
 interface EventDetailRow {
@@ -27,6 +27,17 @@ interface EventDetailRow {
   media_assets:
     | { alt_text: string | null; storage_path: string }
     | { alt_text: string | null; storage_path: string }[]
+    | null;
+  event_photos:
+    | {
+        id: string;
+        caption: string | null;
+        display_order: number;
+        media_assets:
+          | { alt_text: string | null; storage_path: string }
+          | { alt_text: string | null; storage_path: string }[]
+          | null;
+      }[]
     | null;
   businesses:
     | {
@@ -56,7 +67,7 @@ const getEvent = cache(async (businessSlug: string, eventSlug: string) => {
   const { data } = await supabase
     .from('events')
     .select(
-      'id, title, slug, description, starts_at, ends_at, timezone, location_mode, address_text, external_url, age_note, capacity_text, is_published, publish_at, media_assets(alt_text, storage_path), businesses!inner(id, name, slug, address_line_1, address_line_2, city, region_code, postal_code)',
+      'id, title, slug, description, starts_at, ends_at, timezone, location_mode, address_text, external_url, age_note, capacity_text, is_published, publish_at, media_assets(alt_text, storage_path), event_photos(id, caption, display_order, media_assets(alt_text, storage_path)), businesses!inner(id, name, slug, address_line_1, address_line_2, city, region_code, postal_code)',
     )
     .eq('slug', eventSlug)
     .eq('businesses.slug', businessSlug)
@@ -102,11 +113,28 @@ export default async function EventDetailPage({
   const image = asset
     ? supabase.storage.from('business-media').getPublicUrl(asset.storage_path).data.publicUrl
     : null;
+  const gallery = (event.event_photos ?? [])
+    .slice()
+    .sort((a, b) => a.display_order - b.display_order)
+    .flatMap((photo) => {
+      const photoAsset = Array.isArray(photo.media_assets)
+        ? photo.media_assets[0]
+        : photo.media_assets;
+      if (!photoAsset) return [];
+      return [
+        {
+          url: supabase.storage.from('business-media').getPublicUrl(photoAsset.storage_path).data
+            .publicUrl,
+          alt: photoAsset.alt_text ?? photo.caption ?? event.title,
+          caption: photo.caption,
+        },
+      ];
+    });
   const { data: authData } = await supabase.auth.getUser();
   const { data: save } = authData.user
     ? await supabase
         .from('event_saves')
-        .select('reminder_enabled')
+        .select('reminder_enabled, reminder_frequency, reminder_minutes_before')
         .eq('event_id', event.id)
         .eq('customer_id', authData.user.id)
         .maybeSingle()
@@ -127,7 +155,6 @@ export default async function EventDetailPage({
         ? event.address_text
         : businessAddress;
   const saveAction = saveEventAction.bind(null, businessSlug, eventSlug);
-  const removeAction = removeEventSaveAction.bind(null, businessSlug, eventSlug);
   const reminderAction = setEventReminderAction.bind(null, businessSlug, eventSlug);
   const eventUrl = `/events/${businessSlug}/${eventSlug}`;
   const structuredData = {
@@ -169,6 +196,17 @@ export default async function EventDetailPage({
           // eslint-disable-next-line @next/next/no-img-element
           <img className="event-detail-image" src={image} alt={asset?.alt_text ?? ''} />
         )}
+        {gallery.length > 0 && (
+          <div className="event-detail-gallery" aria-label="Event gallery">
+            {gallery.map((photo) => (
+              <figure key={photo.url}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={photo.url} alt={photo.alt} />
+                {photo.caption && <figcaption>{photo.caption}</figcaption>}
+              </figure>
+            ))}
+          </div>
+        )}
         <div className="event-detail-content">
           <p className="eyebrow">{business.name}</p>
           <h1>{event.title}</h1>
@@ -195,7 +233,7 @@ export default async function EventDetailPage({
               </div>
             )}
           </dl>
-          {query.saved === '1' && <p className="notice-success">Event saved with reminders on.</p>}
+          {query.saved === '1' && <p className="notice-success">Event reminder enabled.</p>}
           {query.reminder === 'updated' && (
             <p className="notice-success">Reminder preference updated.</p>
           )}
@@ -203,9 +241,6 @@ export default async function EventDetailPage({
           <div className="event-detail-actions">
             {save ? (
               <>
-                <form action={removeAction}>
-                  <button className="button button-secondary">Remove from saved</button>
-                </form>
                 <form action={reminderAction} className="event-reminder-form">
                   <label>
                     <input
@@ -215,16 +250,68 @@ export default async function EventDetailPage({
                     />
                     Remind me before this event
                   </label>
-                  <button className="text-button">Save reminder</button>
+                  <label>
+                    Timing
+                    <select
+                      name="reminderMinutesBefore"
+                      defaultValue={String(save.reminder_minutes_before ?? 1440)}
+                    >
+                      <option value="60">1 hour before</option>
+                      <option value="180">3 hours before</option>
+                      <option value="1440">1 day before</option>
+                      <option value="2880">2 days before</option>
+                      <option value="10080">1 week before</option>
+                      <option value="43200">1 month before</option>
+                      <option value="129600">3 months before</option>
+                    </select>
+                  </label>
+                  <label>
+                    Repeat
+                    <select
+                      name="reminderFrequency"
+                      defaultValue={save.reminder_frequency ?? 'once'}
+                    >
+                      <option value="once">One reminder</option>
+                      <option value="daily">Every day until the event</option>
+                      <option value="weekly">Every week until the event</option>
+                      <option value="monthly">Every month until the event</option>
+                    </select>
+                  </label>
+                  <button className="text-button">
+                    {save.reminder_enabled ? 'Update reminder' : 'Enable reminder'}
+                  </button>
                 </form>
               </>
             ) : authData.user ? (
               <form action={saveAction}>
-                <button className="button">Save event</button>
+                <div className="event-reminder-form">
+                  <label>
+                    Timing
+                    <select name="reminderMinutesBefore" defaultValue="1440">
+                      <option value="60">1 hour before</option>
+                      <option value="180">3 hours before</option>
+                      <option value="1440">1 day before</option>
+                      <option value="2880">2 days before</option>
+                      <option value="10080">1 week before</option>
+                      <option value="43200">1 month before</option>
+                      <option value="129600">3 months before</option>
+                    </select>
+                  </label>
+                  <label>
+                    Repeat
+                    <select name="reminderFrequency" defaultValue="once">
+                      <option value="once">One reminder</option>
+                      <option value="daily">Every day until the event</option>
+                      <option value="weekly">Every week until the event</option>
+                      <option value="monthly">Every month until the event</option>
+                    </select>
+                  </label>
+                  <button className="button">Remind me</button>
+                </div>
               </form>
             ) : (
               <Link className="button" href={`/auth?next=${encodeURIComponent(eventUrl)}`}>
-                Sign in to save
+                Sign in to set a reminder
               </Link>
             )}
             <a className="button button-secondary" href={`${eventUrl}/calendar`}>

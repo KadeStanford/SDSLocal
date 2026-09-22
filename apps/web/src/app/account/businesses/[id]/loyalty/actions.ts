@@ -4,6 +4,7 @@ import { loyaltyProgramSchema } from '@sds/validation';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+import { getShareSiteUrl } from '@/lib/supabase/config';
 import { createClient } from '@/lib/supabase/server';
 
 function destination(businessId: string, key: 'error' | 'saved', message: string) {
@@ -32,9 +33,16 @@ async function ownerClient(businessId: string) {
 export async function saveLoyaltyProgramAction(formData: FormData) {
   const businessId = String(formData.get('businessId') ?? '');
   const result = loyaltyProgramSchema.safeParse({
+    programType: formData.get('programType'),
     name: formData.get('name'),
     rewardDescription: formData.get('rewardDescription'),
     stampsRequired: Number(formData.get('stampsRequired')),
+    pointsPerDollar: formData.get('pointsPerDollar')
+      ? Number(formData.get('pointsPerDollar'))
+      : undefined,
+    pointsRequired: formData.get('pointsRequired')
+      ? Number(formData.get('pointsRequired'))
+      : undefined,
     terms: formData.get('terms'),
   });
   if (!result.success) {
@@ -50,9 +58,12 @@ export async function saveLoyaltyProgramAction(formData: FormData) {
   const { error } = await supabase.from('loyalty_programs').upsert(
     {
       business_id: businessId,
+      program_type: result.data.programType,
       name: result.data.name,
       reward_description: result.data.rewardDescription,
       stamps_required: result.data.stampsRequired,
+      points_per_dollar: result.data.programType === 'points' ? result.data.pointsPerDollar : null,
+      points_required: result.data.programType === 'points' ? result.data.pointsRequired : null,
       terms: result.data.terms,
       is_active: formData.get('isActive') === 'on',
     },
@@ -67,18 +78,51 @@ export async function saveLoyaltyProgramAction(formData: FormData) {
 
 export async function addStaffAction(formData: FormData) {
   const businessId = String(formData.get('businessId') ?? '');
-  const email = String(formData.get('email') ?? '').trim();
-  if (!/^\S+@\S+\.\S+$/.test(email)) {
-    redirect(destination(businessId, 'error', 'Enter the staff member’s account email.'));
+  const identifier = String(formData.get('email') ?? '').trim();
+  if (!identifier) {
+    redirect(destination(businessId, 'error', 'Enter a valid staff email address.'));
   }
   const { supabase } = await ownerClient(businessId);
-  const { error } = await supabase.rpc('add_business_staff', {
+  const { data, error } = await supabase.rpc('create_business_staff_invite', {
     p_business_id: businessId,
-    p_email: email,
+    p_email: identifier,
+  });
+  if (error) redirect(destination(businessId, 'error', error.message));
+  const invite = (Array.isArray(data) ? data[0] : data) as {
+    invited_email: string;
+    token: string;
+  } | null;
+  if (!invite?.token)
+    redirect(destination(businessId, 'error', 'The invite link could not be created.'));
+  revalidatePath(`/account/businesses/${businessId}/loyalty`);
+  let shareSiteUrl: string;
+  try {
+    shareSiteUrl = getShareSiteUrl();
+  } catch (shareError) {
+    redirect(
+      destination(
+        businessId,
+        'error',
+        shareError instanceof Error ? shareError.message : 'Set a reachable share URL first.',
+      ),
+    );
+  }
+  const inviteUrl = `${shareSiteUrl.replace(/\/$/, '')}/staff-invite?token=${encodeURIComponent(invite.token)}`;
+  redirect(
+    `/account/businesses/${businessId}/loyalty?saved=${encodeURIComponent('Invite ready. Share the link with your staff member.')}&inviteEmail=${encodeURIComponent(invite.invited_email)}&inviteUrl=${encodeURIComponent(inviteUrl)}`,
+  );
+}
+
+export async function revokeStaffInviteAction(formData: FormData) {
+  const businessId = String(formData.get('businessId') ?? '');
+  const inviteId = String(formData.get('inviteId') ?? '');
+  const { supabase } = await ownerClient(businessId);
+  const { error } = await supabase.rpc('revoke_business_staff_invite', {
+    p_invite_id: inviteId,
   });
   if (error) redirect(destination(businessId, 'error', error.message));
   revalidatePath(`/account/businesses/${businessId}/loyalty`);
-  redirect(destination(businessId, 'saved', 'Staff access added.'));
+  redirect(destination(businessId, 'saved', 'Staff invite revoked.'));
 }
 
 export async function removeStaffAction(formData: FormData) {

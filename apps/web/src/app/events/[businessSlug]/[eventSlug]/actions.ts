@@ -28,14 +28,30 @@ async function eventAndUser(businessSlug: string, eventSlug: string) {
   return { supabase, userId: authData.user.id, eventId: event.id, path };
 }
 
-export async function saveEventAction(businessSlug: string, eventSlug: string) {
+export async function saveEventAction(
+  businessSlug: string,
+  eventSlug: string,
+  formData?: FormData,
+) {
   const { supabase, userId, eventId, path } = await eventAndUser(businessSlug, eventSlug);
-  const { error } = await supabase
-    .from('event_saves')
-    .upsert(
-      { event_id: eventId, customer_id: userId, reminder_enabled: true },
-      { onConflict: 'event_id,customer_id', ignoreDuplicates: true },
-    );
+  const minutes = Number(formData?.get('reminderMinutesBefore'));
+  const reminderMinutesBefore = [60, 180, 1440, 2880, 10080, 43200, 129600].includes(minutes)
+    ? minutes
+    : 1440;
+  const frequency = formData?.get('reminderFrequency');
+  const reminderFrequency = ['once', 'daily', 'weekly', 'monthly'].includes(String(frequency))
+    ? String(frequency)
+    : 'once';
+  const { error } = await supabase.from('event_saves').upsert(
+    {
+      event_id: eventId,
+      customer_id: userId,
+      reminder_enabled: true,
+      reminder_minutes_before: reminderMinutesBefore,
+      reminder_frequency: reminderFrequency,
+    },
+    { onConflict: 'event_id,customer_id', ignoreDuplicates: true },
+  );
   if (error) redirect(`${path}?error=${encodeURIComponent(error.message)}`);
   revalidatePath(path);
   redirect(`${path}?saved=1`);
@@ -59,9 +75,21 @@ export async function setEventReminderAction(
   formData: FormData,
 ) {
   const { supabase, userId, eventId, path } = await eventAndUser(businessSlug, eventSlug);
+  const frequency = formData.get('reminderFrequency');
+  const reminderFrequency = ['once', 'daily', 'weekly', 'monthly'].includes(String(frequency))
+    ? String(frequency)
+    : 'once';
+  const minutes = Number(formData.get('reminderMinutesBefore'));
+  const reminderMinutesBefore = [60, 180, 1440, 2880, 10080, 43200, 129600].includes(minutes)
+    ? minutes
+    : 1440;
   const { error } = await supabase
     .from('event_saves')
-    .update({ reminder_enabled: formData.get('reminderEnabled') === 'on' })
+    .update({
+      reminder_enabled: formData.get('reminderEnabled') === 'on',
+      reminder_frequency: reminderFrequency,
+      reminder_minutes_before: reminderMinutesBefore,
+    })
     .eq('event_id', eventId)
     .eq('customer_id', userId);
   if (error) redirect(`${path}?error=${encodeURIComponent(error.message)}`);

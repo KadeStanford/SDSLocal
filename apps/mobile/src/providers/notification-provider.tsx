@@ -11,19 +11,24 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { AppState, Platform } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
+import { isSafeNotificationUrl } from '@/lib/nearby-alerts-core';
 import { userMessageFromError } from '@/lib/user-error';
 import { useAuth } from '@/providers/auth-provider';
+import { useAppMode } from '@/providers/app-mode-provider';
 
 type NotificationStatus = 'available' | 'enabled' | 'denied' | 'error' | 'unsupported';
 
 interface NotificationContextValue {
   readonly status: NotificationStatus;
   readonly errorMessage: string | null;
+  readonly unreadCount: number;
+  readonly refreshUnreadCount: () => Promise<void>;
   readonly enable: () => Promise<boolean>;
   readonly deactivate: () => Promise<void>;
 }
@@ -32,8 +37,8 @@ const NotificationContext = createContext<NotificationContextValue | null>(null)
 const installationKey = 'sds-local-installation-id';
 
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: false,
+  handleNotification: async (notification) => ({
+    shouldPlaySound: notification.request.content.data?.notificationType === 'orders',
     shouldSetBadge: false,
     shouldShowBanner: true,
     shouldShowList: true,
@@ -67,6 +72,12 @@ async function installationHash() {
 
 async function registerToken(session: Session) {
   if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('orders', {
+      name: 'Pickup orders',
+      description: 'New orders, preparation updates, and pickup confirmations.',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'default',
+    });
     await Notifications.setNotificationChannelAsync('updates', {
       name: 'SDS Local updates',
       description: 'Event reminders, rewards, and followed-business updates.',
@@ -92,14 +103,32 @@ async function registerToken(session: Session) {
 function notificationUrl(notification: Notifications.Notification) {
   const value = notification.request.content.data?.url;
   if (typeof value !== 'string') return null;
-  if (value === '/rewards' || value.startsWith('/notification?')) return value as Href;
+  if (isSafeNotificationUrl(value)) return value as Href;
   return null;
 }
 
 export function NotificationProvider({ children }: PropsWithChildren) {
   const { session } = useAuth();
+  const { setMode, loading: modeLoading } = useAppMode();
+  const handledResponse = useRef<string | null>(null);
   const [status, setStatus] = useState<NotificationStatus>('available');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const refreshUnreadCount = useCallback(async () => {
+    if (!session) {
+      setUnreadCount(0);
+      return;
+    }
+    const { count, error } = await supabase
+      .from('notification_deliveries')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', session.user.id)
+      .or('status.eq.sent,entity_type.eq.pickup_order')
+      .is('read_at', null)
+      .is('dismissed_at', null);
+    if (!error) setUnreadCount(count ?? 0);
+  }, [session]);
 
   const syncGrantedRegistration = useCallback(async () => {
     if (!session) return false;
@@ -138,9 +167,28 @@ export function NotificationProvider({ children }: PropsWithChildren) {
   }, [session, syncGrantedRegistration]);
 
   useEffect(() => {
+    const initialRefresh = setTimeout(() => void refreshUnreadCount(), 0);
+    const appStateSubscription = session
+      ? AppState.addEventListener('change', (nextState) => {
+          if (nextState === 'active') void refreshUnreadCount();
+        })
+      : null;
+    return () => {
+      clearTimeout(initialRefresh);
+      appStateSubscription?.remove();
+    };
+  }, [refreshUnreadCount, session]);
+
+  useEffect(() => {
     const redirect = (notification: Notifications.Notification) => {
+      if (modeLoading || !session || handledResponse.current === notification.request.identifier)
+        return;
       const url = notificationUrl(notification);
-      if (url) router.push(url);
+      if (url) {
+        handledResponse.current = notification.request.identifier;
+        if (String(url).startsWith('/pickup-order?')) setMode('business');
+        router.push(url);
+      }
     };
     const initialResponse = Notifications.getLastNotificationResponse();
     if (initialResponse?.notification) redirect(initialResponse.notification);
@@ -148,7 +196,14 @@ export function NotificationProvider({ children }: PropsWithChildren) {
       redirect(response.notification),
     );
     return () => responseSubscription.remove();
-  }, []);
+  }, [setMode, modeLoading, session]);
+
+  useEffect(() => {
+    const receivedSubscription = Notifications.addNotificationReceivedListener(() => {
+      void refreshUnreadCount();
+    });
+    return () => receivedSubscription.remove();
+  }, [refreshUnreadCount]);
 
   const enable = useCallback(async () => {
     if (!session) return false;
@@ -193,8 +248,8 @@ export function NotificationProvider({ children }: PropsWithChildren) {
   }, [session]);
 
   const value = useMemo(
-    () => ({ status, errorMessage, enable, deactivate }),
-    [status, errorMessage, enable, deactivate],
+    () => ({ status, errorMessage, unreadCount, refreshUnreadCount, enable, deactivate }),
+    [status, errorMessage, unreadCount, refreshUnreadCount, enable, deactivate],
   );
   return <NotificationContext.Provider value={value}>{children}</NotificationContext.Provider>;
 }

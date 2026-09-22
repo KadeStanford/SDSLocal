@@ -19,7 +19,20 @@ pnpm db:start
 pnpm dev:web
 ```
 
-Run the development client separately with `pnpm dev:mobile`. Native EAS builds require the project to be linked to an Expo account first; no Expo project ID or credentials are committed.
+For a one-click startup on Windows, double-click `Start-SDSLocal.cmd` (or run
+`pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-local.ps1`). It starts Docker Desktop,
+waits for the local Supabase containers, then builds and starts the Next.js and Expo Metro containers
+in LAN mode. All three application layers are visible in Docker Desktop under the `sds-local-dev`
+Compose project. It also handles Docker Desktop's Windows stale-socket failure by quarantining only
+the two runtime socket directories; Docker images, containers, volumes, and project files are not
+touched. Source code is bind-mounted for hot reload, and dependencies live in Docker-managed named
+volumes. Because Docker Desktop's Linux VM does not forward Bonjour multicast to the Windows LAN,
+the launcher also keeps a small Windows Bonjour proxy registration for `_expo._tcp` while Metro is
+running. This is discovery plumbing only; Metro, Next.js, and Supabase remain containerized. The
+registration is refreshed on every launch using the current LAN address. If an iPhone still does not
+show `SDS Local`, confirm that the SDS Local development build has Local Network access enabled in
+iOS Settings, then refresh its development-server list. Native EAS builds require the project to be
+linked to an Expo account first; no Expo project ID or credentials are committed.
 
 ## Provision an SDS administrator
 
@@ -32,8 +45,9 @@ values ('USER_PROFILE_UUID')
 on conflict do nothing;
 ```
 
-The local owner account created during development has already been provisioned. Staging and
-production administrators must be added separately in their respective projects.
+Provision the local owner after the account exists, then repeat the same trusted step for staging
+and production administrators in their respective projects. The seed file does not guess a user
+ID or grant administrator access automatically.
 
 ## Repository map
 

@@ -132,6 +132,7 @@ export function BusinessDetailsForm({
             <option value="services">Services</option>
             <option value="retail">Retail</option>
             <option value="entertainment_venue">Entertainment or venue</option>
+            <option value="mobile">Mobile business (food truck, pop-up, traveling service)</option>
             <option value="general">General</option>
           </select>
         </label>

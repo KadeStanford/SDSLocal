@@ -1,4 +1,4 @@
-import { getOfferingTerminology } from '@sds/business-logic';
+import { getBusinessStatusLabel, getOfferingTerminology } from '@sds/business-logic';
 import type { BusinessType, ServiceAreaType } from '@sds/types';
 import { usRegionOptions } from '@sds/validation';
 import type { CSSProperties } from 'react';
@@ -100,7 +100,21 @@ interface LoyaltyProgramRow {
   name: string;
   reward_description: string;
   stamps_required: number;
+  program_type: 'visits' | 'points';
+  points_per_dollar: number | null;
+  points_required: number | null;
   terms: string;
+}
+
+interface LocationStopRow {
+  id: string;
+  title: string;
+  address_text: string | null;
+  latitude: number;
+  longitude: number;
+  starts_at: string;
+  ends_at: string;
+  timezone: string;
 }
 
 const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -157,6 +171,9 @@ export default async function BusinessPage({ params, searchParams }: PageProps<'
         .eq('customer_id', authData.user.id)
         .maybeSingle()
     : { data: null };
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const ninetyDaysFromNowIso = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString();
   const [
     { data: categoryData },
     { data: hourData },
@@ -165,6 +182,7 @@ export default async function BusinessPage({ params, searchParams }: PageProps<'
     { data: itemData },
     { data: eventData },
     { data: loyaltyData },
+    { data: locationData },
   ] = await Promise.all([
     supabase
       .from('business_categories')
@@ -203,17 +221,24 @@ export default async function BusinessPage({ params, searchParams }: PageProps<'
         'id, slug, title, description, starts_at, timezone, location_mode, address_text, media_assets(alt_text, storage_path)',
       )
       .eq('business_id', business.id)
-      .or(`is_published.eq.true,publish_at.lte.${new Date().toISOString()}`)
+      .or(`is_published.eq.true,publish_at.lte.${nowIso}`)
       .is('archived_at', null)
-      .gte('starts_at', new Date().toISOString())
+      .gte('starts_at', nowIso)
       .order('starts_at')
       .limit(6),
     supabase
       .from('loyalty_programs')
-      .select('id, name, reward_description, stamps_required, terms')
+      .select(
+        'id, name, reward_description, program_type, stamps_required, points_per_dollar, points_required, terms',
+      )
       .eq('business_id', business.id)
       .eq('is_active', true)
       .maybeSingle(),
+    supabase.rpc('get_business_location_stops', {
+      p_business_id: business.id,
+      p_from: nowIso,
+      p_to: ninetyDaysFromNowIso,
+    }),
   ]);
 
   const categories = ((categoryData ?? []) as CategoryJoinRow[]).flatMap((row) => {
@@ -238,6 +263,7 @@ export default async function BusinessPage({ params, searchParams }: PageProps<'
   const offeringItems = (itemData ?? []) as OfferingItemRow[];
   const events = (eventData ?? []) as EventRow[];
   const loyaltyProgram = loyaltyData as LoyaltyProgramRow | null;
+  const locationStops = (locationData ?? []) as LocationStopRow[];
   const { data: rewardsMembership } =
     authData.user && loyaltyProgram
       ? await supabase
@@ -270,7 +296,9 @@ export default async function BusinessPage({ params, searchParams }: PageProps<'
       style={theme}
     >
       {business.status !== 'active' && (
-        <div className="draft-banner">Private preview · {business.status.replace('_', ' ')}</div>
+        <div className="draft-banner">
+          Private preview · {getBusinessStatusLabel(business.status)}
+        </div>
       )}
       <nav className="business-nav">
         <Link className="brand" href="/">
@@ -359,6 +387,32 @@ export default async function BusinessPage({ params, searchParams }: PageProps<'
             {serviceArea && <p>{serviceArea}</p>}
             {!address && !serviceArea && <p>Location details coming soon.</p>}
           </section>
+          {business.business_type === 'mobile' && (
+            <section>
+              <h2>Upcoming stops</h2>
+              {locationStops.length ? (
+                <ul className="hours-list">
+                  {locationStops.map((stop) => (
+                    <li key={stop.id}>
+                      <strong>{stop.title}</strong>
+                      <span>
+                        {new Date(stop.starts_at).toLocaleString()} ·{' '}
+                        {stop.address_text ??
+                          `${stop.latitude.toFixed(4)}, ${stop.longitude.toFixed(4)}`}
+                      </span>
+                      <a
+                        href={`https://maps.apple.com/?ll=${stop.latitude},${stop.longitude}&q=${encodeURIComponent(stop.title)}`}
+                      >
+                        Directions
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>Upcoming locations will be posted here.</p>
+              )}
+            </section>
+          )}
           <section>
             <h2>Hours</h2>
             {hours.length ? (
@@ -494,7 +548,11 @@ export default async function BusinessPage({ params, searchParams }: PageProps<'
             <p className="eyebrow">Local rewards</p>
             <h2>{loyaltyProgram.name}</h2>
             <p>{loyaltyProgram.reward_description}</p>
-            <strong>Earn a reward every {loyaltyProgram.stamps_required} visits.</strong>
+            <strong>
+              {loyaltyProgram.program_type === 'points'
+                ? `Earn ${loyaltyProgram.points_per_dollar ?? 1} point${loyaltyProgram.points_per_dollar === 1 ? '' : 's'} per $1; redeem at ${loyaltyProgram.points_required ?? 0} points.`
+                : `Earn a reward every ${loyaltyProgram.stamps_required} visits.`}
+            </strong>
             {loyaltyProgram.terms && <small>{loyaltyProgram.terms}</small>}
           </div>
           {rewardsMembership ? (

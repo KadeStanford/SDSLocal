@@ -1,3 +1,4 @@
+import { getBusinessStatusLabel, getOfferingTerminology } from '@sds/business-logic';
 import type { BusinessType, ServiceAreaType } from '@sds/types';
 import type { EventTimezone } from '@sds/validation';
 import Link from 'next/link';
@@ -121,8 +122,11 @@ export default async function BusinessSettingsPage({
           ← Account
         </Link>
         <div className="nav-actions">
-          <Link href={`/account/businesses/${id}/offerings`}>Offerings</Link>
+          <Link href={`/account/businesses/${id}/offerings`}>
+            {getOfferingTerminology(business.business_type).items}
+          </Link>
           <Link href={`/account/businesses/${id}/media`}>Photos</Link>
+          <Link href={`/account/businesses/${id}/updates`}>Follower updates</Link>
           <Link href={`/b/${business.slug}`}>View page</Link>
         </div>
       </nav>
@@ -137,11 +141,11 @@ export default async function BusinessSettingsPage({
       {typeof query.error === 'string' && <p className="notice-error">{query.error}</p>}
       {business.review_feedback && <p className="notice-error">{business.review_feedback}</p>}
 
-      <section className="panel readiness-panel">
+      <section className="panel readiness-panel" id="readiness">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Publication readiness</p>
-            <h2>Status: {business.status.replace('_', ' ')}</h2>
+            <h2>Status: {getBusinessStatusLabel(business.status)}</h2>
           </div>
           {business.status === 'draft' && (
             <form action={submitBusinessForReviewAction}>

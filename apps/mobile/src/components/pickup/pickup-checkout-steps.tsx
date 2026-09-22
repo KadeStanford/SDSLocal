@@ -1,0 +1,243 @@
+import type { ReactNode } from 'react';
+import { View } from 'react-native';
+import { AppButton } from '../app-button';
+import { ThemedText } from '../themed-text';
+import { ReceiptItem, ReceiptTotal } from './order-presentation';
+import { QuantityStepper } from './quantity-stepper';
+import { useTheme } from '@/hooks/use-theme';
+import { cartReview } from '@/lib/pickup-order-flow';
+import { formattedPickupPhone } from '@/lib/pickup-checkout-presentation';
+import {
+  money,
+  pickupLabel,
+  type CartLine,
+  type Product,
+  type Quote,
+} from '@/lib/square-commerce-core';
+
+export function PickupCart({
+  cart,
+  products,
+  onEdit,
+  onRemove,
+  onQuantity,
+  disabled = false,
+}: {
+  cart: CartLine[];
+  products: Product[];
+  onEdit: (index: number) => void;
+  onRemove: (index: number) => void;
+  onQuantity?: (index: number, delta: 1 | -1) => void;
+  disabled?: boolean;
+}) {
+  const c = useTheme();
+  const review = cartReview(cart, products);
+  return (
+    <View style={{ gap: 16 }}>
+      {!cart.length && <ThemedText>Choose something from the menu to get started.</ThemedText>}
+      {review.pricesChanged && (
+        <ThemedText accessibilityLiveRegion="polite">
+          Some prices changed. This estimate uses the current menu.
+        </ThemedText>
+      )}
+      {review.issues.map((issue, i) => (
+        <ThemedText key={i} accessibilityLiveRegion="polite">
+          {issue}
+        </ThemedText>
+      ))}
+      {cart.map((line, index) => {
+        const p = products.find((p) => p.id === line.variationId);
+        return (
+          <View
+            key={index}
+            style={{ padding: 16, borderRadius: 16, backgroundColor: c.backgroundElement, gap: 12 }}
+          >
+            <View style={{ gap: 4 }}>
+              <ThemedText type="card">{p?.name ?? 'Item no longer available'}</ThemedText>
+              {p && (
+                <ThemedText type="small" themeColor="textSecondary">
+                  {[
+                    p.variation !== 'Regular' ? p.variation : '',
+                    ...p.groups
+                      .flatMap((g) => g.modifiers)
+                      .filter((m) => line.modifierIds.includes(m.id))
+                      .map((m) => m.name),
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </ThemedText>
+              )}
+              <ThemedText type="smallBold">
+                {money(cartReview([line], products).subtotal, p?.currency ?? 'USD')}
+              </ThemedText>
+            </View>
+            <View
+              style={{
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 8,
+              }}
+            >
+              {onQuantity && p?.available !== false && p ? (
+                <QuantityStepper
+                  name={p.name}
+                  quantity={line.quantity}
+                  disabled={disabled}
+                  onChange={(delta) => onQuantity(index, delta)}
+                />
+              ) : (
+                <ThemedText>Quantity {line.quantity}</ThemedText>
+              )}
+              {p && p.available !== false && (
+                <AppButton
+                  label="Edit"
+                  accessibilityLabel={`Edit ${p.name}`}
+                  variant="tertiary"
+                  disabled={disabled}
+                  onPress={() => onEdit(index)}
+                />
+              )}
+              <AppButton
+                label="Remove"
+                accessibilityLabel={`Remove ${p?.name ?? 'item'}`}
+                variant="tertiary"
+                disabled={disabled}
+                onPress={() => onRemove(index)}
+              />
+            </View>
+          </View>
+        );
+      })}
+      {!!cart.length && (
+        <ReceiptTotal
+          label="Estimated items"
+          value={review.subtotal}
+          currency={products[0]?.currency ?? 'USD'}
+          strong
+        />
+      )}
+      <ThemedText type="small" themeColor="textSecondary">
+        Tax is calculated at review. Your cart is saved for this business on this device.
+      </ThemedText>
+    </View>
+  );
+}
+
+export { PickupScheduler } from './pickup-scheduler';
+
+function ReviewSection({
+  title,
+  onEdit,
+  children,
+}: {
+  title: string;
+  onEdit?: (() => void) | undefined;
+  children: ReactNode;
+}) {
+  const c = useTheme();
+  return (
+    <View style={{ padding: 16, borderRadius: 16, backgroundColor: c.backgroundElement, gap: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <ThemedText type="card" style={{ flex: 1 }}>
+          {title}
+        </ThemedText>
+        {onEdit && (
+          <AppButton
+            label="Edit"
+            accessibilityLabel={`Edit ${title.toLowerCase()}`}
+            variant="tertiary"
+            onPress={onEdit}
+          />
+        )}
+      </View>
+      {children}
+    </View>
+  );
+}
+export function PickupReview({
+  quote,
+  name,
+  phone,
+  cart,
+  products,
+  expired,
+  onEdit,
+}: {
+  quote: Quote;
+  name: string;
+  phone: string;
+  cart: CartLine[];
+  products: Product[];
+  expired: boolean;
+  onEdit?: ((step: 'cart' | 'pickup' | 'contact') => void) | undefined;
+}) {
+  return (
+    <View style={{ gap: 12 }}>
+      <ReviewSection title="Pickup" onEdit={onEdit ? () => onEdit('pickup') : undefined}>
+        <ThemedText>{pickupLabel(quote.slot)}</ThemedText>
+        <ThemedText themeColor="textSecondary">{quote.slot.title}</ThemedText>
+        <ThemedText themeColor="textSecondary">{quote.slot.address}</ThemedText>
+      </ReviewSection>
+      <ReviewSection title="Contact" onEdit={onEdit ? () => onEdit('contact') : undefined}>
+        <ThemedText>{name}</ThemedText>
+        <ThemedText themeColor="textSecondary">{formattedPickupPhone(phone)}</ThemedText>
+      </ReviewSection>
+      <ReviewSection title="Order summary" onEdit={onEdit ? () => onEdit('cart') : undefined}>
+        {cart.map((line, i) => {
+          const p = products.find((p) => p.id === line.variationId);
+          return (
+            <ReceiptItem
+              key={i}
+              currency={quote.currency}
+              item={{
+                name: p?.name ?? 'Item unavailable',
+                quantity: String(line.quantity),
+                variation_name: p?.variation ?? '',
+                modifiers:
+                  p?.groups
+                    .flatMap((g) => g.modifiers)
+                    .filter((m) => line.modifierIds.includes(m.id))
+                    .map((m) => ({ name: m.name })) ?? [],
+                total_money: {
+                  amount: cartReview([line], products).subtotal,
+                  currency: quote.currency,
+                },
+              }}
+            />
+          );
+        })}
+        <View style={{ gap: 8, paddingTop: 8 }}>
+          <ReceiptTotal label="Subtotal" value={quote.subtotal} currency={quote.currency} />
+          {quote.reward && quote.reward.discountMinor > 0 && (
+            <ReceiptTotal
+              label={quote.reward.label || 'Rewards discount'}
+              value={-quote.reward.discountMinor}
+              currency={quote.currency}
+            />
+          )}
+          <ReceiptTotal label="Tax" value={quote.tax} currency={quote.currency} />
+          {quote.tip > 0 && (
+            <ReceiptTotal label="Tip" value={quote.tip} currency={quote.currency} />
+          )}
+          <ReceiptTotal label="Total" value={quote.total} currency={quote.currency} strong />
+        </View>
+      </ReviewSection>
+      <ThemedText type="small" themeColor="textSecondary">
+        {quote.reward
+          ? `Rewards applied · ${quote.reward.label}`
+          : 'Rewards are checked automatically when you are signed in.'}
+      </ThemedText>
+      <ThemedText type="small" themeColor="textSecondary">
+        Secure checkout ·{' '}
+        {quote.provider === 'stripe' ? 'Stripe test payment' : 'Square Sandbox test payment'}
+      </ThemedText>
+      {expired && (
+        <ThemedText accessibilityLiveRegion="polite">
+          Your total expired. Refresh it before continuing.
+        </ThemedText>
+      )}
+    </View>
+  );
+}

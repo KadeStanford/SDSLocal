@@ -97,17 +97,19 @@ export default async function EventDiscoveryPage({ searchParams }: PageProps<'/e
     p_offset: (page - 1) * 24,
   });
   const events = (data ?? []) as DiscoveryEvent[];
-  const savedIds = new Set<string>();
+  const reminderIds = new Set<string>();
   if (authData.user && events.length) {
     const { data: saves } = await supabase
       .from('event_saves')
-      .select('event_id')
+      .select('event_id, reminder_enabled')
       .eq('customer_id', authData.user.id)
       .in(
         'event_id',
         events.map((event) => event.event_id),
       );
-    for (const save of saves ?? []) savedIds.add(save.event_id);
+    for (const reminder of saves ?? []) {
+      if (reminder.reminder_enabled) reminderIds.add(reminder.event_id);
+    }
   }
 
   const nextQuery = new URLSearchParams();
@@ -139,9 +141,7 @@ export default async function EventDiscoveryPage({ searchParams }: PageProps<'/e
       <div className="page-heading compact-heading">
         <p className="eyebrow">What’s happening locally</p>
         <h1>Events worth showing up for.</h1>
-        <p>
-          Browse without an account. Sign in only when you want to save an event or set a reminder.
-        </p>
+        <p>Browse without an account. Sign in when you want a reminder for an event.</p>
       </div>
 
       <section className="panel event-filter-panel">
@@ -192,7 +192,7 @@ export default async function EventDiscoveryPage({ searchParams }: PageProps<'/e
                   {event.distance_miles !== null && (
                     <span>{event.distance_miles.toFixed(1)} miles away</span>
                   )}
-                  {savedIds.has(event.event_id) && <span>Saved</span>}
+                  {reminderIds.has(event.event_id) && <span>Reminder on</span>}
                 </div>
                 <Link
                   className="button button-small"

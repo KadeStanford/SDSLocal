@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
 };
 
-type MediaRole = 'logo' | 'cover' | 'gallery' | 'offering' | 'event';
+type MediaRole = 'logo' | 'cover' | 'gallery' | 'offering' | 'event' | 'event_gallery';
 
 interface StagedVariant {
   path: string;
@@ -18,6 +18,8 @@ interface RequestBody {
   role: MediaRole;
   targetId?: string;
   altText?: string;
+  caption?: string;
+  displayOrder?: number;
   variants: StagedVariant[];
 }
 
@@ -45,6 +47,11 @@ const variantRules: Record<
   },
   event: {
     event_card: { maxDimension: 1200, maxBytes: 500 * 1024 },
+  },
+  event_gallery: {
+    thumbnail: { maxDimension: 320, maxBytes: 120 * 1024 },
+    card: { maxDimension: 800, maxBytes: 300 * 1024 },
+    full: { maxDimension: 1600, maxBytes: 800 * 1024 },
   },
 };
 
@@ -126,7 +133,7 @@ Deno.serve(async (request) => {
     !isUuid(body.businessId) ||
     !isUuid(body.assetGroupId) ||
     !variantRules[body.role] ||
-    (['offering', 'event'].includes(body.role) && !isUuid(body.targetId)) ||
+    (['offering', 'event', 'event_gallery'].includes(body.role) && !isUuid(body.targetId)) ||
     !Array.isArray(body.variants)
   ) {
     return json(400, { error: 'Invalid media request.' });
@@ -207,14 +214,25 @@ Deno.serve(async (request) => {
               p_alt_text: body.altText ?? '',
               p_variants: verifiedVariants,
             })
-          : await admin.rpc('finalize_business_media', {
-              p_actor_id: authData.user.id,
-              p_business_id: body.businessId,
-              p_asset_group_id: body.assetGroupId,
-              p_role: body.role,
-              p_alt_text: body.altText ?? '',
-              p_variants: verifiedVariants,
-            });
+          : body.role === 'event_gallery'
+            ? await admin.rpc('finalize_event_gallery_media', {
+                p_actor_id: authData.user.id,
+                p_business_id: body.businessId,
+                p_event_id: body.targetId!,
+                p_asset_group_id: body.assetGroupId,
+                p_alt_text: body.altText ?? '',
+                p_caption: body.caption ?? '',
+                p_display_order: body.displayOrder ?? null,
+                p_variants: verifiedVariants,
+              })
+            : await admin.rpc('finalize_business_media', {
+                p_actor_id: authData.user.id,
+                p_business_id: body.businessId,
+                p_asset_group_id: body.assetGroupId,
+                p_role: body.role,
+                p_alt_text: body.altText ?? '',
+                p_variants: verifiedVariants,
+              });
     if (finalizeError) throw new Error(finalizeError.message);
 
     const previousPaths = (result as { previousPaths?: string[] } | null)?.previousPaths ?? [];

@@ -4,6 +4,11 @@ export interface PublicSupabaseConfig {
   readonly url: string;
   readonly anonKey: string;
   readonly allowInsecureLocalNetwork?: boolean;
+  readonly storage?: {
+    readonly getItem: (key: string) => string | null | Promise<string | null>;
+    readonly setItem: (key: string, value: string) => void | Promise<void>;
+    readonly removeItem: (key: string) => void | Promise<void>;
+  };
 }
 
 function isLoopbackHost(hostname: string) {
@@ -65,6 +70,7 @@ export function createPublicSupabaseClient(config: PublicSupabaseConfig): Supaba
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: false,
+      storage: config.storage,
     },
   });
 }

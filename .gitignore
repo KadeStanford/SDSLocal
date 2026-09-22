@@ -20,6 +20,18 @@ apps/mobile/web-build/
 *.aab
 *.apk
 *.ipa
+dist-android/
+dist-ios/
+dist-web/
+
+# Local Codex, Expo, and EAS state
+.codex/
+.codex-tmp/
+.eas/
+.eas-cli-home/
+apps/.eas-userdata/
+apps/mobile/.eas-userdata/
+NUL
 
 # Supabase local state
 supabase/.branches/

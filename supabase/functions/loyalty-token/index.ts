@@ -42,19 +42,23 @@ Deno.serve(async (request) => {
     return json(400, { error: 'A JSON request body is required.' });
   }
 
-  const { data: membership } = await admin
+  const { data: membership, error: membershipError } = await admin
     .from('loyalty_memberships')
     .select('id, program_id, business_id, customer_id, is_active')
     .eq('id', membershipId)
     .eq('customer_id', authData.user.id)
     .eq('is_active', true)
     .maybeSingle();
+  if (membershipError) {
+    console.error('Rewards membership lookup failed:', membershipError.message);
+    return json(500, { error: 'The rewards membership could not be checked.' });
+  }
   if (!membership) return json(404, { error: 'Active rewards membership not found.' });
 
   const [{ data: program }, { data: business }] = await Promise.all([
     admin
       .from('loyalty_programs')
-      .select('id')
+      .select('id, program_type')
       .eq('id', membership.program_id)
       .eq('is_active', true)
       .maybeSingle(),
@@ -75,6 +79,7 @@ Deno.serve(async (request) => {
     membershipId: membership.id,
     businessId: membership.business_id,
     programId: membership.program_id,
+    programType: program.program_type === 'points' ? 'points' : 'visits',
     jti: crypto.randomUUID(),
     iat: issuedAt,
     exp: issuedAt + 45,

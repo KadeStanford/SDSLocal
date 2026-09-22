@@ -6,23 +6,9 @@
 import '@/global.css';
 
 import { Platform } from 'react-native';
+import { color, radius, spacing, themeColors } from '@sds/design-tokens';
 
-export const Colors = {
-  light: {
-    text: '#14231C',
-    background: '#F6F5F0',
-    backgroundElement: '#FFFFFF',
-    backgroundSelected: '#DCECE3',
-    textSecondary: '#596860',
-  },
-  dark: {
-    text: '#F3F7F4',
-    background: '#0E1411',
-    backgroundElement: '#19221E',
-    backgroundSelected: '#26362E',
-    textSecondary: '#AEBBB4',
-  },
-} as const;
+export const Colors = themeColors;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
@@ -53,30 +39,30 @@ export const Fonts = Platform.select({
 
 export const Spacing = {
   half: 2,
-  one: 4,
-  two: 8,
-  three: 16,
-  four: 24,
-  five: 32,
+  one: spacing.xs,
+  two: spacing.sm,
+  three: spacing.md,
+  four: spacing.lg,
+  five: spacing.xl,
   six: 64,
 } as const;
 
 /** Shared product tokens: calm local-marketplace green, warm surfaces, and soft geometry. */
 export const Brand = {
-  primary: '#176B4D',
+  primary: color.brand,
   primaryBright: '#2FB07C',
   primarySoft: '#DCECE3',
-  danger: '#A13D3D',
-  border: '#718078',
+  danger: color.danger,
+  border: color.border,
   onPrimary: '#FFFFFF',
 } as const;
 
 export const Radius = {
-  small: 12,
-  medium: 16,
-  large: 22,
+  small: radius.sm + 4,
+  medium: radius.md + 2,
+  large: radius.lg,
   hero: 26,
-  pill: 999,
+  pill: radius.pill,
 } as const;
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;

@@ -93,6 +93,7 @@ export const businessTypeSchema = z.enum([
   'services',
   'retail',
   'entertainment_venue',
+  'mobile',
   'general',
 ]);
 
@@ -384,12 +385,34 @@ export const eventSchema = z
     }
   });
 
-export const loyaltyProgramSchema = z.object({
-  name: z.string().trim().min(2).max(120),
-  rewardDescription: z.string().trim().min(2).max(textLimits.rewardDescription),
-  stampsRequired: z.int().min(2).max(30),
-  terms: z.string().trim().max(2_000),
-});
+export const loyaltyProgramSchema = z
+  .object({
+    programType: z.enum(['visits', 'points']).default('visits'),
+    name: z.string().trim().min(2).max(120),
+    rewardDescription: z.string().trim().min(2).max(textLimits.rewardDescription),
+    stampsRequired: z.int().min(2).max(30).default(10),
+    pointsPerDollar: z.number().positive().max(1_000).optional(),
+    pointsRequired: z.int().min(1).max(1_000_000).optional(),
+    terms: z.string().trim().max(2_000),
+  })
+  .superRefine((value, context) => {
+    if (value.programType === 'points') {
+      if (!value.pointsPerDollar) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Enter how many points each dollar earns.',
+          path: ['pointsPerDollar'],
+        });
+      }
+      if (!value.pointsRequired) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Enter the points needed to redeem a reward.',
+          path: ['pointsRequired'],
+        });
+      }
+    }
+  });
 
 export const publicClientEnvironmentSchema = z.object({
   appEnvironment: z.enum(['development', 'staging', 'production']),
