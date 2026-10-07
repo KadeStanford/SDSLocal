@@ -2,7 +2,7 @@
   "project": "F:/BusinessApp",
   "activeSource": "F:/BusinessApp/.codex-tmp/parish-pass-dark-review",
   "branch": "codex/current-redesign-2026-10-07",
-  "branchStatus": "Independent project-associated source checkout saved to GitHub; OTA publication pending.",
+  "branchStatus": "Saved to GitHub; redesigned OTA published and actual downloads verified on normal preview.",
   "candidateIdentity": "c8fdaace793838dec271cda14196b85a818f1b7894c4d5e4fb29e7fff8b07478",
   "releaseGroup": "16899e45-ef46-427c-870a-009ff22a3caf",
   "rows": [
@@ -101,5 +101,11 @@
       "conflictBlocks": 2,
       "reason": "Keep theme hook and queue icons; add published gated backup panel and truthful backup description."
     }
-  ]
+  ],
+  "redesignRelease": {
+    "group": "2bd5b6d8-1252-4688-968a-1c27aa3cc32c",
+    "sourceCommit": "3cbd0afd62be54e1e1d2e0d65447ee61bfcc9f5b",
+    "status": "PUBLISHED_CHANNEL_RUNTIME_AND_ACTUAL_ASSETS_VERIFIED",
+    "publishedAt": "2026-10-07T21:45:13.811Z"
+  }
 }

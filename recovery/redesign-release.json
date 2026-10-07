@@ -1,0 +1,106 @@
+{
+  "status": "PUBLISHED_CHANNEL_RUNTIME_AND_ACTUAL_ASSETS_VERIFIED",
+  "publishedAt": "2026-10-07T21:45:13.811Z",
+  "verifiedAt": "2026-10-07T21:49:00.339Z",
+  "projectId": "2406d47e-390c-4a39-932c-325b2ec5ab99",
+  "channel": "preview",
+  "branch": "preview",
+  "runtime": "0.1.0",
+  "appEnvironment": "staging",
+  "group": "2bd5b6d8-1252-4688-968a-1c27aa3cc32c",
+  "sourceBranch": "codex/current-redesign-2026-10-07",
+  "sourceCommit": "3cbd0afd62be54e1e1d2e0d65447ee61bfcc9f5b",
+  "securityAdminBaselineGroup": "16899e45-ef46-427c-870a-009ff22a3caf",
+  "platforms": [
+    {
+      "platform": "android",
+      "id": "01a11853-e553-7212-b782-91d4b899ea6a",
+      "normalPreviewSelectsExactUpdate": true,
+      "manifestHashMatches": true,
+      "downloadSha256": "9038fe25b8821d7f57abff6d3fdfc1f9e099d507c00ec2931f5e91e1962d307c",
+      "downloadBytes": 8639164,
+      "verifiedSourceFiles": 306,
+      "appEnvironment": "staging"
+    },
+    {
+      "platform": "ios",
+      "id": "01a11853-e553-7d5d-a104-670ae0939b0f",
+      "normalPreviewSelectsExactUpdate": true,
+      "manifestHashMatches": true,
+      "downloadSha256": "2513edbb94abb1022776de26ba1ab4eebf5f03282af081fd9df22e3bafa72b71",
+      "downloadBytes": 8502484,
+      "verifiedSourceFiles": 306,
+      "appEnvironment": "staging"
+    }
+  ],
+  "validation": {
+    "files": 94,
+    "passedFiles": 83,
+    "initializationFailures": [
+      {
+        "path": "apps/mobile/src/components/auth-callback-readiness-workflow.test.tsx",
+        "error": "Unexpected token 'typeof'"
+      },
+      {
+        "path": "apps/mobile/src/components/business-reviews-flow.test.tsx",
+        "error": "Unexpected token 'typeof'"
+      },
+      {
+        "path": "apps/mobile/src/components/business-tools-render.test.tsx",
+        "error": "Unexpected token 'typeof'"
+      },
+      {
+        "path": "apps/mobile/src/components/customer-rewards.test.tsx",
+        "error": "Unexpected token 'typeof'"
+      },
+      {
+        "path": "apps/mobile/src/components/discovery-home.test.tsx",
+        "error": "Unexpected token 'typeof'"
+      },
+      {
+        "path": "apps/mobile/src/components/listing-plans-screen.test.tsx",
+        "error": "Unexpected token 'typeof'"
+      },
+      {
+        "path": "apps/mobile/src/components/merchant-ui.test.tsx",
+        "error": "Cannot read properties of undefined (reading 'EventEmitter')"
+      },
+      {
+        "path": "apps/mobile/src/components/service-operations-screen.test.tsx",
+        "error": "Unexpected token 'typeof'"
+      },
+      {
+        "path": "apps/mobile/src/components/staff-invite-flow.test.tsx",
+        "error": "Unexpected token 'typeof'"
+      },
+      {
+        "path": "apps/mobile/src/components/pickup/pickup-render.test.tsx",
+        "error": "Unexpected token 'typeof'"
+      },
+      {
+        "path": "apps/mobile/src/components/pickup/pickup-rewards-render.test.tsx",
+        "error": "Unexpected token 'typeof'"
+      }
+    ],
+    "executedTestsPassed": 1020,
+    "executedTestsFailed": 0,
+    "typecheckPassed": false,
+    "typecheckDiagnostics": 258
+  },
+  "review": {
+    "routes": 34,
+    "stateViewportPairs": 77,
+    "captured": 12,
+    "blocked": 0,
+    "remaining": 142,
+    "renderer": "React Native Web with isolated fixtures",
+    "installedPhoneVerified": false
+  },
+  "hostedBackendChanged": false,
+  "notes": [
+    "No review fixture code is in either native bundle.",
+    "306 app/shared source files per platform match the frozen export.",
+    "Current runtime source is at sourceCommit; subsequent documentation/test changes do not change the published bundles.",
+    "Web/backend recovery source was saved, not deployed by this task."
+  ]
+}

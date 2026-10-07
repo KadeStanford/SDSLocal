@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-07T21:02:05.278Z",
+  "at": "2026-10-07T21:40:11.433Z",
   "source": "F:\\BusinessApp\\.codex-tmp\\parish-pass-dark-review",
   "files": 419,
   "passed": false,
@@ -33,6 +33,54 @@
       "line": 267,
       "code": 7006,
       "message": "Parameter 'identity' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\account.tsx",
+      "line": 417,
+      "code": 2339,
+      "message": "Property 'signInWithPassword' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\account.tsx",
+      "line": 448,
+      "code": 2339,
+      "message": "Property 'signUp' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\account.tsx",
+      "line": 521,
+      "code": 2339,
+      "message": "Property 'resetPasswordForEmail' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\account.tsx",
+      "line": 558,
+      "code": 2339,
+      "message": "Property 'signInWithOtp' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\account.tsx",
+      "line": 584,
+      "code": 2339,
+      "message": "Property 'verifyOtp' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\account.tsx",
+      "line": 614,
+      "code": 2339,
+      "message": "Property 'verifyOtp' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\account.tsx",
+      "line": 620,
+      "code": 2339,
+      "message": "Property 'updateUser' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\account.tsx",
+      "line": 1026,
+      "code": 2339,
+      "message": "Property 'signOut' does not exist on type 'SupabaseAuthClient'."
     },
     {
       "file": "apps\\mobile\\src\\app\\(tabs)\\explore.tsx",
@@ -135,6 +183,24 @@
       "line": 1691,
       "code": 7031,
       "message": "Binding element 'photo' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\auth\\callback.tsx",
+      "line": 64,
+      "code": 2339,
+      "message": "Property 'getSession' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\auth\\callback.tsx",
+      "line": 78,
+      "code": 2339,
+      "message": "Property 'exchangeCodeForSession' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\auth\\callback.tsx",
+      "line": 83,
+      "code": 2339,
+      "message": "Property 'setSession' does not exist on type 'SupabaseAuthClient'."
     },
     {
       "file": "apps\\mobile\\src\\app\\b\\[slug].tsx",
@@ -267,6 +333,18 @@
       "line": 297,
       "code": 7031,
       "message": "Binding element 'item' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\account-data-panel.tsx",
+      "line": 114,
+      "code": 2339,
+      "message": "Property 'signOut' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\admin\\moderation-outcome-screen.tsx",
+      "line": 43,
+      "code": 2339,
+      "message": "Property 'getUser' does not exist on type 'SupabaseAuthClient'."
     },
     {
       "file": "apps\\mobile\\src\\components\\admin\\moderation-outcome-screen.tsx",
@@ -447,6 +525,18 @@
       "line": 840,
       "code": 7006,
       "message": "Parameter 'scheme' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pending-email-confirmation.tsx",
+      "line": 31,
+      "code": 2339,
+      "message": "Property 'resend' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pending-email-confirmation.tsx",
+      "line": 61,
+      "code": 2339,
+      "message": "Property 'getSession' does not exist on type 'SupabaseAuthClient'."
     },
     {
       "file": "apps\\mobile\\src\\components\\pending-email-confirmation.tsx",
@@ -695,6 +785,18 @@
       "message": "Parameter 'r' implicitly has an 'any' type."
     },
     {
+      "file": "apps\\mobile\\src\\hooks\\use-pickup-order.ts",
+      "line": 517,
+      "code": 2339,
+      "message": "Property 'getSession' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\hooks\\use-platform-admin-access.ts",
+      "line": 30,
+      "code": 2339,
+      "message": "Property 'getUser' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
       "file": "apps\\mobile\\src\\lib\\admin\\mobile-moderation-client.test.ts",
       "line": 137,
       "code": 7006,
@@ -747,6 +849,12 @@
       "line": 374,
       "code": 7006,
       "message": "Parameter 'name' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\appointment-commerce.ts",
+      "line": 69,
+      "code": 2339,
+      "message": "Property 'getSession' does not exist on type 'SupabaseAuthClient'."
     },
     {
       "file": "apps\\mobile\\src\\lib\\business-feature-access.test.ts",
@@ -1002,9 +1110,63 @@
     },
     {
       "file": "apps\\mobile\\src\\lib\\mobile-oauth.ts",
+      "line": 30,
+      "code": 2339,
+      "message": "Property 'exchangeCodeForSession' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\mobile-oauth.ts",
+      "line": 31,
+      "code": 2339,
+      "message": "Property 'exchangeCodeForSession' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\mobile-oauth.ts",
+      "line": 39,
+      "code": 2339,
+      "message": "Property 'setSession' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\mobile-oauth.ts",
+      "line": 146,
+      "code": 2339,
+      "message": "Property 'signInWithIdToken' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\mobile-oauth.ts",
+      "line": 154,
+      "code": 2339,
+      "message": "Property 'signInWithOAuth' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\mobile-oauth.ts",
+      "line": 167,
+      "code": 2339,
+      "message": "Property 'linkIdentity' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\mobile-oauth.ts",
+      "line": 173,
+      "code": 2339,
+      "message": "Property 'getUserIdentities' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\mobile-oauth.ts",
       "line": 175,
       "code": 7006,
       "message": "Parameter 'identity' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\mobile-oauth.ts",
+      "line": 177,
+      "code": 2339,
+      "message": "Property 'linkIdentity' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\mobile-oauth.ts",
+      "line": 186,
+      "code": 2339,
+      "message": "Property 'getUserIdentities' does not exist on type 'SupabaseAuthClient'."
     },
     {
       "file": "apps\\mobile\\src\\lib\\mobile-oauth.ts",
@@ -1014,9 +1176,33 @@
     },
     {
       "file": "apps\\mobile\\src\\lib\\mobile-oauth.ts",
+      "line": 194,
+      "code": 2339,
+      "message": "Property 'linkIdentity' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\mobile-oauth.ts",
+      "line": 201,
+      "code": 2339,
+      "message": "Property 'getUserIdentities' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\mobile-oauth.ts",
       "line": 203,
       "code": 7006,
       "message": "Parameter 'identity' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\mobile-oauth.ts",
+      "line": 218,
+      "code": 2339,
+      "message": "Property 'signInWithIdToken' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\mobile-oauth.ts",
+      "line": 233,
+      "code": 2339,
+      "message": "Property 'updateUser' does not exist on type 'SupabaseAuthClient'."
     },
     {
       "file": "apps\\mobile\\src\\lib\\nearby-alerts-core.test.ts",
@@ -1175,6 +1361,18 @@
       "message": "Property 'error' does not exist on type 'unknown'."
     },
     {
+      "file": "apps\\mobile\\src\\lib\\square-commerce.ts",
+      "line": 151,
+      "code": 2339,
+      "message": "Property 'getSession' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\square-commerce.ts",
+      "line": 198,
+      "code": 2339,
+      "message": "Property 'getSession' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
       "file": "apps\\mobile\\src\\lib\\square-pickup-settings.test.ts",
       "line": 158,
       "code": 7006,
@@ -1217,6 +1415,18 @@
       "message": "Parameter 'expected' implicitly has an 'any' type."
     },
     {
+      "file": "apps\\mobile\\src\\lib\\supabase.ts",
+      "line": 61,
+      "code": 2339,
+      "message": "Property 'startAutoRefresh' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\supabase.ts",
+      "line": 62,
+      "code": 2339,
+      "message": "Property 'stopAutoRefresh' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
       "file": "apps\\mobile\\src\\lib\\ui-presentation.test.ts",
       "line": 61,
       "code": 7006,
@@ -1254,9 +1464,21 @@
     },
     {
       "file": "apps\\mobile\\src\\providers\\auth-provider.tsx",
+      "line": 37,
+      "code": 2339,
+      "message": "Property 'getSession' does not exist on type 'SupabaseAuthClient'."
+    },
+    {
+      "file": "apps\\mobile\\src\\providers\\auth-provider.tsx",
       "line": 38,
       "code": 7031,
       "message": "Binding element 'data' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\providers\\auth-provider.tsx",
+      "line": 50,
+      "code": 2339,
+      "message": "Property 'onAuthStateChange' does not exist on type 'SupabaseAuthClient'."
     },
     {
       "file": "apps\\mobile\\src\\providers\\auth-provider.tsx",
@@ -1329,132 +1551,6 @@
       "line": 58,
       "code": 7006,
       "message": "Parameter 'b' implicitly has an 'any' type."
-    },
-    {
-      "file": "packages\\api-client\\src\\index.ts",
-      "line": 1,
-      "code": 2307,
-      "message": "Cannot find module '@supabase/supabase-js' or its corresponding type declarations."
-    },
-    {
-      "file": "packages\\validation\\src\\index.ts",
-      "line": 1,
-      "code": 2307,
-      "message": "Cannot find module 'zod' or its corresponding type declarations."
-    },
-    {
-      "file": "packages\\validation\\src\\index.ts",
-      "line": 76,
-      "code": 7006,
-      "message": "Parameter 'value' implicitly has an 'any' type."
-    },
-    {
-      "file": "packages\\validation\\src\\index.ts",
-      "line": 83,
-      "code": 7006,
-      "message": "Parameter 'value' implicitly has an 'any' type."
-    },
-    {
-      "file": "packages\\validation\\src\\index.ts",
-      "line": 127,
-      "code": 7006,
-      "message": "Parameter 'value' implicitly has an 'any' type."
-    },
-    {
-      "file": "packages\\validation\\src\\index.ts",
-      "line": 132,
-      "code": 7006,
-      "message": "Parameter 'value' implicitly has an 'any' type."
-    },
-    {
-      "file": "packages\\validation\\src\\index.ts",
-      "line": 175,
-      "code": 7006,
-      "message": "Parameter 'value' implicitly has an 'any' type."
-    },
-    {
-      "file": "packages\\validation\\src\\index.ts",
-      "line": 181,
-      "code": 7006,
-      "message": "Parameter 'value' implicitly has an 'any' type."
-    },
-    {
-      "file": "packages\\validation\\src\\index.ts",
-      "line": 195,
-      "code": 7006,
-      "message": "Parameter 'value' implicitly has an 'any' type."
-    },
-    {
-      "file": "packages\\validation\\src\\index.ts",
-      "line": 195,
-      "code": 7006,
-      "message": "Parameter 'context' implicitly has an 'any' type."
-    },
-    {
-      "file": "packages\\validation\\src\\index.ts",
-      "line": 241,
-      "code": 7006,
-      "message": "Parameter 'value' implicitly has an 'any' type."
-    },
-    {
-      "file": "packages\\validation\\src\\index.ts",
-      "line": 260,
-      "code": 7006,
-      "message": "Parameter 'value' implicitly has an 'any' type."
-    },
-    {
-      "file": "packages\\validation\\src\\index.ts",
-      "line": 264,
-      "code": 7006,
-      "message": "Parameter 'value' implicitly has an 'any' type."
-    },
-    {
-      "file": "packages\\validation\\src\\index.ts",
-      "line": 286,
-      "code": 7006,
-      "message": "Parameter 'value' implicitly has an 'any' type."
-    },
-    {
-      "file": "packages\\validation\\src\\index.ts",
-      "line": 290,
-      "code": 7006,
-      "message": "Parameter 'value' implicitly has an 'any' type."
-    },
-    {
-      "file": "packages\\validation\\src\\index.ts",
-      "line": 290,
-      "code": 7006,
-      "message": "Parameter 'context' implicitly has an 'any' type."
-    },
-    {
-      "file": "packages\\validation\\src\\index.ts",
-      "line": 350,
-      "code": 7006,
-      "message": "Parameter 'value' implicitly has an 'any' type."
-    },
-    {
-      "file": "packages\\validation\\src\\index.ts",
-      "line": 371,
-      "code": 7006,
-      "message": "Parameter 'value' implicitly has an 'any' type."
-    },
-    {
-      "file": "packages\\validation\\src\\index.ts",
-      "line": 371,
-      "code": 7006,
-      "message": "Parameter 'context' implicitly has an 'any' type."
-    },
-    {
-      "file": "packages\\validation\\src\\index.ts",
-      "line": 398,
-      "code": 7006,
-      "message": "Parameter 'value' implicitly has an 'any' type."
-    },
-    {
-      "file": "packages\\validation\\src\\index.ts",
-      "line": 398,
-      "code": 7006,
-      "message": "Parameter 'context' implicitly has an 'any' type."
     }
   ]
 }

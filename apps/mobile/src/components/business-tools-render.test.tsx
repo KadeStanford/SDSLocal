@@ -43,6 +43,11 @@ vi.mock('react-native-svg', () => ({
     createElement('linearGradient', p, children),
   Stop: (p: object) => createElement('stop', p),
   Rect: (p: object) => createElement('rect', p),
+  Circle: (p: object) => createElement('circle', p),
+  Ellipse: (p: object) => createElement('ellipse', p),
+  Line: (p: object) => createElement('line', p),
+  Polygon: (p: object) => createElement('polygon', p),
+  Polyline: (p: object) => createElement('polyline', p),
 }));
 vi.mock('react-native-safe-area-context', async () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),

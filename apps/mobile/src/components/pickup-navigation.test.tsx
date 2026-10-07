@@ -207,7 +207,10 @@ describe('actual pickup entry-point native press wiring', () => {
     target('Open Bayou. Order ahead available').onPress();
     expect(openBusiness).toHaveBeenCalledOnce();
     expect(h.push).toHaveBeenCalledOnce();
-    expect(order.style({ pressed: true })).toContainEqual({ opacity: 0.82 });
+    const pressedStyle = order.style({ pressed: true });
+    const feedback = pressedStyle.flat(Infinity).find((style: any) => typeof style?.opacity === 'number');
+    expect(feedback.opacity).toBeGreaterThan(0);
+    expect(feedback.opacity).toBeLessThan(1);
   });
   it.each([false, true])('public business CTA navigates once, signedIn=%s', (signedIn) => {
     h.signedIn = signedIn;

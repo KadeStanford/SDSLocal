@@ -11606,5 +11606,11 @@
     }
   ],
   "limits": "Actual React Native source rendered through react-native-web. Isolated fixture transport; native root tabs, safe areas, status-bar appearance, keyboard, camera, gestures, provider payment and installed-iPhone verification remain device acceptance gates.",
-  "sourceIdentity": "5c7145f5a0129d69c6ade46ffb2394326458be981a8409db4cbb4ff63424fead"
+  "sourceIdentity": "5c7145f5a0129d69c6ade46ffb2394326458be981a8409db4cbb4ff63424fead",
+  "redesignRelease": {
+    "group": "2bd5b6d8-1252-4688-968a-1c27aa3cc32c",
+    "sourceCommit": "3cbd0afd62be54e1e1d2e0d65447ee61bfcc9f5b",
+    "status": "PUBLISHED_CHANNEL_RUNTIME_AND_ACTUAL_ASSETS_VERIFIED",
+    "publishedAt": "2026-10-07T21:45:13.811Z"
+  }
 }
