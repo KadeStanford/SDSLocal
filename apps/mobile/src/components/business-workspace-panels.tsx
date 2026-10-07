@@ -1,12 +1,13 @@
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { DateTimePicker } from '@expo/ui/community/datetime-picker';
 import { BusinessLogo } from './business-logo';
+import { BusinessWorkspaceSheet } from './business-workspace-sheet';
 import { SymbolView } from 'expo-symbols';
-import { useMemo, useState } from 'react';
-import { Modal, Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Brand, BottomTabInset, Colors, Radius, Spacing } from '@/constants/theme';
+import { Brand, Colors, Radius, Spacing } from '@/constants/theme';
 import { haptics } from '@/lib/haptics';
 import { hasUnsavedChanges } from '@sds/business-logic';
 import type { BusinessSection } from '@/lib/business-workspace-config';
@@ -525,6 +526,7 @@ export function BusinessManage({
 }
 
 export function HoursEditor({
+  onDirtyChange,
   colors,
   accent,
   hours,
@@ -537,16 +539,21 @@ export function HoursEditor({
   readonly hours: readonly WorkspaceHour[];
   readonly canEdit: boolean;
   readonly saving: boolean;
+  readonly onDirtyChange?: (dirty: boolean) => void;
   readonly onSave: (hours: readonly WorkspaceHour[]) => Promise<boolean>;
 }) {
   const scheme = useColorScheme();
   const initial = useMemo(() => normalizeHours(hours), [hours]);
   const [draft, setDraft] = useState<WorkspaceHour[]>(initial);
+  const [expandedDay, setExpandedDay] = useState<number | null>(null);
   const [picker, setPicker] = useState<{ day: number; field: 'opens_at' | 'closes_at' } | null>(
     null,
   );
 
-  const dirty = hasUnsavedChanges(initial, draft);
+  const missingDays = new Set(hours.map((row) => row.day_of_week)).size < 7;
+  const dirty = missingDays || hasUnsavedChanges(initial, draft);
+  useEffect(() => { onDirtyChange?.(hasUnsavedChanges(initial, draft)); }, [initial, draft, onDirtyChange]);
+  useEffect(() => { setDraft(initial); }, [initial]);
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   function updateDay(day: number, patch: Partial<WorkspaceHour>) {
@@ -567,35 +574,53 @@ export function HoursEditor({
   return (
     <View style={styles.panelList}>
       <View style={styles.editorIntro}>
-        <ThemedText type="subtitle">Hours</ThemedText>
-        <ThemedText themeColor="textSecondary">
-          Set the regular weekly schedule customers can rely on.
+        <ThemedText type="smallBold" style={{ color: colors.accent }}>
+          WEEKLY SCHEDULE
+        </ThemedText>
+        <ThemedText themeColor="textSecondary" type="small">
+          {missingDays ? 'Hours are not saved yet. Set your week, including closed days, then save.' : 'Your week at a glance. Tap a day to change its times.'}
         </ThemedText>
       </View>
       <View
         style={[
           styles.hoursList,
-          { backgroundColor: colors.backgroundElement, borderColor: colors.border },
+          { backgroundColor: colors.backgroundElement, borderColor: colors.divider },
         ]}
       >
         {draft.map((row) => (
           <View
             key={row.day_of_week}
-            style={[styles.hoursRow, row.day_of_week > 0 && styles.separatorTop]}
+            style={[
+              styles.hoursRow,
+              { borderTopWidth: row.day_of_week > 0 ? 1 : 0, borderColor: colors.divider },
+            ]}
           >
-            <View style={styles.hoursDayCopy}>
-              <ThemedText type="smallBold">{dayNames[row.day_of_week]}</ThemedText>
-              <ThemedText themeColor="textSecondary" type="small">
-                {row.is_closed
-                  ? 'Closed'
-                  : `${formatTime(row.opens_at)}–${formatTime(row.closes_at)}`}
-              </ThemedText>
-            </View>
-            <View style={styles.hoursControls}>
+            <View style={styles.hoursDayHeader}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Edit ${dayNames[row.day_of_week]} hours`}
+                accessibilityState={{ expanded: expandedDay === row.day_of_week }}
+                onPress={() =>
+                  setExpandedDay(expandedDay === row.day_of_week ? null : row.day_of_week)
+                }
+                style={[styles.hoursDayCopy, { minHeight: 44, justifyContent: 'center' }]}
+              >
+                <ThemedText type="card">{dayNames[row.day_of_week]}</ThemedText>
+                <ThemedText
+                  type="small"
+                  style={{ color: row.is_closed ? colors.textSecondary : colors.accent }}
+                >
+                  {row.is_closed
+                    ? 'Closed'
+                    : `${formatTime(row.opens_at)} – ${formatTime(row.closes_at)} · Edit`}
+                </ThemedText>
+              </Pressable>
               <Switch
                 accessibilityLabel={`${dayNames[row.day_of_week]} open`}
-                disabled={!canEdit}
-                onValueChange={(isOpen) =>
+                disabled={!canEdit || saving}
+                trackColor={{ false: colors.divider, true: colors.actionPrimary }}
+                onValueChange={(isOpen) => {
+                  if (isOpen) setExpandedDay(row.day_of_week);
                   updateDay(
                     row.day_of_week,
                     isOpen
@@ -605,26 +630,31 @@ export function HoursEditor({
                           closes_at: row.closes_at ?? '17:00:00',
                         }
                       : { is_closed: true, opens_at: null, closes_at: null },
-                  )
-                }
+                  );
+                }}
                 value={!row.is_closed}
               />
-              {!row.is_closed && (
-                <View style={styles.timeButtons}>
-                  <TimeButton
-                    label={formatTime(row.opens_at)}
-                    disabled={!canEdit}
-                    onPress={() => setPicker({ day: row.day_of_week, field: 'opens_at' })}
-                  />
-                  <ThemedText themeColor="textSecondary">to</ThemedText>
-                  <TimeButton
-                    label={formatTime(row.closes_at)}
-                    disabled={!canEdit}
-                    onPress={() => setPicker({ day: row.day_of_week, field: 'closes_at' })}
-                  />
-                </View>
-              )}
             </View>
+            {!row.is_closed && expandedDay === row.day_of_week && (
+              <View style={styles.timeButtons}>
+                <TimeButton
+                  caption="Opens at"
+                  accessibilityLabel={`${dayNames[row.day_of_week]} opening time, ${formatTime(row.opens_at)}`}
+                  colors={colors}
+                  label={formatTime(row.opens_at)}
+                  disabled={!canEdit || saving}
+                  onPress={() => setPicker({ day: row.day_of_week, field: 'opens_at' })}
+                />
+                <TimeButton
+                  caption="Closes at"
+                  accessibilityLabel={`${dayNames[row.day_of_week]} closing time, ${formatTime(row.closes_at)}`}
+                  colors={colors}
+                  label={formatTime(row.closes_at)}
+                  disabled={!canEdit || saving}
+                  onPress={() => setPicker({ day: row.day_of_week, field: 'closes_at' })}
+                />
+              </View>
+            )}
           </View>
         ))}
       </View>
@@ -648,47 +678,29 @@ export function HoursEditor({
         </Pressable>
       )}
       {picker && (
-        <Modal animationType="slide" transparent visible onRequestClose={() => setPicker(null)}>
-          <View style={styles.modalRoot}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Close time picker"
-              onPress={() => setPicker(null)}
-              style={styles.modalBackdrop}
-            />
-            <View style={[styles.modalSheet, { backgroundColor: colors.backgroundElement }]}>
-              <View style={styles.modalHeader}>
-                <View style={styles.rowCopy}>
-                  <ThemedText type="subtitle">Choose a time</ThemedText>
-                  <ThemedText themeColor="textSecondary" type="small">
-                    Use the native time picker.
-                  </ThemedText>
-                </View>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => setPicker(null)}
-                  style={{ minHeight: 44, minWidth: 44, justifyContent: 'center' }}
-                >
-                  <ThemedText style={{ color: accent }} type="smallBold">
-                    Done
-                  </ThemedText>
-                </Pressable>
-              </View>
-              <DateTimePicker
-                accentColor={accent}
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                is24Hour={false}
-                mode="time"
-                onValueChange={(_, value) =>
-                  updateDay(picker.day, { [picker.field]: `${toTime(value)}:00` })
-                }
-                presentation="inline"
-                themeVariant={scheme === 'dark' ? 'dark' : 'light'}
-                value={pickerValue()}
-              />
-            </View>
-          </View>
-        </Modal>
+        <BusinessWorkspaceSheet
+          visible
+          onClose={() => setPicker(null)}
+          closeAccessibilityLabel="Close time picker"
+          title="Choose a time"
+          description={`${dayNames[picker.day]} · ${picker.field === 'opens_at' ? 'Opening time' : 'Closing time'}`}
+          backgroundColor={colors.backgroundElement}
+          accentColor={accent}
+          closeVariant="text"
+        >
+          <DateTimePicker
+            accentColor={accent}
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            is24Hour={false}
+            mode="time"
+            onValueChange={(_, value) =>
+              updateDay(picker.day, { [picker.field]: `${toTime(value)}:00` })
+            }
+            presentation="inline"
+            themeVariant={scheme === 'dark' ? 'dark' : 'light'}
+            value={pickerValue()}
+          />
+        </BusinessWorkspaceSheet>
       )}
     </View>
   );
@@ -712,10 +724,16 @@ function normalizeHours(hours: readonly WorkspaceHour[]): WorkspaceHour[] {
 }
 
 function TimeButton({
+  caption,
+  accessibilityLabel,
+  colors,
   label,
   disabled,
   onPress,
 }: {
+  readonly caption: string;
+  readonly accessibilityLabel: string;
+  readonly colors: ThemeColors;
   readonly label: string;
   readonly disabled: boolean;
   readonly onPress: () => void;
@@ -723,11 +741,23 @@ function TimeButton({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
-      style={[styles.timeButton, disabled && styles.disabled]}
+      style={({ pressed }) => [
+        styles.timeButton,
+        { backgroundColor: colors.background, borderColor: colors.divider },
+        pressed && styles.pressed,
+        disabled && styles.disabled,
+      ]}
     >
-      <ThemedText type="smallBold">{label}</ThemedText>
+      <ThemedText type="small" themeColor="textSecondary">
+        {caption}
+      </ThemedText>
+      <ThemedText type="smallBold" style={{ fontSize: 17, lineHeight: 24 }}>
+        {label}
+      </ThemedText>
     </Pressable>
   );
 }
@@ -905,26 +935,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   editorIntro: { gap: Spacing.one, paddingVertical: Spacing.one },
-  hoursList: { borderWidth: 1, borderRadius: Radius.medium, paddingHorizontal: Spacing.three },
+  hoursList: { borderWidth: 1, borderRadius: Radius.large, paddingHorizontal: Spacing.three },
   hoursRow: {
-    minHeight: 74,
+    gap: Spacing.three,
+    paddingVertical: 20,
+  },
+  hoursDayHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
-    paddingVertical: Spacing.two,
+    justifyContent: 'space-between',
+    gap: Spacing.three,
   },
-  hoursDayCopy: { width: 104, gap: 2 },
-  hoursControls: { flex: 1, alignItems: 'flex-end', gap: Spacing.one },
-  timeButtons: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  hoursDayCopy: { flex: 1, gap: 2 },
+  timeButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   timeButton: {
-    minWidth: 84,
-    minHeight: 44,
-    alignItems: 'center',
+    flexGrow: 1,
+    flexBasis: 120,
+    minHeight: 72,
+    alignItems: 'flex-start',
     justifyContent: 'center',
+    gap: 4,
     borderWidth: 1,
-    borderColor: Brand.border,
     borderRadius: Radius.small,
-    paddingHorizontal: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
   },
   exceptionNotice: {
     flexDirection: 'row',
@@ -942,27 +976,4 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.72 },
   disabled: { opacity: 0.55 },
-  modalRoot: { flex: 1, justifyContent: 'flex-end' },
-  modalBackdrop: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    backgroundColor: 'rgba(4,12,8,0.58)',
-  },
-  modalSheet: {
-    width: '100%',
-    borderTopLeftRadius: Radius.large,
-    borderTopRightRadius: Radius.large,
-    padding: Spacing.four,
-    paddingBottom: BottomTabInset + Spacing.three,
-    gap: Spacing.three,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.two,
-  },
 });

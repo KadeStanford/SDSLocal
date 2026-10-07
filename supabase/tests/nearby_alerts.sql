@@ -10,11 +10,10 @@ declare
   settings jsonb;
   visible_count integer;
 begin
-  select id into first_user from public.profiles order by created_at limit 1;
-  select id into second_user from public.profiles where id <> first_user order by created_at limit 1;
-  if first_user is null or second_user is null then
-    raise exception 'Nearby alerts test requires two seeded profiles';
-  end if;
+  first_user := gen_random_uuid(); second_user := gen_random_uuid();
+  insert into auth.users(id,raw_user_meta_data) values
+    (first_user,'{"display_name":"Nearby fixture A"}'),
+    (second_user,'{"display_name":"Nearby fixture B"}');
 
   insert into public.businesses (
     created_by, slug, name, business_type, status, approved_at

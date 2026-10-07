@@ -1,0 +1,9 @@
+{
+  "expo": {
+    "name": "Parish Pass public information",
+    "slug": "sds-local",
+    "owner": "kadestanford",
+    "version": "0.1.0",
+    "extra": { "eas": { "projectId": "2406d47e-390c-4a39-932c-325b2ec5ab99" } }
+  }
+}

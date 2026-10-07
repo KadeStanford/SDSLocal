@@ -66,10 +66,12 @@ export async function loadPickupModule(
   const orderId = saved?.businessId === businessId ? (saved.orderId ?? null) : null;
   const state = { ...initialPickupModule(businessId), orderId, loading: false };
   if (capability.status === 'rejected') return { ...state, failed: true };
-  const supported = capability.value.some(
+  const supported = capability.value.find(
     (row) => row.business_id === businessId && row.supports_pickup_ordering,
   );
   if (!supported) return { ...state, supported: false };
+  if (supported.pickup_status === 'paused')
+    return { ...state, supported: true, discoveryStatus: 'paused' };
   try {
     const availability = await ports.availability();
     return {

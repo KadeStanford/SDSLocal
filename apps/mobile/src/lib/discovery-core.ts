@@ -1,11 +1,13 @@
 import type { IdentityPhoto } from './business-identity';
+import { businessSearchScore } from './discovery-search';
 
-export type DiscoverySort = 'name' | 'recent';
+export type DiscoverySort = 'name' | 'recent' | 'nearby';
 export type DiscoveryAudience = 'all' | 'following';
 export const DISCOVERY_EVENT_HORIZON_DAYS = 90;
 export const DISCOVERY_EVENT_QUERY_LIMIT = 250;
 export const DISCOVER_LOCAL_SECTION_TITLE = 'Explore local';
-export type DiscoveryFeature = 'all' | 'rewards' | 'events' | 'pickup';
+export type DiscoveryFeature =
+  'all' | 'rewards' | 'events' | 'pickup' | 'accepting-pickup' | 'open-now';
 
 export interface DiscoveryEvent {
   readonly id?: string;
@@ -78,8 +80,11 @@ export interface DiscoveryBusiness {
   readonly business_type?: string;
   readonly has_active_rewards?: boolean;
   readonly supportsPickupOrdering?: boolean;
+  readonly pickupStatus?: 'accepting' | 'paused' | undefined;
   readonly events?: readonly DiscoveryEvent[] | null;
   readonly stops?: readonly DiscoveryStop[] | null;
+  readonly isOpenNow?: boolean;
+  readonly distanceMiles?: number | null;
 }
 
 export interface DiscoveryFilters {
@@ -242,15 +247,7 @@ export function discoverBottomContentInset(tabInset: number, safeAreaBottom: num
 }
 
 export function matchesBusinessSearch(business: DiscoveryBusiness, query: string): boolean {
-  const search = normalizeSearch(query);
-  if (!search) return true;
-  return [
-    business.name,
-    business.description,
-    business.category_summary,
-    business.offering_search_text,
-    business.city,
-  ].some((value) => normalizeSearch(value ?? '').includes(search));
+  return businessSearchScore(business, query) > 0;
 }
 
 export function filterDiscoveryBusinesses<T extends DiscoveryBusiness>(
@@ -261,10 +258,11 @@ export function filterDiscoveryBusinesses<T extends DiscoveryBusiness>(
   blockedIds: ReadonlySet<string>,
   now: Date,
 ): T[] {
+  const scores = new Map(businesses.map((b) => [b.id, businessSearchScore(b, query)]));
   const filtered = businesses.filter((business) => {
     if (business.status !== undefined && business.status !== 'active') return false;
     if (blockedIds.has(business.id)) return false;
-    if (!matchesBusinessSearch(business, query)) return false;
+    if (!scores.get(business.id)) return false;
     if (filters.audience === 'following' && !followingIds.has(business.id)) return false;
     if (
       filters.category !== 'all' &&
@@ -275,17 +273,45 @@ export function filterDiscoveryBusinesses<T extends DiscoveryBusiness>(
     if (filters.feature === 'rewards' && !business.has_active_rewards) return false;
     if (filters.feature === 'pickup' && !business.supportsPickupOrdering) return false;
     if (
+      filters.feature === 'accepting-pickup' &&
+      (!business.supportsPickupOrdering || business.pickupStatus !== 'accepting')
+    )
+      return false;
+    if (
       filters.feature === 'events' &&
       !(business.events ?? []).some((event) => isPublishedUpcomingEvent(event, now))
     )
       return false;
+    if (filters.feature === 'open-now' && !business.isOpenNow) return false;
     return true;
   });
   return [...filtered].sort((a, b) =>
-    filters.sort === 'recent'
-      ? Date.parse(b.created_at) - Date.parse(a.created_at) || a.name.localeCompare(b.name)
-      : a.name.localeCompare(b.name) || a.id.localeCompare(b.id),
+    filters.sort === 'nearby'
+      ? (a.distanceMiles ?? Number.POSITIVE_INFINITY) -
+          (b.distanceMiles ?? Number.POSITIVE_INFINITY) || a.name.localeCompare(b.name)
+      : filters.sort === 'recent'
+        ? Date.parse(b.created_at) - Date.parse(a.created_at) || a.name.localeCompare(b.name)
+        : (query.trim() ? (scores.get(b.id) ?? 0) - (scores.get(a.id) ?? 0) : 0) ||
+          a.name.localeCompare(b.name) ||
+          a.id.localeCompare(b.id),
   );
+}
+
+export interface DiscoveryCoordinates {
+  readonly latitude: number;
+  readonly longitude: number;
+}
+
+export function distanceInMiles(from: DiscoveryCoordinates, to: DiscoveryCoordinates) {
+  const radians = (degrees: number) => (degrees * Math.PI) / 180;
+  const latitudeDelta = radians(to.latitude - from.latitude);
+  const longitudeDelta = radians(to.longitude - from.longitude);
+  const originLatitude = radians(from.latitude);
+  const destinationLatitude = radians(to.latitude);
+  const haversine =
+    Math.sin(latitudeDelta / 2) ** 2 +
+    Math.cos(originLatitude) * Math.cos(destinationLatitude) * Math.sin(longitudeDelta / 2) ** 2;
+  return 3958.7613 * 2 * Math.asin(Math.sqrt(Math.min(1, haversine)));
 }
 
 export type CuratedSectionKind = 'following' | 'events' | 'rewards' | 'mobile' | 'recent' | 'all';
@@ -382,6 +408,39 @@ export interface BusinessHour {
   readonly opens_at: string | null;
   readonly closes_at: string | null;
   readonly is_closed: boolean;
+}
+
+export function isBusinessOpenNow(hours: readonly BusinessHour[], now: Date, timezone?: string) {
+  let today: number;
+  let minuteOfDay: number;
+  try {
+    const parts = Object.fromEntries(
+      new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone || undefined,
+        weekday: 'short',
+        hour: 'numeric',
+        minute: 'numeric',
+        hourCycle: 'h23',
+      })
+        .formatToParts(now)
+        .map((part) => [part.type, part.value]),
+    );
+    today = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(parts.weekday!);
+    minuteOfDay = Number(parts.hour) * 60 + Number(parts.minute);
+  } catch {
+    return false;
+  }
+  if (today < 0 || !Number.isFinite(minuteOfDay)) return false;
+  return hours.some((item) => {
+    if (item.is_closed) return false;
+    const opens = item.opens_at ? parseClock(item.opens_at) : null;
+    const closes = item.closes_at ? parseClock(item.closes_at) : null;
+    if (opens === null || closes === null) return false;
+    if (item.day_of_week === today) {
+      return closes <= opens ? minuteOfDay >= opens : minuteOfDay >= opens && minuteOfDay < closes;
+    }
+    return item.day_of_week === (today + 6) % 7 && closes <= opens && minuteOfDay < closes;
+  });
 }
 
 export interface TodayHoursSummary {

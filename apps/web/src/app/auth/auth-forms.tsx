@@ -90,7 +90,7 @@ export function AuthForms({ next = '/account' }: { readonly next?: string }) {
       </section>
 
       <section className="panel panel-accent">
-        <p className="eyebrow">New to SDS Local</p>
+        <p className="eyebrow">New to Parish Pass</p>
         <h2>Create an account</h2>
         <form action={signUp} className="form-stack">
           <input type="hidden" name="next" value={next} />

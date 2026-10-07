@@ -1,18 +1,35 @@
 import type { PickupBusiness, PickupOrder, PickupQueue } from './square-commerce-core';
-export type QueueView = 'active' | 'ready' | 'history';
+export type QueueView = 'active' | 'ready' | 'history' | 'requests';
 export type OperatorBusiness = PickupBusiness & {
   canRefund: boolean;
   isOpen: boolean;
   counts: PickupQueue['counts'];
 };
 export const attentionStates = ['payment_review', 'refund_pending', 'refund_failed'];
-export const historyStates = ['completed', 'refunded', 'checkout_expired', 'checkout_failed'];
+export const historyStates = [
+  'completed',
+  'refunded',
+  'checkout_expired',
+  'checkout_failed',
+  'dispute_lost',
+];
 export function queueView(status: string): QueueView {
   return historyStates.includes(status) ? 'history' : status === 'ready' ? 'ready' : 'active';
 }
 export function sortOrders(orders: PickupOrder[], view: QueueView) {
   return [...orders]
-    .filter((o) => queueView(o.status) === view)
+    .filter((o) =>
+      view === 'requests'
+        ? o.supportRequest?.status === 'open' &&
+          ![
+            'refunded',
+            'cancelled',
+            'checkout_expired',
+            'checkout_failed',
+            'dispute_lost',
+          ].includes(o.status)
+        : queueView(o.status) === view,
+    )
     .sort((a, b) =>
       view === 'history'
         ? Date.parse(b.createdAt) - Date.parse(a.createdAt) || a.id.localeCompare(b.id)

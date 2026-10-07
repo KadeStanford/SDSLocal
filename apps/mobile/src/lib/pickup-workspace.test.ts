@@ -27,6 +27,25 @@ describe('pickup workspace state', () => {
     expect(sortOrders(rows, 'history').map((o) => o.id)).toEqual(['complete']);
     expect(mergeOrders(rows, [{ ...rows[0]!, status: 'accepted' }])).toHaveLength(4);
   });
+  it('clears ended orders from requests while retaining completed-order issues and partial refunds', () => {
+    const rows = [
+      'placed',
+      'refunded',
+      'checkout_expired',
+      'checkout_failed',
+      'dispute_lost',
+      'completed',
+      'payment_review',
+    ].map((status) => ({
+      ...order(status, status, '2026-09-21T15:00Z'),
+      supportRequest: { status: 'open' } as NonNullable<PickupOrder['supportRequest']>,
+    }));
+    expect(sortOrders(rows, 'requests').map((o) => o.id)).toEqual([
+      'completed',
+      'payment_review',
+      'placed',
+    ]);
+  });
   it('derives urgency only from real pickup time or payment review', () => {
     expect(
       orderUrgency(order('a', 'placed', '2026-09-21T15:00Z'), Date.parse('2026-09-21T15:05Z')),

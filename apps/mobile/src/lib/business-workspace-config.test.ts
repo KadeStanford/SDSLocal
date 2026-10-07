@@ -4,6 +4,7 @@ import {
   businessHubDestinations,
   businessWorkspaceBackTarget,
   isBusinessSection,
+  publishingCheckSection,
   sections,
   visibleBusinessHubDestinations,
 } from './business-workspace-config';
@@ -13,7 +14,51 @@ import {
   profileEditorPatch,
 } from './business-editor-patches';
 
+it('opens the editor that can resolve each publication requirement', () => {
+  for (const key of ['description', 'category'])
+    expect(publishingCheckSection(key, false)).toBe('profile');
+  expect(publishingCheckSection('contact', false)).toBe('contact');
+  expect(publishingCheckSection('hours', false)).toBe('hours');
+  expect(publishingCheckSection('location', false)).toBe('location');
+  expect(publishingCheckSection('location', true)).toBe('mobile-location');
+  for (const key of ['logo', 'cover']) expect(publishingCheckSection(key, false)).toBe('photos');
+  expect(publishingCheckSection('future-server-check', false)).toBeNull();
+});
+
 describe('Business Hub destination registration', () => {
+  it.each(['food_drink', 'retail', 'entertainment_venue', 'mobile', 'general'] as const)(
+    'does not offer appointment booking for a %s business',
+    (businessType) => {
+      expect(
+        visibleBusinessHubDestinations({
+          isMobile: businessType === 'mobile',
+          canEdit: true,
+          businessType,
+        }).some(({ key }) => key === 'appointments'),
+      ).toBe(false);
+    },
+  );
+  it('offers appointments to service owners, but not staff or unknown business types', () => {
+    expect(
+      visibleBusinessHubDestinations({
+        isMobile: false,
+        canEdit: true,
+        businessType: 'services',
+      }).some(({ key }) => key === 'appointments'),
+    ).toBe(true);
+    expect(
+      visibleBusinessHubDestinations({
+        isMobile: false,
+        canEdit: false,
+        businessType: 'services',
+      }).some(({ key }) => key === 'appointments'),
+    ).toBe(false);
+    expect(
+      visibleBusinessHubDestinations({ isMobile: false, canEdit: true }).some(
+        ({ key }) => key === 'appointments',
+      ),
+    ).toBe(false);
+  });
   it('returns editor gestures to the Hub before leaving the business workspace', () => {
     expect(businessWorkspaceBackTarget('rewards')).toBe('hub');
     expect(businessWorkspaceBackTarget('staff')).toBe('hub');

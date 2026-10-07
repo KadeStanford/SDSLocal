@@ -1,4 +1,7 @@
-import { PickupOperations } from './pickup-operations.ts';
+import { planItemRefund } from './item-refunds.ts';
+import { requireBusinessFeature, requireCommerceSetupFeature } from './business-feature-access.ts';
+import { AppointmentOperations } from './appointment-operations.ts';
+import { moneyPatch, squareRefundTotal } from './payment-money.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import { SquareClient, type SquareObject } from './square-client.ts';
 import {
@@ -38,7 +41,7 @@ import {
 
 // Service-role client is created only by the function runtime. Every client
 // operation is authorized here; no direct table grants exist for app users.
-export class SquareService extends PickupOperations {
+export class SquareService extends AppointmentOperations {
   constructor(
     db: SupabaseClient,
     readonly config: SquareConfig,
@@ -46,14 +49,15 @@ export class SquareService extends PickupOperations {
   ) {
     super(db);
   }
-  async rollout(businessId: string) {
+  async rollout(businessId: string, allowAppointmentPilot = false) {
     if (!this.config.enabled)
       fail('DISABLED', 'Square Sandbox ordering has not been enabled.', 503);
     const flag = await this.checked(
       this.db.from('platform_settings').select('value').eq('key', 'square_commerce').single(),
     );
-    if (!flag?.value?.enabled || !flag?.value?.business_ids?.includes(businessId))
-      fail('DISABLED', 'This business is not in the Square Sandbox pilot.', 503);
+    if (flag?.value?.enabled && flag?.value?.business_ids?.includes(businessId)) return;
+    if (allowAppointmentPilot) return this.appointmentRollout(businessId);
+    fail('DISABLED', 'This business is not in the Square Sandbox pilot.', 503);
   }
   async connection(businessId: string) {
     return (await this.checked(
@@ -125,6 +129,9 @@ export class SquareService extends PickupOperations {
     client.onAuthorizationFailure = () => this.revokeLocal(businessId, 'authorization_expired');
     return { client, connection: connection! };
   }
+  configRedirectUrl() {
+    return this.config.redirectUrl;
+  }
   async sealCredentials(tokens: SquareObject, businessId: string, priorRefresh?: string) {
     const access = string(tokens.access_token, 8192);
     const refresh = string(tokens.refresh_token ?? priorRefresh, 8192);
@@ -151,7 +158,7 @@ export class SquareService extends PickupOperations {
   }
   async beginOAuth(businessId: string, userId: string | null) {
     await this.owner(businessId, userId);
-    await this.rollout(businessId);
+    await this.rollout(businessId, true);
     await this.checked(
       this.db
         .from('square_ordering_settings')
@@ -191,7 +198,7 @@ export class SquareService extends PickupOperations {
       );
     const pending = states[0];
     await this.owner(pending.business_id, pending.user_id);
-    await this.rollout(pending.business_id);
+    await this.rollout(pending.business_id, true);
     if (!code) return { businessId: pending.business_id, connected: false };
     await this.checked(
       this.db
@@ -268,19 +275,45 @@ export class SquareService extends PickupOperations {
     );
   }
   async ensureSettled(businessId: string) {
-    const orders = await this.checked(
-      this.db
-        .from('square_orders')
-        .select('id')
-        .eq('business_id', businessId)
-        .eq('provider', 'square')
-        .not('status', 'in', `(${terminalStates.join(',')})`)
-        .limit(1),
-    );
-    if (orders?.length)
+    const [orders, appointmentPayments, paidAppointments] = await Promise.all([
+      this.checked(
+        this.db
+          .from('square_orders')
+          .select('id')
+          .eq('business_id', businessId)
+          .eq('provider', 'square')
+          .not('status', 'in', `(${terminalStates.join(',')})`)
+          .limit(1),
+      ),
+      this.checked(
+        this.db
+          .from('appointments')
+          .select('id')
+          .eq('business_id', businessId)
+          .in('payment_status', ['pending', 'refund_pending', 'refund_failed', 'review'])
+          .limit(1),
+      ),
+      this.checked(
+        this.db
+          .from('appointments')
+          .select('id')
+          .eq('business_id', businessId)
+          .eq('payment_status', 'paid')
+          .in('status', [
+            'requested',
+            'confirmed',
+            'checked_in',
+            'in_service',
+            'cancellation_pending',
+            'payment_review',
+          ])
+          .limit(1),
+      ),
+    ]);
+    if (orders?.length || appointmentPayments?.length || paidAppointments?.length)
       fail(
         'ACTIVE_ORDERS',
-        'Complete or refund active orders and let unpaid checkouts expire before changing the Square connection.',
+        'Complete or refund active pickups and paid appointments, and resolve pending checkouts before changing the Square connection.',
         409,
       );
   }
@@ -364,6 +397,7 @@ export class SquareService extends PickupOperations {
                 .eq('business_id', businessId)
                 .single(),
             );
+            if (!refreshed) fail('STORAGE_ERROR', 'Ordering settings could not be refreshed.', 503);
             settings.timezone = refreshed.timezone;
           }
         }
@@ -391,7 +425,7 @@ export class SquareService extends PickupOperations {
   }
   async selectLocation(businessId: string, userId: string | null, value: unknown) {
     await this.owner(businessId, userId);
-    await this.rollout(businessId);
+    await this.rollout(businessId, true);
     await this.checked(
       this.db
         .from('square_ordering_settings')
@@ -430,7 +464,7 @@ export class SquareService extends PickupOperations {
     );
     const pickupTimezone = string(
       ['UTC', 'Etc/UTC', 'GMT', 'Etc/GMT'].includes(location.timezone)
-        ? business.timezone
+        ? business?.timezone
         : location.timezone,
       80,
     );
@@ -684,9 +718,33 @@ export class SquareService extends PickupOperations {
       connection.location_id,
       connection.location_snapshot.currency,
     ).products;
+    if (reward?.version === 2) {
+      const base =
+        reward.type === 'percent_discount'
+          ? cart.reduce(
+              (sum, line) =>
+                sum + (products.find((p) => p.id === line.variationId)?.price ?? 0) * line.quantity,
+              0,
+            )
+          : (products.find((p) => p.id === reward.variationId)?.price ?? 0);
+      const freshDiscount = Math.floor(
+        base *
+          (['percent_discount', 'item_discount'].includes(reward.type) ? reward.percent / 100 : 1),
+      );
+      if (freshDiscount !== reward.discountMinor)
+        fail(
+          'PRICE_CHANGED',
+          'The reward item price changed. Refresh the menu before choosing your reward.',
+          409,
+        );
+    }
     const order = {
       location_id: connection.location_id,
-      line_items: priceCart(cart, products),
+      line_items: priceCart(cart, products).map((line, index) =>
+        reward && reward.type !== 'percent_discount' && index === reward.lineIndex
+          ? { ...line, applied_discounts: [{ discount_uid: 'sds-reward' }] }
+          : line,
+      ),
       pricing_options: { auto_apply_taxes: true, auto_apply_discounts: false },
       ...(reward
         ? {
@@ -699,7 +757,7 @@ export class SquareService extends PickupOperations {
                   amount: integer(reward.discountMinor, 1, 10000000),
                   currency: connection.location_snapshot.currency,
                 },
-                scope: 'ORDER',
+                scope: reward.type === 'percent_discount' ? 'ORDER' : 'LINE_ITEM',
               },
             ],
           }
@@ -712,6 +770,7 @@ export class SquareService extends PickupOperations {
     return { client, connection, order, calculated, amounts };
   }
   async quote(businessId: string, body: SquareObject, userId: string | null) {
+    await requireBusinessFeature(this.db, businessId, 'pickup_ordering');
     const guestHash = await hash(opaqueToken(body.statusToken));
     const cart = parseCart(body.cart);
     const pickup = parsePickup(body.pickup);
@@ -726,7 +785,14 @@ export class SquareService extends PickupOperations {
       base.connection.location_id,
       base.connection.location_snapshot.currency,
     ).products;
-    const reward = await this.checkoutReward(businessId, userId, cart, products);
+    const reward = await this.checkoutReward(
+      businessId,
+      userId,
+      cart,
+      products,
+      body.rewardSelection,
+      'square',
+    );
     const { order, calculated, amounts, connection } = reward
       ? await this.calculate(businessId, cart, reward)
       : base;
@@ -751,7 +817,7 @@ export class SquareService extends PickupOperations {
     return {
       quoteId: quote!.id,
       expiresAt: quote!.expires_at,
-      subtotal: amounts.subtotal_minor,
+      subtotal: amounts.subtotal_minor + (reward?.discountMinor ?? 0),
       tax: amounts.tax_minor,
       tip: 0,
       total: amounts.total_minor,
@@ -777,10 +843,15 @@ export class SquareService extends PickupOperations {
       this.db.from('square_orders').select('*').eq('idempotency_key', key).maybeSingle(),
     );
     if (existing) {
-      if (existing.guest_hash !== guestHash || existing.request_hash !== requestHash)
+      if (
+        existing.provider === 'stripe' ||
+        existing.guest_hash !== guestHash ||
+        existing.request_hash !== requestHash
+      )
         fail('IDEMPOTENCY_CONFLICT', 'This checkout request does not match.', 409);
       return await this.ensureCheckout(existing);
     }
+    await requireBusinessFeature(this.db, businessId, 'pickup_ordering');
     const quote = await this.checked(
       this.db
         .from('square_quotes')
@@ -804,7 +875,14 @@ export class SquareService extends PickupOperations {
       q.locationId,
       q.amounts.currency,
     ).products;
-    const freshReward = await this.checkoutReward(businessId, userId, q.cart, products);
+    const freshReward = await this.checkoutReward(
+      businessId,
+      userId,
+      q.cart,
+      products,
+      q.reward?.selection,
+      'square',
+    );
     if (canonicalJson(freshReward) !== canonicalJson(q.reward ?? null))
       fail('REWARD_CHANGED', 'Your rewards balance or cart changed. Review the order again.', 409);
     const fresh = await this.calculate(businessId, q.cart, freshReward);
@@ -880,15 +958,12 @@ export class SquareService extends PickupOperations {
     const link = response.payment_link;
     if (!link?.id || !link.order_id || !/^https:\/\//.test(link.url))
       fail('PROVIDER_ERROR', 'Square checkout is not ready. Retry safely.', 503);
-    const saved = await this.patchOrder(order.id, lease, {
-      payment_link_id: link.id,
-      square_order_id: link.order_id,
-      checkout_url: link.url,
-    });
     const actual =
       response.related_resources?.orders?.find((o: SquareObject) => o.id === link.order_id) ??
       (await client.request(`/v2/orders/${encodeURIComponent(link.order_id)}`)).order;
     if (
+      actual?.location_id !== order.location_id ||
+      actual?.reference_id !== order.id ||
       actual.total_money?.amount !== Number(order.total_minor) ||
       actual.total_money?.currency !== order.currency
     ) {
@@ -897,16 +972,28 @@ export class SquareService extends PickupOperations {
         undefined,
         'DELETE',
       );
+      const cancelled = (await client.request(`/v2/orders/${encodeURIComponent(link.order_id)}`))
+        .order;
       await this.patchOrder(order.id, lease, {
-        status: 'checkout_failed',
+        status:
+          cancelled?.state === 'CANCELED' && !(cancelled.tenders ?? []).length
+            ? 'checkout_failed'
+            : 'payment_review',
+        payment_link_id: link.id,
+        square_order_id: link.order_id,
         checkout_url: null,
         provider_status: 'PRICE_CHANGED',
       });
       fail('PRICE_CHANGED', 'The price changed. Review a fresh total before paying.', 409);
     }
-    return saved;
+    return this.patchOrder(order.id, lease, {
+      payment_link_id: link.id,
+      square_order_id: link.order_id,
+      checkout_url: link.url,
+    });
   }
   async ensureCheckout(order: SquareObject) {
+    if (order.provider === 'stripe') fail('NOT_FOUND', 'Order not found.', 404);
     if (order.status !== 'checkout_pending') return { order: await this.orderProjection(order) };
     if (Date.parse(order.expires_at) <= Date.now())
       fail(
@@ -916,16 +1003,42 @@ export class SquareService extends PickupOperations {
       );
     if (order.checkout_url) return { order: await this.orderProjection(order) };
     return await this.withOrderLease(order.id, null, async (locked, lease) => {
-      const { client } = await this.provider(locked.business_id);
+      if (locked.status !== 'checkout_pending')
+        return { order: await this.orderProjection(locked) };
+      if (Date.parse(locked.expires_at) <= Date.now())
+        fail(
+          'CHECKOUT_EXPIRED',
+          'This checkout expired. Refresh order status before starting again.',
+          409,
+        );
+      const { client, connection } = await this.provider(locked.business_id);
+      if (connection.merchant_id !== locked.merchant_id)
+        fail(
+          'CONNECTION_CHANGED',
+          'This order belongs to the original Square seller. Resolve it in that seller’s Square Dashboard.',
+          409,
+        );
       return {
         order: await this.orderProjection(await this.createProviderCheckout(locked, lease, client)),
       };
     });
   }
   async reconcile(order: SquareObject, eventId?: string) {
-    if (!order.business_id || order.status === 'refunded') return order;
+    if (order.provider === 'stripe') fail('NOT_FOUND', 'Order not found.', 404);
+    if (
+      !order.business_id ||
+      order.status === 'refunded' ||
+      order.provider_status === 'REWARD_COVERED'
+    )
+      return order;
     return await this.withOrderLease(order.id, null, async (locked, lease) => {
-      const { client } = await this.provider(locked.business_id);
+      const { client, connection } = await this.provider(locked.business_id);
+      if (connection.merchant_id !== locked.merchant_id)
+        fail(
+          'CONNECTION_CHANGED',
+          'This order belongs to the original Square seller. Resolve it in that seller’s Square Dashboard.',
+          409,
+        );
       if (!locked.square_order_id)
         locked = await this.createProviderCheckout(locked, lease, client);
       const remote = (
@@ -933,6 +1046,24 @@ export class SquareService extends PickupOperations {
       ).order;
       if (remote.location_id !== locked.location_id || remote.reference_id !== locked.id)
         fail('ORDER_MISMATCH', 'Square order needs review.', 409);
+      // The provider may have accepted a refund before the response or database
+      // write failed. Replay its stable key rather than leaving refund_pending
+      // dependent on a webhook that may already have been delivered.
+      if (locked.status === 'refund_pending' && locked.refund_key && !locked.square_refund_id) {
+        const refund = (
+          await client.request('/v2/refunds', {
+            idempotency_key: locked.refund_key,
+            payment_id: locked.square_payment_id,
+            amount_money: {
+              amount: Number(locked.refund_amount_minor ?? locked.total_minor),
+              currency: locked.currency,
+            },
+            reason: 'Pickup order cancelled by business',
+          })
+        ).refund;
+        const patch = refundPatch(locked, refund);
+        if (patch) locked = await this.patchOrder(locked.id, lease, patch);
+      }
       for (const tender of remote.tenders ?? []) {
         if (!tender.payment_id) continue;
         const payment = (
@@ -940,12 +1071,18 @@ export class SquareService extends PickupOperations {
         ).payment;
         const patch = paymentPatch(locked, payment);
         if (patch) locked = await this.patchOrder(locked.id, lease, patch);
+        const refunds: SquareObject[] = [];
         for (const refundId of payment.refund_ids ?? []) {
           const refund = (await client.request(`/v2/refunds/${encodeURIComponent(refundId)}`))
             .refund;
-          const refundUpdate = refundPatch(locked, refund);
-          if (refundUpdate) locked = await this.patchOrder(locked.id, lease, refundUpdate);
+          refunds.push(refund);
         }
+        if (refunds.length)
+          locked = await this.patchOrder(
+            locked.id,
+            lease,
+            squareRefundTotal(locked, payment, refunds),
+          );
       }
       if (locked.square_refund_id && locked.status !== 'refunded') {
         const refund = (
@@ -989,6 +1126,7 @@ export class SquareService extends PickupOperations {
   }
   async status(id: string, userId: string | null, token: unknown) {
     let order = await this.authorizeOrder(id, userId, token);
+    if (order.provider === 'stripe') fail('NOT_FOUND', 'Order not found.', 404);
     if (['checkout_pending', 'refund_pending'].includes(order.status)) {
       try {
         order = await this.reconcile(order);
@@ -996,34 +1134,94 @@ export class SquareService extends PickupOperations {
         if (!(e instanceof CommerceError)) throw e;
       }
     }
-    return { order: await this.orderProjection(order) };
+    return await this.customerOrderProjection(order);
   }
   /** Customer history is a read-only projection, never payment reconciliation. */
   async refund(id: string, userId: string | null, body: SquareObject) {
-    await this.authorizeOrder(id, userId, null, true);
+    const authorized = await this.authorizeOrder(id, userId, null, true);
+    if (authorized.provider === 'stripe') fail('NOT_FOUND', 'Order not found.', 404);
     if (body.confirmed !== true) fail('CONFIRM_REQUIRED', 'Confirm the full refund.');
+    if (authorized.paid_at && !authorized.dispute_state) await this.reconcile(authorized);
     return await this.withOrderLease(
       id,
       integer(body.version, 1, 10000000),
       async (order, lease) => {
-        if (order.status === 'refunded') return { order: publicOrder(order, [], true) };
-        if (!canRefund(order.status) && order.status !== 'refund_pending')
+        if (order.status === 'refunded') return { order: await this.orderProjection(order, true) };
+        if (Number(order.total_minor) === 0 && order.provider_status === 'REWARD_COVERED') {
+          if (body.items !== undefined || body.amountMinor !== undefined)
+            fail('INVALID_REFUND_ITEMS', 'Cancel the whole reward order to restore the reward.');
+          return this.cancelCoveredOrder(order, lease, userId);
+        }
+        if (order.dispute_state && !['WON', 'RESOLVED'].includes(order.dispute_state))
+          fail('DISPUTE_OPEN', 'Resolve this dispute in Square Dashboard before refunding.', 409);
+        if (
+          !canRefund(order.status) &&
+          !['refund_pending', 'payment_review'].includes(order.status)
+        )
           fail('INVALID_TRANSITION', 'This order cannot be refunded here.', 409);
         if (!order.square_payment_id) fail('PAYMENT_PENDING', 'Payment is not confirmed.', 409);
-        const { client } = await this.provider(order.business_id);
-        const retryFailed = order.status === 'refund_failed';
+        const { client, connection } = await this.provider(order.business_id);
+        if (connection.merchant_id !== order.merchant_id)
+          fail(
+            'CONNECTION_CHANGED',
+            'Reconnect the original Square seller or refund through its Square Dashboard.',
+            409,
+          );
+        const retryFailed = order.status !== 'refund_pending';
         const key = retryFailed ? crypto.randomUUID() : (order.refund_key ?? crypto.randomUUID());
-        order = await this.patchOrder(id, lease, { status: 'refund_pending', refund_key: key });
+        if (body.amountMinor !== undefined)
+          fail('INVALID_REFUND_ITEMS', 'Choose items to refund instead of entering an amount.');
+        const plan =
+          order.status !== 'refund_pending' && body.items !== undefined
+            ? planItemRefund(
+                order,
+                (await this.checked(
+                  this.db.from('square_order_items').select('id,snapshot').eq('order_id', id),
+                )) ?? [],
+                body.items,
+                key,
+              )
+            : null;
+        const amount =
+          order.status === 'refund_pending' && order.refund_amount_minor
+            ? Number(order.refund_amount_minor)
+            : (plan?.amount ??
+              integer(
+                Number(order.total_minor) - Number(order.refunded_minor ?? 0),
+                1,
+                Number(order.total_minor),
+              ));
+        order = await this.patchOrder(id, lease, {
+          status: 'refund_pending',
+          refund_key: key,
+          refund_amount_minor: amount,
+          ...(plan ? { item_refunds: plan.history } : {}),
+          ...(retryFailed ? { square_refund_id: null } : {}),
+        });
         const refund = (
-          await client.request('/v2/refunds', {
-            idempotency_key: key,
-            payment_id: order.square_payment_id,
-            amount_money: { amount: Number(order.total_minor), currency: order.currency },
-            reason: 'Pickup order cancelled by business',
-          })
+          order.square_refund_id
+            ? await client.request(`/v2/refunds/${encodeURIComponent(order.square_refund_id)}`)
+            : await client.request('/v2/refunds', {
+                idempotency_key: key,
+                payment_id: order.square_payment_id,
+                amount_money: { amount, currency: order.currency },
+                reason: 'Pickup order cancelled by business',
+              })
         ).refund;
-        const patch = refundPatch(order, refund);
-        if (patch) order = await this.patchOrder(id, lease, patch);
+        refundPatch(order, refund); // Validate payment, currency, amount and provider state before any partial settlement.
+        if (refund.amount_money?.amount !== amount)
+          fail('REFUND_MISMATCH', 'The refund amount changed. Refresh and retry.', 409);
+        const patch =
+          amount < Number(order.total_minor)
+            ? refund.status === 'COMPLETED'
+              ? moneyPatch(order, Number(order.refunded_minor ?? 0) + amount)
+              : {
+                  status: refund.status === 'PENDING' ? 'refund_pending' : 'refund_failed',
+                  square_refund_id: refund.id,
+                }
+            : refundPatch(order, refund);
+        if (patch)
+          order = await this.patchOrder(id, lease, { ...patch, square_refund_id: refund.id });
         await this.checked(
           this.db.from('square_order_events').insert({
             order_id: id,
@@ -1032,10 +1230,171 @@ export class SquareService extends PickupOperations {
             to_state: order.status,
           }),
         );
-        return { order: publicOrder(order, [], true) };
+        return { order: await this.orderProjection(order, true) };
       },
     );
   }
+
+  async appointmentWebhookEvent(event: SquareObject, connections: SquareObject[]) {
+    if (event.event_type.startsWith('refund.'))
+      return this.appointmentRefundWebhookEvent(event, connections);
+    if (
+      !/^(payment\.(created|updated)|order\.(created|updated|fulfillment.updated))$/.test(
+        event.event_type,
+      )
+    )
+      return false;
+    if (typeof event.object_id !== 'string' || !event.object_id)
+      fail('WEBHOOK_INVALID', 'Square event needs review.', 400);
+    for (const connection of connections) {
+      const { client } = await this.provider(connection.business_id);
+      let squareOrderId: string | null = null;
+      if (event.event_type.startsWith('payment.')) {
+        squareOrderId =
+          (await client.request(`/v2/payments/${encodeURIComponent(event.object_id)}`)).payment
+            ?.order_id ?? null;
+      } else {
+        squareOrderId = event.object_id;
+      }
+      if (!squareOrderId) continue;
+      const order = (await client.request(`/v2/orders/${encodeURIComponent(squareOrderId)}`)).order;
+      if (!/^[0-9a-f-]{36}$/i.test(order?.reference_id ?? '')) continue;
+      const appointment = await this.checked(
+        this.db
+          .from('appointments')
+          .select('*')
+          .eq('business_id', connection.business_id)
+          .eq('id', order.reference_id)
+          .maybeSingle(),
+      );
+      if (!appointment) continue;
+      if (!appointment.square_order_id)
+        fail('CHECKOUT_PROCESSING', 'Appointment checkout is still being saved.', 409);
+      if (
+        appointment.square_order_id !== squareOrderId ||
+        connection.merchant_id !== event.merchant_id ||
+        order.location_id !== connection.location_id ||
+        order.total_money?.amount !== Number(appointment.amount_due_minor) ||
+        order.total_money?.currency !== appointment.currency
+      )
+        fail('PAYMENT_MISMATCH', 'Square appointment payment needs review.', 409);
+      let completed: SquareObject | null = null;
+      for (const tender of order.tenders ?? []) {
+        if (!tender.payment_id) continue;
+        const payment = (
+          await client.request(`/v2/payments/${encodeURIComponent(tender.payment_id)}`)
+        ).payment;
+        if (payment?.status === 'COMPLETED') completed = payment;
+      }
+      if (completed) {
+        if (
+          completed.order_id !== squareOrderId ||
+          completed.amount_money?.amount !== Number(appointment.amount_due_minor) ||
+          completed.amount_money?.currency !== appointment.currency
+        )
+          fail('PAYMENT_MISMATCH', 'Square appointment payment needs review.', 409);
+        await this.checked(
+          this.db.rpc('apply_appointment_provider_payment', {
+            p_appointment_id: appointment.id,
+            p_square_order_id: squareOrderId,
+            p_square_payment_id: completed.id,
+            p_payment_state: 'COMPLETED',
+          }),
+        );
+      } else if (order.state === 'CANCELED' && !(order.tenders ?? []).length) {
+        await this.checked(
+          this.db.rpc('apply_appointment_provider_payment', {
+            p_appointment_id: appointment.id,
+            p_square_order_id: squareOrderId,
+            p_square_payment_id: null,
+            p_payment_state: 'CANCELED',
+          }),
+        );
+      }
+      return true;
+    }
+    return false;
+  }
+
+  async appointmentRefundWebhookEvent(event: SquareObject, connections: SquareObject[]) {
+    if (!/^refund\.(created|updated)$/.test(event.event_type)) return false;
+    if (typeof event.object_id !== 'string' || !event.object_id)
+      fail('WEBHOOK_INVALID', 'Square refund event needs review.', 400);
+    for (const connection of connections) {
+      const { client } = await this.provider(connection.business_id);
+      const refund = (await client.request(`/v2/refunds/${encodeURIComponent(event.object_id)}`))
+        .refund;
+      if (!refund?.payment_id) continue;
+      const payment = (
+        await client.request(`/v2/payments/${encodeURIComponent(refund.payment_id)}`)
+      ).payment;
+      if (!payment?.order_id) continue;
+      const order = (await client.request(`/v2/orders/${encodeURIComponent(payment.order_id)}`))
+        .order;
+      if (!/^[0-9a-f-]{36}$/i.test(order?.reference_id ?? '')) continue;
+      const appointment = await this.checked(
+        this.db
+          .from('appointments')
+          .select('*')
+          .eq('business_id', connection.business_id)
+          .eq('id', order.reference_id)
+          .maybeSingle(),
+      );
+      if (!appointment) continue;
+      if (
+        connection.merchant_id !== event.merchant_id ||
+        refund.location_id !== connection.location_id ||
+        payment.location_id !== connection.location_id ||
+        order.location_id !== connection.location_id ||
+        order.reference_id !== appointment.id ||
+        appointment.square_order_id !== order.id ||
+        appointment.square_payment_id !== payment.id ||
+        payment.order_id !== order.id ||
+        payment.status !== 'COMPLETED'
+      )
+        fail('REFUND_MISMATCH', 'Square appointment refund needs review.', 409);
+
+      const savedAttempt = await this.checked(
+        this.db
+          .from('appointment_refunds')
+          .select('idempotency_key')
+          .eq('square_refund_id', refund.id)
+          .maybeSingle(),
+      );
+      const justStartedAttempt =
+        appointment.payment_status === 'refund_pending' &&
+        !appointment.square_refund_id &&
+        appointment.square_refund_key &&
+        Date.parse(refund.created_at) >= Date.parse(appointment.updated_at) - 5000;
+      const idempotencyKey =
+        savedAttempt?.idempotency_key ??
+        (justStartedAttempt ? appointment.square_refund_key : null);
+      if (
+        payment.total_money?.amount !== Number(appointment.amount_due_minor) ||
+        payment.total_money?.currency !== appointment.currency ||
+        !Number.isSafeInteger(refund.amount_money?.amount) ||
+        refund.amount_money.amount < 1 ||
+        refund.amount_money.amount > Number(appointment.amount_due_minor) ||
+        refund.amount_money?.currency !== appointment.currency ||
+        !['PENDING', 'COMPLETED', 'FAILED', 'REJECTED'].includes(refund.status)
+      )
+        fail('REFUND_MISMATCH', 'Square appointment refund needs review.', 409);
+      await this.checked(
+        this.db.rpc('apply_appointment_provider_refund', {
+          p_appointment_id: appointment.id,
+          p_square_payment_id: payment.id,
+          p_square_refund_id: refund.id,
+          p_idempotency_key: idempotencyKey,
+          p_amount_minor: refund.amount_money.amount,
+          p_currency: refund.amount_money.currency,
+          p_refund_state: refund.status,
+        }),
+      );
+      return true;
+    }
+    return false;
+  }
+
   async webhookEvent(event: SquareObject) {
     const rows = await this.checked(this.db.rpc('square_webhook_claim', { p_id: event.event_id }));
     if (!rows?.length) return;
@@ -1043,7 +1402,7 @@ export class SquareService extends PickupOperations {
       const connections = await this.checked(
         this.db
           .from('square_connections')
-          .select('business_id,connected_at')
+          .select('business_id,connected_at,merchant_id,location_id')
           .eq('merchant_id', event.merchant_id),
       );
       if (event.event_type === 'oauth.authorization.revoked') {
@@ -1052,47 +1411,129 @@ export class SquareService extends PickupOperations {
             await this.revokeLocal(c.business_id, 'authorization_revoked');
       } else if (event.event_type === 'catalog.version.updated') {
         for (const c of connections ?? []) await this.syncCatalog(c.business_id);
-      } else if (
-        /^(payment\.(created|updated)|refund\.(created|updated)|order\.(created|updated|fulfillment.updated))$/.test(
-          event.event_type,
-        )
-      ) {
+      } else if (event.event_type.startsWith('dispute.')) {
         for (const c of connections ?? []) {
           const { client } = await this.provider(c.business_id);
-          let orderId: string | null = null;
-          if (event.event_type.startsWith('payment.'))
-            orderId = (await client.request(`/v2/payments/${encodeURIComponent(event.object_id)}`))
-              .payment?.order_id;
-          else if (event.event_type.startsWith('refund.')) {
-            const refund = (
-              await client.request(`/v2/refunds/${encodeURIComponent(event.object_id)}`)
-            ).refund;
-            orderId = (
-              await client.request(`/v2/payments/${encodeURIComponent(refund.payment_id)}`)
-            ).payment?.order_id;
-          } else orderId = event.object_id;
-          if (!orderId) continue;
-          const remote = (await client.request(`/v2/orders/${encodeURIComponent(orderId)}`)).order;
-          if (!/^[0-9a-f-]{36}$/i.test(remote.reference_id ?? '')) continue;
+          const dispute = (
+            await client.request('/v2/disputes/' + encodeURIComponent(string(event.object_id, 100)))
+          ).dispute;
+          const paymentId = dispute?.disputed_payment?.payment_id;
+          if (!paymentId || dispute.location_id !== c.location_id)
+            fail('DISPUTE_MISMATCH', 'The Square dispute needs review.', 409);
+          const payment = (await client.request('/v2/payments/' + encodeURIComponent(paymentId)))
+            .payment;
           const order = await this.checked(
             this.db
               .from('square_orders')
               .select('*')
               .eq('business_id', c.business_id)
-              .eq('id', remote.reference_id)
+              .eq('square_payment_id', paymentId)
               .maybeSingle(),
           );
-          if (
-            order &&
-            order.merchant_id === event.merchant_id &&
-            order.location_id === remote.location_id
-          ) {
-            // A webhook may arrive before the checkout request saves its IDs.
-            if (!order.square_order_id)
-              fail('CHECKOUT_PROCESSING', 'Checkout is still being created.', 409);
-            await this.reconcile(order, event.event_id);
+          const state = ['LOST', 'ACCEPTED'].includes(dispute.state)
+            ? 'LOST'
+            : dispute.state === 'WON'
+              ? 'WON'
+              : dispute.state === 'INQUIRY_CLOSED'
+                ? 'RESOLVED'
+                : dispute.state;
+          if (order) {
+            if (
+              order.merchant_id !== event.merchant_id ||
+              order.location_id !== dispute.location_id ||
+              payment.id !== order.square_payment_id ||
+              payment.order_id !== order.square_order_id ||
+              dispute.amount_money?.currency !== order.currency ||
+              !Number.isSafeInteger(dispute.amount_money?.amount) ||
+              dispute.amount_money.amount < 1 ||
+              dispute.amount_money.amount > Number(order.total_minor)
+            )
+              fail('DISPUTE_MISMATCH', 'The Square dispute needs review.', 409);
+            await this.withOrderLease(order.id, null, async (locked, lease) =>
+              this.patchOrder(
+                order.id,
+                lease,
+                moneyPatch(locked, Number(locked.refunded_minor ?? 0), false, {
+                  id: dispute.id,
+                  state,
+                  amount: dispute.amount_money.amount,
+                }),
+              ),
+            );
+          } else {
+            const appointment = await this.checked(
+              this.db
+                .from('appointments')
+                .select('*')
+                .eq('business_id', c.business_id)
+                .eq('square_payment_id', paymentId)
+                .maybeSingle(),
+            );
+            if (appointment) {
+              if (
+                appointment.square_order_id !== payment.order_id ||
+                dispute.amount_money?.currency !== appointment.currency ||
+                !Number.isSafeInteger(dispute.amount_money?.amount) ||
+                dispute.amount_money.amount < 1 ||
+                dispute.amount_money.amount > Number(appointment.amount_due_minor)
+              )
+                fail('DISPUTE_MISMATCH', 'The Square dispute needs review.', 409);
+              await this.checked(
+                this.db.rpc('apply_appointment_dispute', {
+                  p_appointment: appointment.id,
+                  p_payment: paymentId,
+                  p_id: dispute.id,
+                  p_state: state,
+                }),
+              );
+            }
           }
         }
+      } else if (
+        /^(payment\.(created|updated)|refund\.(created|updated)|order\.(created|updated|fulfillment.updated))$/.test(
+          event.event_type,
+        )
+      ) {
+        const appointmentHandled = await this.appointmentWebhookEvent(event, connections ?? []);
+        if (!appointmentHandled)
+          for (const c of connections ?? []) {
+            const { client } = await this.provider(c.business_id);
+            let orderId: string | null = null;
+            if (event.event_type.startsWith('payment.'))
+              orderId = (
+                await client.request(`/v2/payments/${encodeURIComponent(event.object_id)}`)
+              ).payment?.order_id;
+            else if (event.event_type.startsWith('refund.')) {
+              const refund = (
+                await client.request(`/v2/refunds/${encodeURIComponent(event.object_id)}`)
+              ).refund;
+              orderId = (
+                await client.request(`/v2/payments/${encodeURIComponent(refund.payment_id)}`)
+              ).payment?.order_id;
+            } else orderId = event.object_id;
+            if (!orderId) continue;
+            const remote = (await client.request(`/v2/orders/${encodeURIComponent(orderId)}`))
+              .order;
+            if (!/^[0-9a-f-]{36}$/i.test(remote.reference_id ?? '')) continue;
+            const order = await this.checked(
+              this.db
+                .from('square_orders')
+                .select('*')
+                .eq('business_id', c.business_id)
+                .eq('id', remote.reference_id)
+                .maybeSingle(),
+            );
+            if (
+              order &&
+              order.merchant_id === event.merchant_id &&
+              order.location_id === remote.location_id
+            ) {
+              // A webhook may arrive before the checkout request saves its IDs.
+              if (!order.square_order_id)
+                fail('CHECKOUT_PROCESSING', 'Checkout is still being created.', 409);
+              await this.reconcile(order, event.event_id);
+            }
+          }
       }
       await this.checked(
         this.db
@@ -1146,6 +1587,8 @@ export class SquareService extends PickupOperations {
           'preparing',
           'ready',
           'completed',
+          'payment_review',
+          'refund_failed',
         ])
         .or(`status.neq.completed,completed_at.gt.${new Date(Date.now() - 86400000).toISOString()}`)
         .order('last_reconciled_at', { nullsFirst: true })
@@ -1171,6 +1614,40 @@ export class SquareService extends PickupOperations {
     for (const c of connections ?? []) {
       try {
         await this.provider(c.business_id);
+      } catch {
+        failures++;
+      }
+    }
+    const pendingAppointments = await this.checked(
+      this.db
+        .from('appointments')
+        .select('*')
+        .eq('status', 'payment_pending')
+        .order('hold_expires_at', { ascending: true })
+        .limit(10),
+    );
+    for (const appointment of pendingAppointments ?? []) {
+      try {
+        await this.reconcileAppointmentPayment(appointment);
+        reconciled++;
+      } catch {
+        failures++;
+      }
+    }
+    const pendingAppointmentRefunds = await this.checked(
+      this.db
+        .from('appointments')
+        .select('*')
+        .eq('payment_status', 'refund_pending')
+        .order('updated_at')
+        .limit(10),
+    );
+    for (const appointment of pendingAppointmentRefunds ?? []) {
+      try {
+        if (appointment.status === 'cancellation_pending' && appointment.square_refund_key)
+          await this.ensureAppointmentRefund(appointment);
+        else await this.reconcileAppointmentRefunds(appointment);
+        reconciled++;
       } catch {
         failures++;
       }
@@ -1210,7 +1687,40 @@ export class SquareService extends PickupOperations {
     return { retried, reconciled, failures };
   }
   async route(body: SquareObject, userId: string | null) {
+    await requireCommerceSetupFeature(this.db, body);
+    if (body.action === 'resolve_payment_review')
+      return this.resolvePaymentReview(uuid(body.orderId), userId, body);
     const action = string(body.action, 40);
+    if (action === 'my_event_review_candidates') return this.customerEventReviewCandidates(userId);
+    if (action === 'submit_event_review')
+      return this.submitVerifiedEventReview(uuid(body.eventId), userId, body);
+    if (action === 'appointment_status')
+      return this.customerAppointmentStatus(uuid(body.appointmentId), userId, body.statusToken);
+    if (action === 'appointment_customer_action')
+      return this.customerAppointmentAction(uuid(body.appointmentId), userId, body);
+    if (action === 'appointment_customer_reschedule')
+      return this.customerAppointmentReschedule(uuid(body.appointmentId), userId, body);
+    if (action === 'appointment_public') return this.publicAppointments(uuid(body.businessId));
+    if (action === 'appointment_slots') return this.appointmentSlots(uuid(body.businessId), body);
+    if (action === 'appointment_book')
+      return this.bookAppointment(uuid(body.businessId), userId, body);
+    if (action === 'appointment_owner_setup')
+      return this.appointmentOwnerSetup(uuid(body.businessId), userId);
+    if (action === 'appointment_owner_setup_save')
+      return this.saveAppointmentSetup(uuid(body.businessId), userId, body);
+    if (action === 'appointment_queue')
+      return this.appointmentQueue(uuid(body.businessId), userId, body);
+    if (action === 'appointment_owner_action')
+      return this.ownerAppointmentAction(uuid(body.appointmentId), userId, body);
+    if (action === 'appointment_owner_refund')
+      return this.ownerAppointmentRefund(uuid(body.appointmentId), userId);
+    if (action === 'appointment_owner_reimbursement')
+      return this.ownerAppointmentReimbursement(uuid(body.appointmentId), userId, body);
+    if (action === 'merchant_reviews')
+      return this.merchantPickupReviews(uuid(body.businessId), userId);
+    if (action === 'merchant_review_reply')
+      return this.replyToPickupReview(uuid(body.businessId), userId, body);
+    if (action === 'report_customer_review') return this.reportPickupReview(userId, body);
     if (action === 'pickup_code')
       return this.pickupCode(uuid(body.orderId), userId, body.statusToken);
     if (action === 'pickup_scan') return this.pickupScan(uuid(body.businessId), userId, body);
@@ -1235,15 +1745,50 @@ export class SquareService extends PickupOperations {
       );
       return order ? this.status(order.id, userId, body.statusToken) : { order: null };
     }
-    if (['status', 'operator_detail', 'order_action', 'refund'].includes(action)) {
+    if (
+      [
+        'status',
+        'operator_detail',
+        'order_action',
+        'refund',
+        'customer_order_request',
+        'customer_order_reorder',
+        'resolve_order_request',
+        'submit_pickup_review',
+      ].includes(action)
+    ) {
       const id = uuid(body.orderId);
       if (action === 'status') return this.status(id, userId, body.statusToken);
       if (action === 'operator_detail') return this.operatorDetail(id, userId);
       if (action === 'refund') return this.refund(id, userId, body);
+      if (action === 'customer_order_request')
+        return this.submitOrderSupportRequest(id, userId, body);
+      if (action === 'customer_order_reorder') return this.customerOrderReorder(id, userId, body);
+      if (action === 'resolve_order_request')
+        return this.resolveOrderSupportRequest(id, userId, body);
+      if (action === 'submit_pickup_review') return this.submitPickupReview(id, userId, body);
       return this.orderAction(id, userId, body);
     }
     const businessId = uuid(body.businessId);
     switch (action) {
+      case 'reward_options':
+      case 'reward_catalog': {
+        await this.rollout(businessId);
+        if (action === 'reward_catalog') await this.owner(businessId, userId);
+        const connection = await this.connection(businessId);
+        if (!connection?.location_id || connection.state !== 'connected')
+          return action === 'reward_catalog'
+            ? { provider: 'square', products: [] }
+            : { offer: null };
+        const products = catalogProducts(
+          await this.catalog(businessId),
+          connection.location_id,
+          connection.location_snapshot.currency,
+        ).products;
+        return action === 'reward_catalog'
+          ? { provider: 'square', products }
+          : this.checkoutRewardOptions(businessId, userId, products, 'square');
+      }
       case 'availability':
         return this.availability(businessId, body.catalog === true);
       case 'connect':

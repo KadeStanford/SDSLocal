@@ -10,6 +10,18 @@ export function useOrderPolling<T>(key: string, read: () => Promise<T>, pollUpda
   const [denied, setDenied] = useState(false);
   const generation = useRef(0);
   const pending = useRef<{ gen: number; task: Promise<T | null> } | null>(null);
+  const updateData = useCallback(
+    (update: (data: T) => T) => {
+      // A request started before a saved mutation must not replace its response.
+      generation.current++;
+      setSnapshot((old) =>
+        old?.key === key ? { ...old, data: update(old.data), at: Date.now() } : old,
+      );
+      setLoading(false);
+      setError('');
+    },
+    [key],
+  );
   const refresh = useCallback(
     async (force = false) => {
       while (pending.current?.gen === generation.current) {
@@ -87,5 +99,6 @@ export function useOrderPolling<T>(key: string, read: () => Promise<T>, pollUpda
     denied,
     refresh,
     setError,
+    updateData,
   };
 }

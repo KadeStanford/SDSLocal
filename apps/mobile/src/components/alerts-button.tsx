@@ -1,3 +1,5 @@
+import { BusinessThemeProvider } from './business-theme';
+import { AlertsInboxHeader, AlertsInboxList } from '@/components/alerts-inbox';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { SymbolView } from 'expo-symbols';
 import { useCallback, useEffect, useState } from 'react';
@@ -13,7 +15,6 @@ import { userMessageFromError } from '@/lib/user-error';
 import { useAuth } from '@/providers/auth-provider';
 import { useNotifications } from '@/providers/notification-provider';
 import {
-  DismissibleAlert,
   alertTypeLabel,
   formatAlertDate,
   orderAlertNextStep,
@@ -26,7 +27,6 @@ import { router } from 'expo-router';
 import { useAppMode } from '@/providers/app-mode-provider';
 import { isSafeNotificationUrl } from '@/lib/nearby-alerts-core';
 import { AppButton } from './app-button';
-import { splitNotificationAlerts } from '@/lib/notification-audience';
 
 type AlertRow = DismissibleAlertRow & { url: string };
 
@@ -130,10 +130,6 @@ export function AlertsButton() {
     await refreshUnreadCount();
   }
 
-  const alertGroups = splitNotificationAlerts(alerts);
-  const activeAlerts = alertGroups[alertAudience];
-  const activeAudienceLabel = alertAudience === 'customer' ? 'Customer alerts' : 'Business alerts';
-
   return (
     <>
       <Pressable
@@ -171,199 +167,144 @@ export function AlertsButton() {
         presentationStyle="pageSheet"
         visible={open}
       >
-        <GestureHandlerRootView style={styles.modalRoot}>
-          <ThemedView style={styles.modalRoot}>
-            <SafeAreaView style={styles.modalSafeArea} edges={['top', 'bottom']}>
-              <ScrollView contentContainerStyle={styles.modalContent} directionalLockEnabled>
-                <View style={styles.modalHeader}>
-                  <View style={styles.headerCopy}>
-                    <ThemedText style={styles.eyebrow} type="smallBold">
-                      INBOX
-                    </ThemedText>
-                    <ThemedText type="title">Alerts</ThemedText>
-                    <ThemedText themeColor="textSecondary">
-                      Updates from businesses you follow, event reminders, and rewards.
-                    </ThemedText>
-                  </View>
-                  <View style={styles.headerActions}>
-                    {alerts.length > 0 && (
-                      <Pressable
-                        accessibilityLabel="Clear all alerts"
-                        accessibilityRole="button"
-                        onPress={() => void clearAllAlerts()}
-                        style={styles.clearButton}
-                      >
-                        <ThemedText style={styles.clearButtonText} type="smallBold">
-                          Clear all
+        <BusinessThemeProvider>
+          <GestureHandlerRootView style={styles.modalRoot}>
+            <ThemedView style={styles.modalRoot}>
+              <SafeAreaView style={styles.modalSafeArea} edges={['top', 'bottom']}>
+                <ScrollView contentContainerStyle={styles.modalContent} directionalLockEnabled>
+                  <AlertsInboxHeader
+                    count={alerts.length}
+                    unread={alerts.filter((row) => !row.read_at).length}
+                    onClear={() => void clearAllAlerts()}
+                    onClose={() => setOpen(false)}
+                  />
+                  {selected ? (
+                    <View
+                      style={[
+                        styles.detailCard,
+                        selected.entity_type === 'pickup_order' && styles.orderDetailCard,
+                      ]}
+                    >
+                      <Pressable onPress={() => setSelected(null)} style={styles.backLink}>
+                        <ThemedText
+                          style={[styles.linkText, { color: colors.accent }]}
+                          type="smallBold"
+                        >
+                          ‹ All alerts
                         </ThemedText>
                       </Pressable>
-                    )}
-                    <Pressable
-                      accessibilityLabel="Close alerts"
-                      accessibilityRole="button"
-                      onPress={() => setOpen(false)}
-                      style={styles.doneButton}
-                    >
-                      <ThemedText type="smallBold">Done</ThemedText>
-                    </Pressable>
-                  </View>
-                </View>
-                {selected ? (
-                  <View
-                    style={[
-                      styles.detailCard,
-                      selected.entity_type === 'pickup_order' && styles.orderDetailCard,
-                    ]}
-                  >
-                    <Pressable onPress={() => setSelected(null)} style={styles.backLink}>
-                      <ThemedText style={styles.linkText} type="smallBold">
-                        ‹ All alerts
-                      </ThemedText>
-                    </Pressable>
-                    {selected.entity_type === 'pickup_order' ? (
-                      <View style={styles.orderDetailCopy}>
-                        <View style={styles.orderDetailEyebrow}>
-                          <ThemedText style={styles.eyebrow} type="smallBold">
-                            {selected.order_audience === 'business'
-                              ? 'PICKUP QUEUE'
-                              : 'ORDER UPDATE'}
-                          </ThemedText>
-                          <View style={styles.orderDetailStatus}>
-                            <ThemedText style={{ color: colors.accent }} type="smallBold">
-                              {orderAlertStatusLabel(
+                      {selected.entity_type === 'pickup_order' ? (
+                        <View style={styles.orderDetailCopy}>
+                          <View style={styles.orderDetailEyebrow}>
+                            <ThemedText
+                              style={[styles.eyebrow, { color: colors.textSecondary }]}
+                              type="smallBold"
+                            >
+                              {selected.order_audience === 'business'
+                                ? 'PICKUP QUEUE'
+                                : 'ORDER UPDATE'}
+                            </ThemedText>
+                            <View style={styles.orderDetailStatus}>
+                              <ThemedText style={{ color: colors.accent }} type="smallBold">
+                                {orderAlertStatusLabel(
+                                  selected.order_status,
+                                  selected.order_audience ?? 'customer',
+                                )}
+                              </ThemedText>
+                            </View>
+                          </View>
+                          <ThemedText type="card">{selected.title}</ThemedText>
+                          <ThemedText themeColor="textSecondary">{selected.body}</ThemedText>
+                          <View style={styles.orderNextStep}>
+                            <ThemedText type="smallBold">
+                              {selected.order_audience === 'business'
+                                ? 'Staff action'
+                                : 'What happens next'}
+                            </ThemedText>
+                            <ThemedText type="small" themeColor="textSecondary">
+                              {orderAlertNextStep(
                                 selected.order_status,
                                 selected.order_audience ?? 'customer',
                               )}
                             </ThemedText>
                           </View>
                         </View>
-                        <ThemedText type="card">{selected.title}</ThemedText>
-                        <ThemedText themeColor="textSecondary">{selected.body}</ThemedText>
-                        <View style={styles.orderNextStep}>
-                          <ThemedText type="smallBold">
-                            {selected.order_audience === 'business'
-                              ? 'Staff action'
-                              : 'What happens next'}
-                          </ThemedText>
-                          <ThemedText type="small" themeColor="textSecondary">
-                            {orderAlertNextStep(
-                              selected.order_status,
-                              selected.order_audience ?? 'customer',
-                            )}
-                          </ThemedText>
-                        </View>
-                      </View>
-                    ) : (
-                      <>
-                        <ThemedText style={styles.eyebrow} type="smallBold">
-                          {alertTypeLabel(selected)}
-                        </ThemedText>
-                        <ThemedText type="subtitle">{selected.title}</ThemedText>
-                        <ThemedText>{selected.body}</ThemedText>
-                      </>
-                    )}
-                    {selected.entity_type === 'pickup_order' &&
-                      isSafeNotificationUrl(selected.url) && (
-                        <AppButton
-                          label="View order"
-                          onPress={() => {
-                            if (selected.url.startsWith('/pickup-order?')) setMode('business');
-                            setOpen(false);
-                            router.push(selected.url as never);
-                          }}
-                        />
-                      )}
-                    <ThemedText themeColor="textSecondary" type="small">
-                      {formatAlertDate(selected.created_at)}
-                    </ThemedText>
-                  </View>
-                ) : loading ? (
-                  <ActivityIndicator color={Brand.primary} />
-                ) : error ? (
-                  <View style={styles.emptyCard}>
-                    <ThemedText type="subtitle">Alerts are unavailable</ThemedText>
-                    <ThemedText themeColor="textSecondary">{error}</ThemedText>
-                    <Pressable onPress={() => void loadAlerts()} style={styles.primaryButton}>
-                      <ThemedText style={styles.primaryButtonText} type="smallBold">
-                        Try again
-                      </ThemedText>
-                    </Pressable>
-                  </View>
-                ) : alerts.length === 0 ? (
-                  <View style={styles.emptyCard}>
-                    <ThemedText type="subtitle">You’re all caught up</ThemedText>
-                    <ThemedText themeColor="textSecondary">
-                      New event, business, and rewards updates will appear here.
-                    </ThemedText>
-                  </View>
-                ) : (
-                  <View style={styles.alertList}>
-                    <ThemedText themeColor="textSecondary" type="small">
-                      Tap an alert to read it. Swipe left to clear it.
-                    </ThemedText>
-                    <View style={styles.audienceSelector} accessibilityRole="tablist">
-                      {(['customer', 'business'] as const).map((audience) => {
-                        const count = alertGroups[audience].length;
-                        const unread = alertGroups[audience].filter((row) => !row.read_at).length;
-                        const selected = alertAudience === audience;
-                        return (
-                          <Pressable
-                            key={audience}
-                            accessibilityRole="tab"
-                            accessibilityState={{ selected }}
-                            accessibilityLabel={`${audience === 'customer' ? 'Customer' : 'Business'} alerts, ${unread} unread`}
-                            onPress={() => setAlertAudience(audience)}
-                            style={[
-                              styles.audienceOption,
-                              selected && { backgroundColor: colors.backgroundElement },
-                            ]}
+                      ) : (
+                        <>
+                          <ThemedText
+                            style={[styles.eyebrow, { color: colors.textSecondary }]}
+                            type="smallBold"
                           >
-                            {unread > 0 && <View style={styles.unreadIndicator} />}
-                            <ThemedText type="smallBold">
-                              {audience === 'customer' ? 'Customer' : 'Business'}
-                            </ThemedText>
-                            <ThemedText themeColor="textSecondary" type="smallBold">
-                              {count}
-                            </ThemedText>
-                          </Pressable>
-                        );
-                      })}
-                    </View>
-                    <View style={styles.activeAlertHeading}>
-                      <ThemedText type="subtitle">{activeAudienceLabel}</ThemedText>
-                      {activeAlerts.length > 0 && (
-                        <ThemedText themeColor="textSecondary" type="small">
-                          {activeAlerts.filter((row) => !row.read_at).length} unread
-                        </ThemedText>
+                            {alertTypeLabel(selected)}
+                          </ThemedText>
+                          <ThemedText type="subtitle">{selected.title}</ThemedText>
+                          <ThemedText>{selected.body}</ThemedText>
+                        </>
                       )}
+                      {selected.entity_type === 'pickup_order' &&
+                        isSafeNotificationUrl(selected.url) && (
+                          <AppButton
+                            label="View order"
+                            onPress={() => {
+                              if (
+                                selected.url.startsWith('/pickup-order?') ||
+                                selected.url.startsWith('/service-requests?')
+                              )
+                                setMode('business');
+                              setOpen(false);
+                              router.push(selected.url as never);
+                            }}
+                          />
+                        )}
+                      {selected.entity_type === 'service_request' &&
+                        isSafeNotificationUrl(selected.url) && (
+                          <AppButton
+                            label="Open service request"
+                            onPress={() => {
+                              if (selected.url.startsWith('/service-requests?'))
+                                setMode('business');
+                              setOpen(false);
+                              router.push(selected.url as never);
+                            }}
+                          />
+                        )}
+                      <ThemedText themeColor="textSecondary" type="small">
+                        {formatAlertDate(selected.created_at)}
+                      </ThemedText>
                     </View>
-                    {activeAlerts.length === 0 ? (
-                      <View style={styles.sectionEmptyCard}>
-                        <ThemedText type="smallBold">No {alertAudience} alerts</ThemedText>
-                        <ThemedText themeColor="textSecondary" type="small">
-                          {alertAudience === 'customer'
-                            ? 'Orders, rewards, events, and updates for you will appear here.'
-                            : 'New orders and pickup activity for your team will appear here.'}
+                  ) : loading ? (
+                    <ActivityIndicator color={colors.accent} />
+                  ) : error ? (
+                    <View style={styles.emptyCard}>
+                      <ThemedText type="subtitle">Alerts are unavailable</ThemedText>
+                      <ThemedText themeColor="textSecondary">{error}</ThemedText>
+                      <Pressable onPress={() => void loadAlerts()} style={styles.primaryButton}>
+                        <ThemedText style={styles.primaryButtonText} type="smallBold">
+                          Try again
                         </ThemedText>
-                      </View>
-                    ) : (
-                      activeAlerts.map((row) => (
-                        <DismissibleAlert
-                          key={row.id}
-                          alert={row}
-                          surfaceColor={colors.backgroundElement}
-                          unreadSurfaceColor={colors.backgroundSelected}
-                          onDismiss={() => void dismiss(row)}
-                          onOpen={() => void markRead(row)}
-                        />
-                      ))
-                    )}
-                  </View>
-                )}
-              </ScrollView>
-            </SafeAreaView>
-          </ThemedView>
-        </GestureHandlerRootView>
+                      </Pressable>
+                    </View>
+                  ) : alerts.length === 0 ? (
+                    <View style={styles.emptyCard}>
+                      <ThemedText type="subtitle">You’re all caught up</ThemedText>
+                      <ThemedText themeColor="textSecondary">
+                        New event, business, and rewards updates will appear here.
+                      </ThemedText>
+                    </View>
+                  ) : (
+                    <AlertsInboxList
+                      alerts={alerts}
+                      audience={alertAudience}
+                      onAudience={setAlertAudience}
+                      onOpen={(row) => void markRead(row)}
+                      onDismiss={(row) => void dismiss(row)}
+                    />
+                  )}
+                </ScrollView>
+              </SafeAreaView>
+            </ThemedView>
+          </GestureHandlerRootView>
+        </BusinessThemeProvider>
       </Modal>
     </>
   );

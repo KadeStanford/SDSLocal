@@ -1,6 +1,12 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { businessAllowsObligationRecovery } from '../_shared/business-obligation-access.ts';
 
 import { loyaltySigningSecret, verifyLoyaltyToken } from '../_shared/loyalty-token.ts';
+import {
+  isAuthorizedLoyaltyBusinessMember,
+  matchesExpectedLoyaltyBusinessId,
+  type LoyaltyBusinessMember,
+} from '../_shared/loyalty-preview-authorization.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -49,13 +55,16 @@ async function hasBusinessAccess(
 ) {
   const { data, error } = await admin
     .from('business_members')
-    .select('id')
+    .select('business_id, user_id, role, is_active')
     .eq('business_id', businessId)
     .eq('user_id', userId)
     .eq('is_active', true)
     .in('role', ['owner', 'staff'])
     .maybeSingle();
-  return !error && Boolean(data);
+  return (
+    !error &&
+    isAuthorizedLoyaltyBusinessMember(data as LoyaltyBusinessMember | null, userId, businessId)
+  );
 }
 
 async function recordScanAttempt(
@@ -216,7 +225,7 @@ async function reconcileResult(
   };
 }
 
-Deno.serve(async (request) => {
+export async function loyaltyTransactHandler(request: Request) {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (request.method !== 'POST') return json(405, { error: 'Method not allowed.' });
   const authorization = request.headers.get('Authorization');
@@ -284,29 +293,12 @@ Deno.serve(async (request) => {
   }
 
   const actorId = authData.user.id;
-  const expectedBusinessIsAuthorized = expectedBusinessId
-    ? await hasBusinessAccess(admin, expectedBusinessId, actorId)
-    : false;
-  const expectedBusinessForLog = expectedBusinessIsAuthorized ? expectedBusinessId : null;
-
-  // The scanner declares which workspace is physically performing the scan. Do not
-  // process a code if that workspace is not one the signed-in operator can access.
-  if (expectedBusinessId && !expectedBusinessIsAuthorized) {
-    if (operation === 'commit')
-      await recordScanAttempt(admin, {
-        businessId: null,
-        actorId,
-        membershipId: null,
-        action: action === 'auto' || !action ? 'stamp' : action,
-        scanSource,
-        outcome: 'permission_denied',
-      });
-    return json(403, { error: 'Staff access is required for the selected business.' });
-  }
 
   if (operation === 'reconcile') {
     if (!expectedBusinessId)
       return json(400, { error: 'Select a business before checking this transaction.' });
+    if (!(await hasBusinessAccess(admin, expectedBusinessId, actorId)))
+      return json(403, { error: 'Staff access is required for the selected business.' });
     const reconciled = await reconcileResult(admin, expectedBusinessId, idempotencyKey);
     return reconciled
       ? json(200, { loyalty: reconciled })
@@ -324,7 +316,7 @@ Deno.serve(async (request) => {
       const message = error instanceof Error ? error.message : 'The loyalty code is invalid.';
       if (operation === 'commit')
         await recordScanAttempt(admin, {
-          businessId: expectedBusinessForLog,
+          businessId: null,
           actorId,
           membershipId: null,
           action: action === 'auto' || !action ? 'stamp' : action,
@@ -332,6 +324,21 @@ Deno.serve(async (request) => {
           outcome: outcomeForError(message, /expired/i.test(message) ? 410 : 400),
         });
       return json(/expired/i.test(message) ? 410 : 400, { error: message });
+    }
+
+    // The signed token is authoritative for the business whose customer data is
+    // about to be read. expectedBusinessId is only a client-side consistency check.
+    if (!(await hasBusinessAccess(admin, claims.businessId, actorId))) {
+      if (operation === 'commit')
+        await recordScanAttempt(admin, {
+          businessId: claims.businessId,
+          actorId,
+          membershipId: claims.membershipId,
+          action: action === 'auto' || !action ? 'stamp' : action,
+          scanSource,
+          outcome: 'permission_denied',
+        });
+      return json(403, { error: 'Staff access is required for the selected business.' });
     }
 
     const [{ data: membership, error: membershipError }, { data: program, error: programError }] =
@@ -393,7 +400,7 @@ Deno.serve(async (request) => {
       });
     }
 
-    if (expectedBusinessId && claims.businessId !== expectedBusinessId) {
+    if (!matchesExpectedLoyaltyBusinessId(expectedBusinessId, claims.businessId)) {
       if (operation === 'commit')
         await recordScanAttempt(admin, {
           businessId: expectedBusinessId,
@@ -426,15 +433,36 @@ Deno.serve(async (request) => {
     if (operation === 'preview') {
       const [state, businessResult, profileResult] = await Promise.all([
         rewardsState(admin, claims.membershipId, programType, stampsRequired, pointsRequired),
-        admin.from('businesses').select('name, status').eq('id', claims.businessId).maybeSingle(),
+        admin
+          .from('businesses')
+          .select('name,status,suspension_reason,billing_suspension_previous_status,approved_at')
+          .eq('id', claims.businessId)
+          .maybeSingle(),
         admin
           .from('profiles')
           .select('display_name')
           .eq('id', membership.customer_id)
           .maybeSingle(),
       ]);
-      if (!businessResult.data || businessResult.data.status !== 'active')
+      if (
+        !(resolvedAction === 'redemption'
+          ? businessAllowsObligationRecovery(businessResult.data)
+          : businessResult.data?.status === 'active')
+      )
         return json(409, { error: 'This business is unavailable.' });
+      if (resolvedAction !== 'redemption') {
+        const { error } = await admin.rpc('assert_business_feature', {
+          p_business_id: claims.businessId,
+          p_feature: 'staff_scanning',
+        });
+        if (error)
+          return json(error.details === 'BUSINESS_FEATURE_REQUIRED' ? 403 : 503, {
+            error:
+              error.details === 'BUSINESS_FEATURE_REQUIRED'
+                ? 'This business needs Growth or Pro to add new rewards. Existing rewards can still be redeemed.'
+                : 'Business access could not be checked. Please retry.',
+          });
+      }
       const pointsAwarded =
         resolvedAction === 'earn_points' && pointsPerDollar
           ? Math.floor((purchaseAmountMinor! / 100) * pointsPerDollar)
@@ -552,4 +580,6 @@ Deno.serve(async (request) => {
     const message = error instanceof Error ? error.message : 'The loyalty code is invalid.';
     return json(/expired/i.test(message) ? 410 : 400, { error: message });
   }
-});
+}
+
+if (import.meta.main) Deno.serve(loyaltyTransactHandler);

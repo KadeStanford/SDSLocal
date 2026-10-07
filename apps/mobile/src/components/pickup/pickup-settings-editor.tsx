@@ -39,7 +39,7 @@ function SettingsSection({
   const c = useTheme();
   const [open, setOpen] = useState(false);
   return (
-    <View style={{ gap: 12 }}>
+    <View style={{ gap: 12, padding: 16, borderRadius: 18, backgroundColor: c.backgroundElement }}>
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
@@ -48,7 +48,7 @@ function SettingsSection({
         style={{
           paddingVertical: 14,
           minHeight: 64,
-          borderBottomWidth: 1,
+          borderBottomWidth: 0,
           borderBottomColor: c.divider,
           flexDirection: 'row',
           gap: 12,

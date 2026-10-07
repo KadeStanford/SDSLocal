@@ -331,7 +331,13 @@ export function canRefund(status: string) {
     status,
   );
 }
-export const terminalStates = ['completed', 'refunded', 'checkout_expired', 'checkout_failed'];
+export const terminalStates = [
+  'completed',
+  'refunded',
+  'checkout_expired',
+  'checkout_failed',
+  'dispute_lost',
+];
 export function parseRecipient(value: unknown) {
   const input = record(value);
   const name = string(input.name, 100);
@@ -353,7 +359,7 @@ export function parsePickup(value: unknown) {
   };
 }
 export function orderAmounts(order: SquareObject) {
-  const total = integer(order.total_money?.amount, 1);
+  const total = integer(order.total_money?.amount, 0);
   const tax = integer(order.total_tax_money?.amount ?? 0);
   const currency = string(order.total_money?.currency, 3);
   if (
@@ -382,10 +388,22 @@ export function publicOrder(
     address: order.pickup_address,
     businessName: order.business_name,
     businessId: order.business_id,
-    subtotal: order.subtotal_minor,
+    subtotal: Number(order.subtotal_minor) + Number(order.loyalty_reward?.discountMinor ?? 0),
     tax: order.tax_minor,
     tip: 0,
     total: order.total_minor,
+    refundedMinor: Number(order.refunded_minor ?? 0),
+    remainingMinor: Number(order.total_minor) - Number(order.refunded_minor ?? 0),
+    disputeState: order.dispute_state ?? null,
+    providerStatus: order.provider_status ?? null,
+    reward: order.loyalty_reward
+      ? {
+          type: order.loyalty_reward.type,
+          label: order.loyalty_reward.label,
+          discountMinor: order.loyalty_reward.discountMinor,
+          itemName: order.loyalty_reward.itemName ?? null,
+        }
+      : null,
     currency: order.currency,
     createdAt: order.created_at,
     updatedAt: order.updated_at,
@@ -393,12 +411,31 @@ export function publicOrder(
     refundedAt: order.refunded_at,
     expiresAt: order.expires_at,
     paidAt: order.paid_at,
-    items: items.map(({ snapshot: i }) => ({
+    items: items.map(({ id, snapshot: i }) => ({
+      refundedQuantity: (order.item_refunds ?? [])
+        .filter((r: SquareObject) => r.state === 'completed')
+        .reduce(
+          (n: number, r: SquareObject) =>
+            n + (r.items.find((item: SquareObject) => item.itemId === id)?.quantity ?? 0),
+          0,
+        ),
       name: i.name,
       variation_name: i.variation_name,
+      variationId: i.variation_id ?? i.catalog_object_id ?? null,
       quantity: i.quantity,
+      modifierIds: Array.isArray(i.modifier_ids)
+        ? i.modifier_ids
+        : (i.modifiers ?? [])
+            .map((modifier: SquareObject) => modifier.catalog_object_id)
+            .filter((id: unknown): id is string => typeof id === 'string'),
       total_money: i.total_money
-        ? { amount: i.total_money.amount, currency: i.total_money.currency }
+        ? {
+            amount:
+              Number(i.total_money.amount) +
+              Number(i.total_discount_money?.amount ?? 0) -
+              Number(i.total_tax_money?.amount ?? 0),
+            currency: i.total_money.currency,
+          }
         : undefined,
       modifiers: (i.modifiers ?? []).map((m: SquareObject) => ({ name: m.name })),
     })),
@@ -415,9 +452,11 @@ export function publicOrder(
           provider: order.provider ?? 'square',
           squareOrderId: order.square_order_id,
           dashboardUrl:
-            order.provider === 'stripe' && order.merchant_id
-              ? 'https://dashboard.stripe.com/test/connect/accounts/' + order.merchant_id
-              : 'https://squareupsandbox.com/dashboard/orders/overview',
+            order.provider_status === 'REWARD_COVERED'
+              ? undefined
+              : order.provider === 'stripe' && order.merchant_id
+                ? 'https://dashboard.stripe.com/test/connect/accounts/' + order.merchant_id
+                : 'https://squareupsandbox.com/dashboard/orders/overview',
         }
       : {}),
   };
@@ -451,14 +490,37 @@ export function refundPatch(order: SquareObject, refund: SquareObject): SquareOb
   if (
     refund.payment_id !== order.square_payment_id ||
     refund.amount_money?.currency !== order.currency ||
-    refund.amount_money?.amount !== Number(order.total_minor)
+    !Number.isSafeInteger(refund.amount_money?.amount) ||
+    refund.amount_money.amount <= 0 ||
+    refund.amount_money.amount > Number(order.total_minor) ||
+    !['PENDING', 'COMPLETED', 'FAILED', 'REJECTED'].includes(refund.status)
   )
     fail('REFUND_MISMATCH', 'Refund requires review.', 409);
   if (order.status === 'refunded') return null;
+  if (refund.amount_money.amount < Number(order.total_minor))
+    return refund.status === 'PENDING'
+      ? {
+          status: 'refund_pending',
+          provider_status: 'REFUND_PENDING',
+          checkout_url: null,
+          square_refund_id: refund.id,
+          refund_amount_minor: refund.amount_money.amount,
+        }
+      : refund.status === 'COMPLETED' &&
+          Number(order.refunded_minor ?? 0) < refund.amount_money.amount
+        ? { status: 'payment_review', provider_status: 'PARTIAL_REFUND', checkout_url: null }
+        : null;
+  if (
+    order.square_refund_id &&
+    refund.id !== order.square_refund_id &&
+    refund.status !== 'COMPLETED'
+  )
+    return null; // An older failed attempt cannot overwrite the latest refund.
   if (refund.status === 'COMPLETED')
     return {
       status: 'refunded',
       provider_status: 'REFUND_COMPLETED',
+      refunded_minor: Number(order.total_minor),
       refunded_at: new Date().toISOString(),
       cancelled_at: new Date().toISOString(),
       square_refund_id: refund.id,

@@ -3,6 +3,14 @@ begin;
 -- A provider-neutral staging fixture for testing the Stripe onboarding path.
 -- It deliberately has no square_connections or square_ordering_settings row;
 -- the owner can choose Stripe from the workspace when they are ready.
+-- This historical fixture must not make a clean database depend on staging-only
+-- accounts, or fabricate those accounts during production installation.
+do $staging_fixture$
+begin
+  if not exists (select 1 from public.profiles where id = '90000000-0000-4000-8000-000000000001')
+     or not exists (select 1 from public.profiles where id = '90000000-0000-4000-8000-000000000003') then
+    return;
+  end if;
 insert into public.businesses (
   id, created_by, slug, name, business_type, status, description,
   category_summary, phone, email, website_url, address_line_1, city,
@@ -155,6 +163,9 @@ on conflict (business_id, slug) do update set
   title = excluded.title, description = excluded.description,
   starts_at = excluded.starts_at, ends_at = excluded.ends_at,
   is_published = true, archived_at = null, updated_at = now();
+
+end;
+$staging_fixture$;
 
 -- Let the owner workspace show a business before it has selected an ordering
 -- provider. Pickup availability remains gated by the provider-specific joins.

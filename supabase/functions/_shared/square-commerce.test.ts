@@ -21,8 +21,14 @@ import {
   randomToken,
   sealToken,
   squareConfig,
+  stripeConfig,
   verifyWebhook,
 } from './square-security';
+import {
+  StripeClient,
+  stripeConnectAccountCreateParams,
+  stripeOnboardingSessionIsReady,
+} from './stripe-client';
 import { SquareService } from './square-service';
 
 const fixture = (): SquareObject[] => [
@@ -183,6 +189,74 @@ describe('Square security boundaries', () => {
     expect(JSON.stringify(result)).not.toMatch(
       /Private|secret|guest_hash|access_cipher|provider_request|refresh_token/,
     );
+  });
+});
+
+describe('Stripe Connect setup', () => {
+  it('lets Stripe collect the legal business type during embedded onboarding', () => {
+    const params = stripeConnectAccountCreateParams({
+      businessId: '11111111-1111-4111-8111-111111111111',
+      businessName: 'Juniper & Ember Kitchen',
+      contactEmail: 'owner@example.test',
+    });
+    expect(params).toMatchObject({
+      display_name: 'Juniper & Ember Kitchen',
+      contact_email: 'owner@example.test',
+      identity: { country: 'us' },
+      dashboard: 'full',
+      defaults: { responsibilities: { fees_collector: 'stripe', losses_collector: 'stripe' } },
+    });
+    expect(params.identity).not.toHaveProperty('entity_type');
+  });
+
+  it('keeps SDS application fees at zero even if a stale server secret sets one', () => {
+    const configValues: Record<string, string> = {
+      APP_ENV: 'staging',
+      STRIPE_SECRET_KEY: 'sk_test_fixture',
+      STRIPE_CHECKOUT_RETURN_URL: 'https://staging.example.test/order',
+      STRIPE_CONNECT_CALLBACK_URL: 'https://staging.example.test/connect',
+      STRIPE_WEBHOOK_SECRET: 'whsec_fixture',
+      STRIPE_COMMERCE_ENABLED: 'true',
+      STRIPE_APPLICATION_FEE_MINOR: '250',
+    };
+    expect(stripeConfig((key) => configValues[key]).applicationFeeMinor).toBe(0);
+    expect(() =>
+      stripeConfig((key) => ({ ...configValues, STRIPE_SECRET_KEY: 'sk_live_fixture' })[key]),
+    ).toThrow('Stripe test ordering requires a test-mode secret key.');
+  });
+
+  it('accepts only a test onboarding session for the connected account', () => {
+    const session = {
+      livemode: false,
+      account: 'acct_fixture',
+      client_secret: 'account_session_secret',
+      components: { account_onboarding: { enabled: true } },
+    };
+    expect(stripeOnboardingSessionIsReady(session, 'acct_fixture')).toBe(true);
+    expect(stripeOnboardingSessionIsReady({ ...session, livemode: true }, 'acct_fixture')).toBe(
+      false,
+    );
+    expect(stripeOnboardingSessionIsReady(session, 'acct_other')).toBe(false);
+    expect(stripeOnboardingSessionIsReady({ ...session, client_secret: '' }, 'acct_fixture')).toBe(
+      false,
+    );
+  });
+
+  it('preserves a safe Stripe request reference when Connect setup fails', async () => {
+    const client = new StripeClient(
+      'sk_test_fixture',
+      undefined,
+      async () =>
+        new Response(
+          JSON.stringify({ error: { type: 'invalid_request_error', code: 'account_invalid' } }),
+          { status: 400, headers: { 'Request-Id': 'req_123abc' } },
+        ),
+    );
+    await expect(client.request('/v1/account_sessions', {}, 'POST')).rejects.toMatchObject({
+      code: 'PROVIDER_ERROR',
+      providerCode: 'account_invalid',
+      providerRequestId: 'req_123abc',
+    });
   });
 });
 
@@ -360,9 +434,9 @@ describe('pickup slots and financial state', () => {
     expect(refundPatch(paid, { ...refund, status: 'COMPLETED' })).toMatchObject({
       status: 'refunded',
     });
-    expect(() =>
+    expect(
       refundPatch(paid, { ...refund, amount_money: { amount: 1, currency: 'USD' } }),
-    ).toThrow();
+    ).toMatchObject({ status: 'refund_pending', provider_status: 'REFUND_PENDING' });
     expect(refundPatch({ ...paid, status: 'refunded' }, refund)).toBeNull();
   });
   it('allows only the formal operational transitions', () => {
@@ -403,6 +477,41 @@ const service = (data: unknown) => {
   return { db, service: new SquareService(db as never, {} as never) };
 };
 describe('Square server authorization and webhook dispatch', () => {
+  it('allows appointment-only sellers to connect without opening pickup ordering', async () => {
+    const flags: Record<string, unknown> = {
+      square_commerce: { enabled: true, business_ids: ['pickup-business'] },
+      appointment_booking: {
+        enabled: true,
+        environment: 'staging',
+        business_ids: ['service-business'],
+      },
+    };
+    const db = {
+      from: vi.fn(() => ({
+        select: () => ({
+          eq: (_column: string, key: string) => ({
+            single: async () => ({ data: { value: flags[key] }, error: null }),
+            maybeSingle: async () => ({ data: { value: flags[key] }, error: null }),
+          }),
+        }),
+      })),
+    };
+    const square = new SquareService(db as never, { enabled: true } as never);
+    await expect(square.rollout('pickup-business')).resolves.toBeUndefined();
+    await expect(square.rollout('service-business')).rejects.toMatchObject({ code: 'DISABLED' });
+    await expect(square.rollout('service-business', true)).resolves.toBeUndefined();
+    await expect(square.rollout('other-business', true)).rejects.toMatchObject({
+      code: 'APPOINTMENTS_DISABLED',
+    });
+    flags.appointment_booking = {
+      enabled: true,
+      environment: 'production',
+      business_ids: ['service-business'],
+    };
+    await expect(square.rollout('service-business', true)).rejects.toMatchObject({
+      code: 'APPOINTMENTS_DISABLED',
+    });
+  });
   it.each([null, { role: 'staff', is_active: true }, { role: 'owner', is_active: false }])(
     'rejects non-owner connection/financial actions (%j)',
     async (membership) => {

@@ -1,8 +1,11 @@
+import { HelpPolicyLinks } from './help-policy-links';
+import { MerchantButton } from './merchant-ui';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
+import { AppTextInput as TextInput } from '@/components/app-text-input';
 
 import { ThemedText } from '@/components/themed-text';
 import { Colors, Spacing } from '@/constants/theme';
@@ -39,10 +42,12 @@ export function AccountDataPanel() {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const [impact, setImpact] = useState<AccountDeletionImpact | null>(null);
+  const [bookingBlocker, setBookingBlocker] = useState(false);
   const [confirmation, setConfirmation] = useState('');
   const [loadingImpact, setLoadingImpact] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showDataDetails, setShowDataDetails] = useState(false);
 
   async function loadImpact() {
     setLoadingImpact(true);
@@ -54,6 +59,7 @@ export function AccountDataPanel() {
         data && typeof data === 'object' ? (data as { impact?: unknown }).impact : null,
       );
       if (!parsed) throw new Error('Invalid deletion impact response.');
+      setBookingBlocker(Array.isArray(data?.blockers) && data.blockers.includes('appointments'));
       setImpact(parsed);
     } catch {
       setErrorMessage('We could not check what deletion would affect. Please try again.');
@@ -81,7 +87,7 @@ export function AccountDataPanel() {
   }
 
   async function deleteAccount() {
-    if (!session || !canConfirmAccountDeletion(confirmation, deleting)) return;
+    if (!session || bookingBlocker || !canConfirmAccountDeletion(confirmation, deleting)) return;
     setDeleting(true);
     setErrorMessage(null);
     const userId = session.user.id;
@@ -91,7 +97,10 @@ export function AccountDataPanel() {
           'delete-account',
           { method: 'DELETE', body: { confirmation } },
         );
-        if (error) throw error;
+        if (error) {
+          try { const detail = await error.context?.json(); if (detail?.blockers?.includes('appointments')) { setBookingBlocker(true); throw new Error('BOOKING_BLOCKER'); } } catch (cause) { if (cause instanceof Error && cause.message === 'BOOKING_BLOCKER') throw cause; }
+          throw error;
+        }
         return { deleted: data?.deleted === true };
       }, [
         () => Notifications.dismissAllNotificationsAsync(),
@@ -106,11 +115,11 @@ export function AccountDataPanel() {
       setMode('customer');
       router.replace('/explore');
       void haptics.success();
-      Alert.alert('Account deleted', 'Your SDS Local account has been deleted.');
-    } catch {
+      Alert.alert('Account deleted', 'Your Parish Pass account has been deleted.');
+    } catch (cause) {
       void haptics.error();
       setErrorMessage(
-        'Account deletion did not complete. You are still signed in and can safely try again.',
+        cause instanceof Error && cause.message === 'BOOKING_BLOCKER' ? 'Resolve your active appointments or outstanding booking payments first.' : 'Account deletion did not complete. Your account is still available. Use support if retrying does not help.',
       );
       setDeleting(false);
     }
@@ -125,28 +134,21 @@ export function AccountDataPanel() {
 
   return (
     <View style={styles.root}>
-      <View style={styles.explanation}>
-        <ThemedText type="subtitle">Your account and saved data</ThemedText>
-        <ThemedText themeColor="textSecondary">
-          Deleting your account removes your profile, saved businesses, rewards memberships,
-          reminders, notification registrations, and business access.
-        </ThemedText>
-      </View>
-
       {errorMessage && (
         <View accessibilityLiveRegion="polite" style={styles.error}>
           <ThemedText style={styles.errorText}>{errorMessage}</ThemedText>
         </View>
       )}
 
-      {impact && (
+      {bookingBlocker && <View style={{ gap: 12 }}><ThemedText type="subtitle">Finish your appointments first</ThemedText><ThemedText>Cancel or complete active bookings and resolve outstanding payments or refunds. Contact the business about payment issues.</ThemedText><MerchantButton label="Open my appointments" onPress={() => router.push('/my-appointments' as never)} /><MerchantButton label="Recheck deletion eligibility" secondary onPress={() => void loadImpact()} /><HelpPolicyLinks /></View>}
+      {impact && !bookingBlocker && (
         <View style={styles.impactCard}>
           <ThemedText type="subtitle">What will happen</ThemedText>
           {listingBilling.summary?.canPublish ? (
             <View style={styles.subscriptionWarning}>
               <ThemedText type="smallBold">Store subscription stays separate</ThemedText>
               <ThemedText themeColor="textSecondary" type="small">
-                Deleting SDS Local cannot cancel billing controlled by Apple or Google. Cancel it
+                Deleting Parish Pass cannot cancel billing controlled by Apple or Google. Cancel it
                 through your store account first if you do not want it to renew.
               </ThemedText>
               <Pressable
@@ -226,12 +228,12 @@ export function AccountDataPanel() {
       {!impact && (
         <View style={styles.dangerZone}>
           <ThemedText type="subtitle">Delete account</ThemedText>
-          <ThemedText themeColor="textSecondary">
-            This is permanent. You will review affected businesses before making a final choice.
+          <ThemedText themeColor="textSecondary" type="small">
+            Permanently remove your account. Review what’s affected before confirming.
           </ThemedText>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Delete account"
+            accessibilityLabel="Review account deletion"
             accessibilityHint="Reviews the permanent effects before deletion"
             accessibilityState={{ disabled: loadingImpact, busy: loadingImpact }}
             disabled={loadingImpact}
@@ -242,10 +244,37 @@ export function AccountDataPanel() {
               <ActivityIndicator color="#B83B3B" />
             ) : (
               <ThemedText style={styles.outlineDeleteText} type="smallBold">
-                Delete account
+                Review deletion
               </ThemedText>
             )}
           </Pressable>
+        </View>
+      )}
+      {!impact && (
+        <View style={[styles.details, { backgroundColor: colors.backgroundElement }]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showDataDetails }}
+            accessibilityLabel="What gets deleted?"
+            onPress={() => setShowDataDetails((current) => !current)}
+            style={styles.detailsTrigger}
+          >
+            <ThemedText type="smallBold" style={{ flex: 1 }}>
+              What gets deleted?
+            </ThemedText>
+            <ThemedText themeColor="textSecondary">{showDataDetails ? '−' : '+'}</ThemedText>
+          </Pressable>
+          {showDataDetails && (
+            <View style={styles.detailsBody}>
+              <ThemedText themeColor="textSecondary" type="small">
+                Your profile, saved businesses, rewards memberships, reminders, notification
+                registrations, and business access are removed.
+              </ThemedText>
+              <ThemedText themeColor="textSecondary" type="small">
+                Businesses you own alone are deleted. Shared businesses stay with another owner.
+              </ThemedText>
+            </View>
+          )}
         </View>
       )}
     </View>
@@ -253,8 +282,16 @@ export function AccountDataPanel() {
 }
 
 const styles = StyleSheet.create({
-  root: { gap: Spacing.four, justifyContent: 'space-between' },
-  explanation: { gap: Spacing.two },
+  root: { gap: Spacing.three },
+  details: { borderRadius: 16, overflow: 'hidden' },
+  detailsTrigger: {
+    minHeight: 56,
+    padding: Spacing.three,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  detailsBody: { paddingHorizontal: Spacing.three, paddingBottom: Spacing.three, gap: Spacing.two },
   error: {
     borderRadius: 14,
     borderWidth: 1,

@@ -27,6 +27,7 @@ dist-web/
 # Local Codex, Expo, and EAS state
 .codex/
 .codex-tmp/
+EmergencyBackup/
 .eas/
 .eas-cli-home/
 apps/.eas-userdata/

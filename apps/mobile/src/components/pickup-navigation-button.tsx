@@ -14,9 +14,11 @@ export type PickupDestination = {
 export function PickupNavigationButton({
   label,
   destination,
+  variant = 'primary',
 }: {
   readonly label: string;
   readonly destination: PickupDestination;
+  readonly variant?: 'primary' | 'secondary';
 }) {
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState('');
@@ -40,6 +42,7 @@ export function PickupNavigationButton({
   return (
     <View style={{ gap: 8 }}>
       <AppButton
+        variant={variant}
         label={opening ? 'Opening pickup…' : label}
         loading={opening}
         disabled={!id.trim()}

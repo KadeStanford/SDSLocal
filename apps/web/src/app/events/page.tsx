@@ -128,7 +128,7 @@ export default async function EventDiscoveryPage({ searchParams }: PageProps<'/e
     <main className="page-shell">
       <nav className="topbar">
         <Link className="brand" href="/">
-          SDS Local
+          Parish Pass
         </Link>
         <div className="nav-actions">
           <Link href="/explore">Explore</Link>

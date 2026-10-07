@@ -37,7 +37,8 @@ const h = vi.hoisted(() => ({
   end: vi.fn(),
   signedIn: false,
   mode: 'customer',
-  businesses: [] as { id: string }[],
+  businesses: [] as { id: string; counts?: { requests: number } }[],
+  services: [] as { id: string }[],
   path: '/order',
 }));
 vi.mock('react', async () => {
@@ -97,7 +98,7 @@ vi.mock('expo-router/unstable-native-tabs', () => {
       h.triggers.push(props);
       return createElement('span');
     },
-    { Label: Empty, Icon: Empty },
+    { Label: Empty, Icon: Empty, Badge: Empty },
   );
   return {
     NativeTabs: Object.assign(
@@ -115,6 +116,12 @@ vi.mock('@/providers/app-mode-provider', () => ({
 }));
 vi.mock('@/providers/pickup-workspace-provider', () => ({
   usePickupWorkspace: () => ({ businesses: h.businesses, loading: false, error: '' }),
+}));
+vi.mock('@/providers/service-operations-provider', () => ({
+  useServiceOperations: () => ({ businesses: h.services, loading: false, error: '' }),
+}));
+vi.mock('@/hooks/use-business-activity', () => ({
+  useBusinessActivity: () => ({ appointments: false, requests: false, orders: false }),
 }));
 vi.mock('@/lib/square-commerce', () => ({
   commerce: vi.fn(),
@@ -160,6 +167,7 @@ beforeEach(() => {
   h.signedIn = false;
   h.mode = 'customer';
   h.businesses = [];
+  h.services = [];
   vi.clearAllMocks();
   vi.stubEnv('EXPO_PUBLIC_APP_ENV', 'staging');
   vi.useFakeTimers();
@@ -327,10 +335,51 @@ describe('actual pickup entry-point native press wiring', () => {
   });
 });
 describe('native router registration and guest guard integration', () => {
-  it('registers order in the root stack, outside the native tabs route group', () => {
+  it.each([0, 1, 3])(
+    'adds actual bottom tabs for %s eligible service businesses without exceeding five destinations',
+    (count) => {
+      h.signedIn = true;
+      h.mode = 'business';
+      h.path = '/businesses';
+      h.services = Array.from({ length: count }, (_, i) => ({ id: String(i) }));
+      h.businesses = [{ id: 'pickup' }];
+      renderToStaticMarkup(<AppTabs />);
+      const names = h.triggers.map((t) => t.name);
+      expect(names).toContain('businesses');
+      expect(names).toContain('staff-scan');
+      expect(names).toContain('pickup-orders');
+      expect(names.includes('business-appointments')).toBe(count > 0);
+      expect(names.includes('business-requests')).toBe(count > 0);
+      expect(names.includes('account')).toBe(count === 0);
+      expect(names.length).toBeLessThanOrEqual(5);
+    },
+  );
+  it('registers order and service request routes in the root stack, outside the native tabs route group', () => {
     renderToStaticMarkup(<RootNavigator />);
-    expect(h.screens.map((s) => s.name)).toEqual(['(tabs)', 'pickup-order', 'order']);
-    expect(h.screens[2]?.options).toMatchObject({
+    expect(h.screens.map((s) => s.name)).toEqual([
+      '(tabs)',
+      'index',
+      'notification',
+      'business',
+      'business-new',
+      'listing-plans',
+      'staff-invite',
+      'auth/callback',
+      'b/[slug]',
+      'pickup-order',
+      'order',
+      'book-appointment',
+      'appointment',
+      'service-request',
+      'request-form',
+      'service-requests',
+      'business-account',
+      'event-attendees',
+      'business-reviews',
+      'my-service-requests',
+      'my-event-reviews',
+    ]);
+    expect(h.screens.find((screen) => screen.name === 'order')?.options).toMatchObject({
       gestureEnabled: true,
       fullScreenGestureEnabled: false,
     });
@@ -355,13 +404,43 @@ describe('native router registration and guest guard integration', () => {
   it('allows only the exact public order path, retaining private-route protection', () => {
     expect(guestCanOpenPath('/order')).toBe(true);
     expect(guestCanOpenPath('/orders')).toBe(true);
-    for (const path of ['/orders/admin', '/order/admin', '/business', '/businesses', '/staff-scan'])
+    expect(guestCanOpenPath('/book-appointment')).toBe(true);
+    expect(guestCanOpenPath('/appointment')).toBe(true);
+    for (const path of [
+      '/orders/admin',
+      '/order/admin',
+      '/appointment/admin',
+      '/book-appointment/admin',
+      '/business',
+      '/businesses',
+      '/staff-scan',
+    ])
       expect(guestCanOpenPath(path)).toBe(false);
     h.path = '/business';
-    renderToStaticMarkup(<AppTabs />);
+    renderToStaticMarkup(<RootNavigator />);
     h.effects.forEach((effect) => effect());
     expect(h.replace).toHaveBeenCalledExactlyOnceWith('/explore');
   });
+  it.each(['/my-event-reviews', '/my-service-requests'])(
+    'opens personal history %s from a business account',
+    (path) => {
+      h.signedIn = true;
+      h.mode = 'business';
+      h.path = path;
+      renderToStaticMarkup(<RootNavigator />);
+      h.effects.forEach((effect) => effect());
+      expect(h.replace).not.toHaveBeenCalled();
+    },
+  );
+  it.each(['/my-event-reviews', '/my-service-requests'])(
+    'keeps personal history %s protected for guests',
+    (path) => {
+      h.path = path;
+      renderToStaticMarkup(<RootNavigator />);
+      h.effects.forEach((effect) => effect());
+      expect(h.replace).toHaveBeenCalledExactlyOnceWith('/explore');
+    },
+  );
 });
 
 describe('business order real native controls', () => {
@@ -466,6 +545,21 @@ describe('business order real native controls', () => {
     });
     expect(h.triggers.find((t) => t.name === 'pickup-orders')?.hidden).not.toBe(true);
   });
+  it('badges business Orders with requests across accessible businesses', () => {
+    h.signedIn = true;
+    h.mode = 'business';
+    h.path = '/businesses';
+    h.businesses = [
+      { id: 'one', counts: { requests: 2 } },
+      { id: 'two', counts: { requests: 1 } },
+    ];
+    renderToStaticMarkup(<AppTabs />);
+    const children = h.triggers.find((t) => t.name === 'pickup-orders')?.children as {
+      props?: { children?: unknown };
+    }[];
+    expect(children[1]).toMatchObject({ props: {} }); // Empty native badge is the requested indicator dot.
+    expect(children[1]?.props?.children).toBeUndefined();
+  });
   it.each(['paused', 'no_slots', 'unavailable'] as const)(
     'never navigates from non-actionable public state %s',
     (status) => {
@@ -511,4 +605,57 @@ it('shows a visible customer Orders tab for guests and signed-in customers in st
     expect(h.triggers.some((t) => t.name === 'orders')).toBe(true);
   }
   vi.unstubAllEnvs();
+});
+
+const compactOrder = {
+  id: 'compact-order',
+  businessId: 'business-one',
+  status: 'ready',
+  version: 1,
+} as PickupOrder;
+it.each([true, false])(
+  'compact pickup footer routes to scan and respects refund permissions: owner=%s',
+  (owner) => {
+    const more = vi.fn();
+    const refund = vi.fn();
+    const transition = vi.fn();
+    const html = renderToStaticMarkup(
+      <FulfillmentActions
+        order={{ ...compactOrder, status: 'ready' }}
+        canRefund={owner}
+        busy={false}
+        onTransition={transition}
+        onRefund={refund}
+        onMore={more}
+      />,
+    );
+    target('Scan to confirm pickup').onPress();
+    expect(h.push).toHaveBeenCalledWith({
+      pathname: '/staff-scan',
+      params: { businessId: compactOrder.businessId },
+    });
+    expect(transition).not.toHaveBeenCalled();
+    expect(refund).not.toHaveBeenCalled();
+    expect(html).not.toContain('Refund remaining payment');
+    expect(h.targets.some((t) => t.accessibilityLabel === 'Order actions')).toBe(owner);
+    if (owner) {
+      target('Order actions').onPress();
+      expect(more).toHaveBeenCalledOnce();
+    }
+  },
+);
+it('compact actions are disabled while the order cannot be refreshed', () => {
+  renderToStaticMarkup(
+    <FulfillmentActions
+      order={{ ...compactOrder, status: 'ready' }}
+      canRefund
+      busy={false}
+      disabled
+      onTransition={vi.fn()}
+      onRefund={vi.fn()}
+      onMore={vi.fn()}
+    />,
+  );
+  expect(target('Scan to confirm pickup').disabled).toBe(true);
+  expect(target('Order actions').disabled).toBe(true);
 });

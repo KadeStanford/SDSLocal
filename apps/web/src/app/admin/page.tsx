@@ -147,6 +147,7 @@ export default async function AdminDashboard() {
         <div className="nav-actions">
           <Link href="/admin/reviews">Review queue</Link>
           <Link href="/admin/reports">Reports & safety</Link>
+          <Link href="/admin/customer-reviews">Review reports</Link>
           <form action={signOutAction}>
             <button className="text-button" type="submit">
               Sign out

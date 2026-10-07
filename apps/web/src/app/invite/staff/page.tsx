@@ -16,7 +16,7 @@ export default async function StaffInvitePage({ searchParams }: PageProps<'/invi
       <main className="page-shell narrow-shell">
         <nav className="topbar">
           <Link className="brand" href="/">
-            SDS Local
+            Parish Pass
           </Link>
         </nav>
         <div className="page-heading compact-heading">
@@ -38,7 +38,7 @@ export default async function StaffInvitePage({ searchParams }: PageProps<'/invi
     <main className="page-shell narrow-shell">
       <nav className="topbar">
         <Link className="brand" href="/">
-          SDS Local
+          Parish Pass
         </Link>
         <Link href="/account">Account</Link>
       </nav>

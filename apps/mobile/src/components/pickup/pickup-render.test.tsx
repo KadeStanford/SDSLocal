@@ -1,12 +1,20 @@
+import { PickupContactFields } from './pickup-contact-fields';
+import { CustomerOrdersHeader } from './customer-orders-header';
+import { OrderActionsSheet } from './order-actions-sheet';
+import { MerchantBusinessList, type ManagedBusiness } from '../merchant-business-list';
 import { CustomerOrderCard } from './customer-order-card';
+import { ItemRefundPicker } from './item-refund-picker';
 import { ScrollView } from 'react-native';
 import { AppButton } from '../app-button';
-import { CommerceField } from '../commerce-fields';
-import { PickupFlowLayout, PickupMerchantHeader } from './pickup-flow-layout';
+import {
+  CustomerFlowNavigation,
+  PickupFlowLayout,
+  PickupMerchantHeader,
+} from './pickup-flow-layout';
 /// <reference types="node" />
 import { createElement, type ReactNode, type ComponentProps } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, it, vi } from 'vitest';
 import { AppRegistry, View } from 'react-native-web';
@@ -16,6 +24,10 @@ import { PickupItem } from './pickup-item';
 import { PickupCart, PickupScheduler, PickupReview } from './pickup-checkout-steps';
 import { PickupTimePicker } from './pickup-scheduler';
 import { PickupStatus } from './pickup-status';
+import { PickupCodeContent } from './pickup-code';
+import { PickupScanEntry } from './pickup-manual-entry';
+import { ParishBusinessBrand } from '../business-screen-header';
+import { createRequire } from 'node:module';
 import { PickupOrderCard, FulfillmentActions } from './business-order-components';
 import { OrderReceipt, OrderTimeline, PickupIdentity } from './order-presentation';
 import { ListLoading, EmptyState, StateNotice } from '../data-state';
@@ -31,6 +43,13 @@ const review = vi.hoisted(() => ({
     disabled?: boolean | null | undefined;
     onPress?: (() => void) | undefined;
   }[],
+}));
+vi.mock('react-native-qrcode-svg', () => ({ default: () => null }));
+vi.mock('@/lib/square-commerce', () => ({ commerce: vi.fn() }));
+vi.mock('react-native-svg', () => ({
+  default: ({ children, ...props }: { children: ReactNode }) =>
+    createElement('svg', props, children),
+  Path: (props: object) => createElement('path', props),
 }));
 vi.mock('react-native', async () => {
   const web = await vi.importActual<typeof import('react-native')>('react-native-web');
@@ -50,13 +69,43 @@ vi.mock('react-native-safe-area-context', async () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 34, left: 0, right: 0 }),
   SafeAreaView: (await vi.importActual<typeof import('react-native-web')>('react-native-web')).View,
 }));
-vi.mock('@/hooks/use-theme', () => ({ useTheme: () => themeColors[review.scheme] }));
-vi.mock('expo-symbols', () => ({
-  SymbolView: () => createElement('span', { 'aria-hidden': true }, '✓'),
+vi.mock('@/hooks/use-color-scheme', () => ({ useColorScheme: () => review.scheme }));
+vi.mock('@/hooks/use-theme', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/hooks/use-theme')>()),
+  useTheme: () => themeColors[review.scheme],
+}));
+vi.mock('expo-symbols', async () => ({
+  SymbolView: (await import('../../test/visual-symbol')).VisualSymbol,
 }));
 vi.mock('@/lib/storage-url', () => ({ storagePublicUrl: () => null }));
 vi.mock('@/hooks/use-reduced-motion', () => ({ useReducedMotion: () => true }));
-vi.mock('expo-image', () => ({ Image: () => null }));
+vi.mock('expo-image', () => ({
+  Image: ({
+    source,
+    style,
+    contentFit,
+  }: {
+    source: { uri?: string };
+    style: object;
+    contentFit?: string;
+  }) => {
+    if (!process.env.MENU_IMAGE_RENDER_DIR || !source?.uri) return null;
+    const photo = source.uri.includes('coffee')
+      ? 'photo-1509042239860-f550ce710b93'
+      : 'photo-1579751626657-72bc17010498';
+    const local = resolve('../../.codex-tmp/playground/images', photo + '.webp');
+    const bytes = readFileSync(
+      existsSync(local)
+        ? local
+        : resolve('../../.codex-tmp/comprehensive-fixtures/images', photo + '.webp'),
+    );
+    return createElement('img', {
+      src: 'data:image/webp;base64,' + bytes.toString('base64'),
+      alt: '',
+      style: { ...style, objectFit: contentFit, display: 'block' },
+    });
+  },
+}));
 vi.mock('expo-router', () => ({ router: { push: vi.fn() }, useFocusEffect: vi.fn() }));
 vi.mock('@/lib/square-commerce', () => ({}));
 vi.mock('@/providers/auth-provider', () => ({ useAuth: () => ({ session: null }) }));
@@ -82,6 +131,146 @@ const product: Product = {
     },
   ],
 };
+it('shows server confirmation without offering another payment or preparation claims', () => {
+  review.targets = [];
+  const html = renderToStaticMarkup(
+    <PickupStatus
+      order={{ ...order, status: 'checkout_pending' }}
+      confirmingPayment
+      confirmationSlow
+      busy={false}
+      onRefresh={() => {}}
+      onCheckout={() => {}}
+      onNew={() => {}}
+    />,
+  );
+  expect(html).toContain('Still checking payment');
+  expect(html).toContain('Please don’t pay again');
+  expect(html).not.toContain('Pay securely');
+  expect(html).not.toContain('Preparing your order');
+  expect(review.targets.some((t) => t.accessibilityLabel === 'Check payment status')).toBe(true);
+});
+it('offers payment continuation only for a verified actionable checkout and renders review states', () => {
+  const cases = [
+    {
+      id: 'unfinished',
+      providerStatus: 'PAYMENT_METHOD_REQUIRED',
+      title: 'Payment not completed',
+      canContinue: true,
+      slow: false,
+    },
+    {
+      id: 'verification',
+      providerStatus: 'PAYMENT_ACTION_REQUIRED',
+      title: 'Finish your payment',
+      canContinue: true,
+      slow: false,
+    },
+    {
+      id: 'processing',
+      providerStatus: 'PAYMENT_PROCESSING',
+      title: 'Confirming your order',
+      canContinue: false,
+      slow: false,
+    },
+    {
+      id: 'slow',
+      providerStatus: 'PAYMENT_PROCESSING',
+      title: 'Still checking payment',
+      canContinue: false,
+      slow: true,
+    },
+  ];
+  for (const mode of ['light', 'dark'] as const)
+    for (const sample of cases) {
+      review.scheme = mode;
+      const Screen = () => (
+        <View
+          style={{
+            padding: 20,
+            minHeight: 760,
+            gap: 24,
+            backgroundColor: themeColors[mode].background,
+          }}
+        >
+          <CustomerFlowNavigation title="Pickup order" onBack={() => {}} />
+          <ThemedText type="title">Pickup order</ThemedText>
+          <PickupStatus
+            order={{
+              ...order,
+              provider: 'stripe',
+              status: 'checkout_pending',
+              providerStatus: sample.providerStatus,
+            }}
+            busy={false}
+            confirmingPayment
+            confirmationSlow={sample.slow}
+            onRefresh={() => {}}
+            onCheckout={() => {}}
+            onNew={undefined}
+          />
+        </View>
+      );
+      AppRegistry.registerComponent('PaymentFeedback', () => Screen);
+      const { element, getStyleElement } = AppRegistry.getApplication('PaymentFeedback', {});
+      const markup = renderToStaticMarkup(element);
+      expect(markup).toContain(sample.title);
+      expect(markup.includes('Continue payment')).toBe(sample.canContinue);
+      expect(markup).toContain('Check payment status');
+      if (process.env.PAYMENT_FEEDBACK_RENDER_DIR) {
+        mkdirSync(process.env.PAYMENT_FEEDBACK_RENDER_DIR, { recursive: true });
+        writeFileSync(
+          resolve(process.env.PAYMENT_FEEDBACK_RENDER_DIR, `${sample.id}-${mode}.html`),
+          `<!doctype html><meta charset="utf-8">${renderToStaticMarkup(getStyleElement())}<style>body{margin:0}*{font-family:Arial,sans-serif!important}</style>${markup}`,
+        );
+      }
+    }
+});
+
+it('makes a customer request visible on the order card and offers quantities instead of amount entry', () => {
+  const html = renderToStaticMarkup(
+    <View>
+      <PickupOrderCard
+        order={{
+          ...order,
+          supportRequest: {
+            id: 'request',
+            type: 'change',
+            message: 'Please remove the milk',
+            response: null,
+            status: 'open',
+            createdAt: order.createdAt,
+            resolvedAt: null,
+          },
+        }}
+        now={Date.parse(order.createdAt)}
+      />
+      <ItemRefundPicker
+        order={{
+          ...order,
+          refundItems: [
+            {
+              itemId: 'item',
+              name: 'Coffee',
+              quantity: 2,
+              available: 1,
+              used: 1,
+              unit: 500,
+              extra: 0,
+            },
+          ],
+        }}
+        disabled={false}
+        onRefund={async () => {}}
+      />
+    </View>,
+  );
+  expect(html).toContain('Reply needed');
+  expect(html).toContain('Please remove the milk');
+  expect(html).toContain('1 of 2 available to refund');
+  expect(html).toContain('Refund items');
+  expect(html).not.toContain('Partial refund amount');
+});
 const cart = [{ variationId: 'coffee', quantity: 2, modifierIds: ['oat'] }];
 const slot: PickupSlot = {
   at: '2026-09-21T15:00:00Z',
@@ -169,7 +358,7 @@ function Gallery() {
       />
       <PickupReview
         quote={quote}
-        name="Layout fixture"
+        name="Kade Stanford"
         phone="(225) 555-0123"
         cart={cart}
         products={[product]}
@@ -226,6 +415,15 @@ function Gallery() {
         onCheckout={() => {}}
         onNew={() => {}}
       />
+      <PickupStatus
+        order={{ ...order, status: 'checkout_pending' }}
+        confirmingPayment
+        confirmationSlow
+        busy={false}
+        onRefresh={() => {}}
+        onCheckout={() => {}}
+        onNew={() => {}}
+      />
     </View>
   );
 }
@@ -237,7 +435,8 @@ it('renders checkout components in light and dark themes without payment claims'
     const { element, getStyleElement } = AppRegistry.getApplication('PickupReview', {});
     const markup = renderToStaticMarkup(element);
     expect(markup).toContain('Estimated items');
-    expect(markup).toContain('Confirming payment');
+    expect(markup).toContain('Payment not confirmed');
+    expect(markup).toContain('Still checking payment');
     expect(markup).toContain('Required');
     expect(markup).toContain('Schedule pickup');
     expect(markup).toContain('Online ordering paused');
@@ -245,7 +444,7 @@ it('renders checkout components in light and dark themes without payment claims'
     if (process.env.PICKUP_RENDER_DIR) {
       const directory = resolve(process.env.PICKUP_RENDER_DIR);
       mkdirSync(directory, { recursive: true });
-      const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pickup static layouts · ${scheme}</title>${renderToStaticMarkup(getStyleElement())}<style>body{margin:0;background:${themeColors[scheme].background}}#root{max-width:375px;margin:auto}</style></head><body><div id="root">${markup}</div></body></html>`;
+      const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pickup static layouts · ${scheme}</title>${renderToStaticMarkup(getStyleElement())}<style>[dir=auto],input{font-family:Arial,sans-serif!important}body{margin:0;background:${themeColors[scheme].background}}#root{max-width:375px;margin:auto}</style></head><body><div id="root">${markup}</div></body></html>`;
       writeFileSync(resolve(directory, `pickup-${scheme}.html`), html);
       writeFileSync(
         resolve(directory, `pickup-${scheme}-large.html`),
@@ -270,7 +469,15 @@ const actualCatalog: Product[] = [
   name: String(name),
   price: Number(price),
   variation: 'Regular',
-  description: '',
+  description:
+    (
+      {
+        side: 'Seasonal vegetables, prepared fresh.',
+        coffee: 'Slow-steeped and served over ice.',
+        sandwich: 'Toasted sourdough with a house-made spread.',
+        bowl: 'Grains, greens and seasonal vegetables.',
+      } as Record<string, string>
+    )[String(id)] ?? '',
   category: 'Menu',
   groups: [],
 }));
@@ -308,7 +515,7 @@ function PhoneFixture({ step }: { step: 'menu' | 'cart' | 'pickup' | 'contact' |
     ) : step === 'review' ? (
       <PickupReview
         quote={fixtureQuote}
-        name="Layout fixture"
+        name="Kade Stanford"
         phone="+12255550123"
         cart={fixtureCart}
         products={actualCatalog}
@@ -316,34 +523,27 @@ function PhoneFixture({ step }: { step: 'menu' | 'cart' | 'pickup' | 'contact' |
         onEdit={() => {}}
       />
     ) : (
-      <View style={{ gap: 20 }}>
-        <ThemedText type="card">Who’s picking up?</ThemedText>
-        <CommerceField label="Pickup name" value="Layout fixture" onChangeText={() => {}} />
-        <CommerceField label="Phone number" value="(225) 555-0123" onChangeText={() => {}} />
-        <ThemedText themeColor="textSecondary">
-          Used only if the business needs to reach you about pickup.
-        </ThemedText>
-      </View>
+      <PickupContactFields
+        name="Kade Stanford"
+        phone="(225) 555-0123"
+        onName={() => {}}
+        onPhone={() => {}}
+      />
     );
+
   return (
     <PickupFlowLayout
       navigation={
-        <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-          <AppButton
-            label="‹ Back"
-            variant="tertiary"
-            onPress={() => {}}
-            style={{ paddingHorizontal: 4, minWidth: 64 }}
-          />
-          <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-            <ThemedText type="smallBold">{titles[step]}</ThemedText>
-            {step !== 'menu' && (
-              <ThemedText type="caption" themeColor="textSecondary">
-                Bayou Bites · {['menu', 'cart', 'pickup', 'contact', 'review'].indexOf(step)} of 4
-              </ThemedText>
-            )}
-          </View>
-        </View>
+        <CustomerFlowNavigation
+          title={titles[step]}
+          subtitle={step !== 'menu' ? 'Bayou Bites' : undefined}
+          step={
+            step !== 'menu'
+              ? ['menu', 'cart', 'pickup', 'contact', 'review'].indexOf(step)
+              : undefined
+          }
+          onBack={() => {}}
+        />
       }
       footer={
         <AppButton
@@ -384,7 +584,7 @@ function PhoneFixture({ step }: { step: 'menu' | 'cart' | 'pickup' | 'contact' |
       ) : (
         <ScrollView
           style={{ flex: 1, minHeight: 0 }}
-          contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
+          contentContainerStyle={{ padding: 20, paddingBottom: 24 }}
         >
           {content}
         </ScrollView>
@@ -406,6 +606,146 @@ it('renders complete viewport shells with the real four-item catalog and safe-ar
       const { element, getStyleElement } = AppRegistry.getApplication('PickupPhone', {});
       const markup = renderToStaticMarkup(element);
       expect(markup).toContain('pickup-sticky-footer');
+      if (step === 'menu' && process.env.MENU_IMAGE_RENDER_DIR) {
+        const directory = resolve(process.env.MENU_IMAGE_RENDER_DIR);
+        mkdirSync(directory, { recursive: true });
+        const imageProducts: Product[] = [
+          {
+            id: 'margherita',
+            name: 'Margherita pizza',
+            description: 'Tomato, fresh mozzarella, basil and olive oil.',
+            price: 1400,
+            image: 'https://fixture.example/pizza',
+            currency: 'USD',
+            category: 'House specialties',
+            groups: [
+              {
+                id: 'crust',
+                name: 'Crust',
+                min: 1,
+                max: 1,
+                modifiers: [
+                  { id: 'classic', name: 'Classic crust', price: 0 },
+                  { id: 'thin', name: 'Thin crust', price: 0 },
+                  { id: 'gluten-free', name: 'Gluten-free crust', price: 250 },
+                ],
+              },
+              {
+                id: 'extras',
+                name: 'Extras',
+                min: 0,
+                max: 2,
+                modifiers: [
+                  { id: 'mozzarella', name: 'Extra mozzarella', price: 200 },
+                  { id: 'basil', name: 'Fresh basil', price: 50 },
+                ],
+              },
+            ],
+            variation: 'Regular',
+          },
+          {
+            id: 'pepperoni',
+            name: 'Pepperoni pizza',
+            description: 'Classic pepperoni with house tomato sauce.',
+            price: 1650,
+            image: 'https://fixture.example/pizza',
+            currency: 'USD',
+            category: 'House specialties',
+            groups: [],
+            variation: 'Regular',
+          },
+          {
+            id: 'coffee',
+            name: 'Cold brew',
+            description: 'Slow-steeped overnight. Smooth and refreshing.',
+            price: 450,
+            image: 'https://fixture.example/coffee',
+            currency: 'USD',
+            category: 'Sides & favorites',
+            groups: [],
+            variation: 'Regular',
+          },
+          {
+            id: 'bread',
+            name: 'Garlic bread',
+            description: 'Toasted with garlic butter and herbs.',
+            price: 500,
+            image: null,
+            currency: 'USD',
+            category: 'Sides & favorites',
+            groups: [],
+            variation: 'Regular',
+          },
+        ];
+        function PhotoMenuFixture() {
+          return (
+            <View
+              style={{
+                backgroundColor: themeColors[scheme].background,
+                paddingTop: 24,
+                paddingBottom: 16,
+              }}
+            >
+              <View style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
+                <CustomerFlowNavigation title="Menu" onBack={() => {}} />
+              </View>
+              <PickupMenu
+                products={imageProducts}
+                cart={[{ variationId: 'coffee', quantity: 1, modifierIds: [] }]}
+                onChoose={() => {}}
+                onAdd={() => {}}
+                onQuantity={() => {}}
+              />
+            </View>
+          );
+        }
+        AppRegistry.registerComponent('PhotoMenu', () => PhotoMenuFixture);
+        const photoApp = AppRegistry.getApplication('PhotoMenu', {});
+        const body = renderToStaticMarkup(photoApp.element);
+        writeFileSync(
+          resolve(directory, `menu-${scheme}.html`),
+          `<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${renderToStaticMarkup(photoApp.getStyleElement())}<style>html,body{margin:0;background:${themeColors[scheme].background}}[dir=auto]{font-family:Arial,sans-serif!important}</style><body>${body}</body></html>`,
+        );
+        for (const scenario of ['options', 'selected', 'no-photo', 'unavailable'] as const) {
+          const first = imageProducts[0]!;
+          const detailProduct = {
+            ...first,
+            image: scenario === 'no-photo' ? null : first.image,
+            available: scenario !== 'unavailable',
+          };
+          AppRegistry.registerComponent(
+            'InsetItem',
+            () =>
+              function InsetItemFixture() {
+                return (
+                  <PickupItem
+                    product={detailProduct}
+                    variants={[
+                      detailProduct,
+                      { ...detailProduct, id: 'large', variation: '16 inch', price: 1900 },
+                    ]}
+                    {...(scenario === 'selected'
+                      ? {
+                          line: {
+                            variationId: first.id,
+                            quantity: 4,
+                            modifierIds: ['classic', 'mozzarella'],
+                          },
+                        }
+                      : {})}
+                    onClose={() => {}}
+                    onSave={() => {}}
+                  />
+                );
+              },
+          );
+          const itemApp = AppRegistry.getApplication('InsetItem', {});
+          writeFileSync(
+            resolve(directory, `${scenario}-${scheme}.html`),
+            `<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${renderToStaticMarkup(itemApp.getStyleElement())}<style>html,body,section,#root{height:100%;margin:0;background:${themeColors[scheme].background}}section{display:flex;flex-direction:column}[dir=auto]{font-family:Arial,sans-serif!important}</style><body>${renderToStaticMarkup(itemApp.element)}</body></html>`,
+          );
+        }
+      }
       if (step === 'menu') {
         for (const p of actualCatalog) expect(markup).toContain(p.name);
         expect(markup).toContain('Add one TEST Cold Brew');
@@ -426,7 +766,7 @@ it('renders complete viewport shells with the real four-item catalog and safe-ar
       if (process.env.PICKUP_RENDER_DIR) {
         const directory = resolve(process.env.PICKUP_RENDER_DIR);
         mkdirSync(directory, { recursive: true });
-        const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Customer pickup ${step} · ${scheme}</title>${renderToStaticMarkup(getStyleElement())}<style>html,body{margin:0;height:100%;overflow:hidden;background:${themeColors[scheme].background}}#root{height:100%;display:flex;flex-direction:column}#root>div{flex:1;min-height:0}</style></head><body><div id="root">${markup}</div></body></html>`;
+        const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Customer pickup ${step} · ${scheme}</title>${renderToStaticMarkup(getStyleElement())}<style>[dir=auto],input{font-family:Arial,sans-serif!important}html,body{margin:0;height:100%;overflow:hidden;background:${themeColors[scheme].background}}#root{height:100%;display:flex;flex-direction:column}#root>div{flex:1;min-height:0}</style></head><body><div id="root">${markup}</div></body></html>`;
         writeFileSync(resolve(directory, `${step}-${scheme}.html`), html);
         writeFileSync(
           resolve(directory, `${step}-${scheme}-large.html`),
@@ -599,23 +939,37 @@ function StatusPhoneFixture({ screen }: { screen: string }) {
       },
     ],
   };
+  if (screen === 'orders')
+    return (
+      <View style={{ flex: 1, backgroundColor: themeColors[review.scheme].background }}>
+        <CustomerOrdersHeader signedIn view="current" onView={() => {}} />
+        <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }}>
+          <CustomerOrderCard order={statusOrder} />
+          <CustomerOrderCard
+            order={{
+              ...statusOrder,
+              id: 'fixture-2',
+              businessName: 'Magnolia & Main Kitchen',
+              status: 'ready',
+              business: null,
+            }}
+          />
+        </ScrollView>
+      </View>
+    );
   return (
     <PickupFlowLayout
       navigation={
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <AppButton label="‹ Back" variant="tertiary" onPress={() => {}} />
-          <ThemedText type="smallBold" style={{ flex: 1 }}>
-            {screen === 'orders' ? 'Your orders' : 'Pickup order'}
-          </ThemedText>
-          {screen !== 'orders' && (
-            <AppButton label="Orders" variant="tertiary" onPress={() => {}} />
-          )}
-        </View>
+        <CustomerFlowNavigation
+          title={screen === 'orders' ? 'Your orders' : 'Pickup order'}
+          onBack={() => {}}
+          onOrders={screen !== 'orders' ? () => {} : undefined}
+        />
       }
     >
       <ScrollView
         style={{ flex: 1, minHeight: 0 }}
-        contentContainerStyle={{ padding: 16, paddingBottom: 34, gap: 16 }}
+        contentContainerStyle={{ padding: 20, paddingBottom: 34, gap: 16 }}
       >
         {screen === 'orders' ? (
           <>
@@ -675,7 +1029,7 @@ it('renders compact status and customer order cards as full phone screens', () =
       if (process.env.PICKUP_RENDER_DIR) {
         const directory = resolve(process.env.PICKUP_RENDER_DIR);
         mkdirSync(directory, { recursive: true });
-        const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Customer ${screen} · ${scheme}</title>${renderToStaticMarkup(getStyleElement())}<style>html,body{margin:0;height:100%;overflow:hidden;background:${themeColors[scheme].background}}#root{height:100%;display:flex;flex-direction:column}#root>div{flex:1;min-height:0}</style></head><body><div id="root">${markup}</div></body></html>`;
+        const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Customer ${screen} · ${scheme}</title>${renderToStaticMarkup(getStyleElement())}<style>[dir=auto],input{font-family:Arial,sans-serif!important}html,body{margin:0;height:100%;overflow:hidden;background:${themeColors[scheme].background}}#root{height:100%;display:flex;flex-direction:column}#root>div{flex:1;min-height:0}</style></head><body><div id="root">${markup}</div></body></html>`;
         writeFileSync(resolve(directory, `${screen}-${scheme}.html`), html);
         writeFileSync(
           resolve(directory, `${screen}-${scheme}-large.html`),
@@ -683,6 +1037,239 @@ it('renders compact status and customer order cards as full phone screens', () =
             /(font-size|line-height):([\d.]+)px/g,
             (_, prop: string, size: string) => `${prop}:${Number(size) * 1.4}px`,
           ),
+        );
+      }
+    }
+});
+
+const managed: ManagedBusiness[] = [
+  {
+    id: 'owner',
+    name: 'Bayou & Bloom Cafe',
+    slug: 'bayou',
+    business_type: 'food_drink',
+    status: 'active',
+    primary_color: null,
+    role: 'owner',
+    business_photos: null,
+  },
+  {
+    id: 'staff',
+    name: 'Smoothie Hut',
+    slug: 'smoothie',
+    business_type: 'food_drink',
+    status: 'draft',
+    primary_color: null,
+    role: 'staff',
+    business_photos: null,
+  },
+];
+it.each(['light', 'dark'] as const)(
+  'business list preserves owner/staff destinations and filters in %s',
+  (scheme) => {
+    review.scheme = scheme;
+    review.targets = [];
+    const open = vi.fn();
+    const props = {
+      businesses: managed,
+      search: '',
+      filter: 'all' as const,
+      onSearch: vi.fn(),
+      onFilter: vi.fn(),
+      onOpen: open,
+      onAdd: vi.fn(),
+      onPlan: vi.fn(),
+      onStaffScan: vi.fn(),
+      planMessage: 'No listing plan yet',
+    };
+    const html = renderToStaticMarkup(<MerchantBusinessList {...props} />);
+    for (const [name, id, section] of [
+      ['Bayou & Bloom Cafe', 'owner', null],
+      ['Smoothie Hut', 'staff', 'preview'],
+    ] as const) {
+      review.targets.find((t) => t.accessibilityLabel?.startsWith(name + ','))!.onPress!();
+      expect(open).toHaveBeenCalledWith(id, section);
+    }
+    expect(html.indexOf('Bayou &amp; Bloom Cafe')).toBeLessThan(
+      html.indexOf('Manage subscription'),
+    );
+    const filtered = renderToStaticMarkup(<MerchantBusinessList {...props} filter="published" />);
+    expect(filtered).toContain('Bayou &amp; Bloom Cafe');
+    expect(filtered).not.toContain('Smoothie Hut');
+    const searched = renderToStaticMarkup(<MerchantBusinessList {...props} search="smoothie" />);
+    expect(searched).toContain('Smoothie Hut');
+    expect(searched).not.toContain('Bayou &amp; Bloom Cafe');
+  },
+);
+
+it('opens cancellation directly at the full refund confirmation and retains owner authorization', () => {
+  review.targets = [];
+  const html = renderToStaticMarkup(
+    <OrderActionsSheet
+      visible
+      initialMode="full"
+      onClose={() => {}}
+      order={{ ...order, paidAt: order.createdAt }}
+      canRefund
+      disabled={false}
+      onRefund={async () => {}}
+      onReview={async () => {}}
+    />,
+  );
+  expect(html).toContain('Confirm refund');
+  expect(html).toContain('This cancels any remaining');
+  expect(html).not.toContain('Select items and quantities');
+  expect(review.targets.find((t) => t.accessibilityLabel === 'Confirm refund')?.disabled).toBe(
+    false,
+  );
+  review.targets = [];
+  renderToStaticMarkup(
+    <OrderActionsSheet
+      visible
+      initialMode="full"
+      onClose={() => {}}
+      order={{ ...order, paidAt: order.createdAt }}
+      canRefund={false}
+      disabled={false}
+      onRefund={async () => {}}
+      onReview={async () => {}}
+    />,
+  );
+  expect(review.targets.find((t) => t.accessibilityLabel === 'Confirm refund')?.disabled).toBe(
+    true,
+  );
+});
+it('does not offer new help requests after a full refund', () => {
+  const html = renderToStaticMarkup(
+    <PickupStatus
+      order={{ ...order, status: 'refunded' }}
+      busy={false}
+      onRefresh={() => {}}
+      onCheckout={() => {}}
+      onNew={() => {}}
+      onSupportRequest={() => {}}
+    />,
+  );
+  expect(html).not.toContain('Send another request');
+  expect(html).not.toContain('Contact the business');
+});
+
+it('shows a readable pickup code, hides expired secrets, and renders the staff fallback', async () => {
+  const qr = createRequire(require.resolve('react-native-qrcode-svg'))('qrcode');
+  const svg = await qr.toString(
+    'sds-pickup:20000000-0000-4000-8000-000000000001:' + 'a'.repeat(64),
+    { type: 'svg', width: 210, margin: 0 },
+  );
+  const now = Date.parse('2026-09-29T17:00:00Z');
+  const code = {
+    code: 'fixture-qr',
+    manualCode: 'K7MP4X9R',
+    expiresAt: new Date(now + 300000).toISOString(),
+  };
+  for (const mode of ['light', 'dark'] as const)
+    for (const screen of ['customer', 'camera', 'staff', 'expired']) {
+      review.scheme = mode;
+      const Screen = () => (
+        <View
+          style={{
+            padding: 20,
+            minHeight: 820,
+            gap: 24,
+            backgroundColor: themeColors[mode].background,
+          }}
+        >
+          {screen === 'staff' || screen === 'camera' ? (
+            <>
+              <ParishBusinessBrand />
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                }}
+              >
+                <ThemedText type="title" style={{ flex: 1 }}>
+                  Confirm pickup
+                </ThemedText>
+                <AppButton label="Close" variant="secondary" onPress={() => {}} />
+              </View>
+            </>
+          ) : (
+            <CustomerFlowNavigation title="Pickup order" onBack={() => {}} />
+          )}
+          <ThemedText type="subtitle">Bayou &amp; Bloom Cafe</ThemedText>
+          {screen === 'staff' || screen === 'camera' ? (
+            <PickupScanEntry
+              manual={screen === 'staff'}
+              code={screen === 'staff' ? 'K7MP 4X9R' : ''}
+              onChange={() => {}}
+              onCheck={() => {}}
+              onToggleMode={() => {}}
+              camera={
+                <View
+                  style={{
+                    height: 300,
+                    borderRadius: 16,
+                    backgroundColor: '#14211c',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 18,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 180,
+                      height: 180,
+                      borderWidth: 2,
+                      borderColor: '#7cd3b0',
+                      borderRadius: 16,
+                    }}
+                  />
+                  <ThemedText style={{ color: '#d7e9df' }} type="small">
+                    Live camera appears here on your phone
+                  </ThemedText>
+                </View>
+              }
+            />
+          ) : (
+            <PickupCodeContent
+              code={code}
+              now={screen === 'expired' ? now + 300001 : now}
+              busy={false}
+              error=""
+              onRefresh={() => {}}
+              qr={createElement('div', {
+                style: { width: 210, height: 210 },
+                dangerouslySetInnerHTML: { __html: svg },
+              })}
+            />
+          )}
+        </View>
+      );
+      AppRegistry.registerComponent('PickupShortCodeReview', () => Screen);
+      const { element, getStyleElement } = AppRegistry.getApplication('PickupShortCodeReview', {});
+      const html = renderToStaticMarkup(element);
+      expect(html).not.toContain('Copy pickup code');
+      if (screen === 'customer') expect(html).toContain('K7MP 4X9R');
+      if (screen === 'expired') {
+        expect(html).not.toContain('K7MP');
+        expect(html).toContain('Get a new pickup code');
+      }
+      if (screen === 'staff') {
+        expect(html).toContain('Find pickup order');
+        expect(html).toContain('Use camera');
+        expect(html).not.toContain('Live camera appears here');
+      }
+      if (screen === 'camera') {
+        expect(html).toContain('Enter short code');
+        expect(html).not.toContain('8-character pickup code');
+      }
+      if (process.env.SHORT_CODE_RENDER_DIR) {
+        mkdirSync(process.env.SHORT_CODE_RENDER_DIR, { recursive: true });
+        writeFileSync(
+          resolve(process.env.SHORT_CODE_RENDER_DIR, `${screen}-${mode}.html`),
+          `<!doctype html><meta charset="utf-8">${renderToStaticMarkup(getStyleElement())}<style>body{margin:0}*{font-family:Arial,sans-serif!important}</style>${html}`,
         );
       }
     }

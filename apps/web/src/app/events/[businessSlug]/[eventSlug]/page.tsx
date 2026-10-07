@@ -1,3 +1,4 @@
+import { OpenInApp } from '@/components/open-in-app';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -181,13 +182,14 @@ export default async function EventDetailPage({
     <main className="event-detail-page">
       <nav className="event-detail-nav">
         <Link className="brand" href="/">
-          SDS Local
+          Parish Pass
         </Link>
         <div className="nav-actions">
           <Link href="/events">All events</Link>
           <Link href={`/b/${business.slug}`}>{business.name}</Link>
         </div>
       </nav>
+      <OpenInApp path={`calendar?eventId=${encodeURIComponent(event.id)}&businessId=${encodeURIComponent(business!.id)}`} description="Open this event to RSVP, manage your group and set a reminder." />
       {!event.is_published && (!event.publish_at || new Date(event.publish_at) > new Date()) && (
         <div className="draft-banner">Private event preview</div>
       )}

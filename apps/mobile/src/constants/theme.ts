@@ -8,7 +8,8 @@ import '@/global.css';
 import { Platform } from 'react-native';
 import { color, radius, spacing, themeColors } from '@sds/design-tokens';
 
-export const Colors = themeColors;
+export type AppTheme = { readonly [K in keyof typeof themeColors.light]: string };
+export const Colors: { readonly light: AppTheme; readonly dark: AppTheme } = themeColors;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 

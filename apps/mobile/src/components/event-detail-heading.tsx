@@ -2,20 +2,19 @@ import { useState } from 'react';
 import { Image } from 'expo-image';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { IdentityPhoto } from '@/lib/business-identity';
-import { brandColor } from '@/lib/color-contrast';
 import { useTheme } from '@/hooks/use-theme';
-import { BusinessBrandHeader } from './business-brand-header';
+import { BusinessIdentityRow } from './business-identity-row';
 import { ThemedText } from './themed-text';
 
 export function EventDetailHeading({
   title,
   businessName,
-  color,
   photos,
   image,
   when,
   where,
   onOpenPhoto,
+  onDirections,
 }: {
   readonly title: string;
   readonly businessName: string;
@@ -24,30 +23,32 @@ export function EventDetailHeading({
   readonly image?: string | undefined;
   readonly when: string;
   readonly where: string;
-  readonly onOpenPhoto: () => void;
+  readonly onOpenPhoto?: () => void;
+  readonly onDirections?: (() => void) | undefined;
 }) {
   const colors = useTheme();
   const [failedImage, setFailedImage] = useState<string | null>(null);
   return (
     <View style={styles.stack}>
-      <View style={styles.hero}>
-        {image && image !== failedImage && (
+      {image && image !== failedImage && (
+        <View style={styles.hero}>
           <Pressable
-            accessibilityRole="button"
+            accessibilityRole={onOpenPhoto ? 'button' : 'image'}
+            disabled={!onOpenPhoto}
             accessibilityLabel={`View event photo for ${title}`}
             onPress={onOpenPhoto}
-            style={{ backgroundColor: brandColor(color) }}
+            style={{ backgroundColor: colors.backgroundElement }}
           >
             <Image
               source={{ uri: image }}
-              contentFit="contain"
+              contentFit="cover"
               onError={() => setFailedImage(image)}
               style={styles.image}
             />
           </Pressable>
-        )}
-        <BusinessBrandHeader name={businessName} color={color} photos={photos} />
-      </View>
+        </View>
+      )}
+      <BusinessIdentityRow name={businessName} photos={photos} size={36} />
       <ThemedText type="title">{title}</ThemedText>
       <View style={[styles.facts, { backgroundColor: colors.backgroundElement }]}>
         <View style={styles.fact}>
@@ -57,9 +58,30 @@ export function EventDetailHeading({
           <ThemedText type="card">{when}</ThemedText>
         </View>
         <View style={[styles.fact, styles.location, { borderColor: colors.divider }]}>
-          <ThemedText themeColor="textSecondary" type="small">
-            Where
-          </ThemedText>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+            }}
+          >
+            <ThemedText themeColor="textSecondary" type="small">
+              Where
+            </ThemedText>
+            {onDirections && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Directions to ${where}`}
+                onPress={onDirections}
+                style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 }}
+              >
+                <ThemedText type="smallBold" style={{ color: colors.accent }}>
+                  Directions ↗
+                </ThemedText>
+              </Pressable>
+            )}
+          </View>
           <ThemedText>{where}</ThemedText>
         </View>
       </View>

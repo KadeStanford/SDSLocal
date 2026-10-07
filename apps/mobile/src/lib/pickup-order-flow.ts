@@ -50,6 +50,9 @@ export function setCartLine(
   if (index === null && cart.length >= 30) throw new Error('Your cart can hold up to 30 items.');
   const line = {
     variationId: product.id,
+    ...(index !== null && cart[index]?.rewardClaim
+      ? { rewardClaim: cart[index]!.rewardClaim }
+      : {}),
     quantity,
     modifierIds: [...modifierIds].sort(),
     lastKnownUnitPrice: unitEstimate(product, modifierIds),
@@ -163,6 +166,7 @@ export function quoteUsable(quote: Quote | null, now = Date.now()) {
   return Boolean(quote && Date.parse(quote.expiresAt) > now);
 }
 export const terminalPickupStates = [
+  'dispute_lost',
   'completed',
   'refunded',
   'checkout_expired',
@@ -179,13 +183,15 @@ export function orderTracking(status: string) {
   const index = fulfillmentSteps.findIndex(([key]) => key === status);
   const notes: Record<string, string> = {
     checkout_pending:
-      'Confirming payment with Square. Returning to this app does not confirm a payment.',
+      'Checking your payment with the payment provider. Your order will update automatically once confirmed.',
     checkout_expired: 'This unpaid checkout expired. You can start a new order.',
     checkout_failed: 'Checkout did not complete. Check the latest status before trying again.',
     payment_review: 'Your payment needs review by the business. Do not pay again.',
-    refund_pending: 'The business requested a refund. Waiting for Square to confirm it.',
+    refund_pending:
+      'The business requested a refund. Waiting for the payment provider to confirm it.',
     refund_failed: 'The refund needs attention from the business. It is not confirmed.',
-    refunded: 'Square confirmed the refund.',
+    refunded: 'The payment provider confirmed the refund.',
+    dispute_lost: 'The payment provider resolved the dispute in the customer’s favor.',
     ready: 'Your order is ready for pickup.',
     completed: 'Your pickup is complete.',
   };
@@ -197,6 +203,15 @@ export function orderTracking(status: string) {
 }
 export function orderingRecovery(code: string | undefined) {
   switch (code) {
+    case 'REWARD_CHANGED':
+    case 'REWARD_ITEM_UNAVAILABLE':
+    case 'REWARD_NOT_READY':
+    case 'REWARD_UNAVAILABLE':
+      return 'Your reward changed or is no longer available. Review it in your cart, or save it for later to order without it.';
+    case 'REWARD_SIGN_IN':
+      return 'Sign in to the account that earned this reward, or save it for later.';
+    case 'MINIMUM_PAYMENT':
+      return 'The remaining payment is below the provider minimum. Add another item or save your reward for later.';
     case 'PRICE_CHANGED':
       return 'Prices changed. Refresh your menu and review a new total before paying.';
     case 'SLOT_FULL':
@@ -211,6 +226,8 @@ export function orderingRecovery(code: string | undefined) {
     case 'CATALOG_CHANGED':
     case 'INVALID_CART':
       return 'The menu changed. Refresh it and review your cart.';
+    case 'ORDER_REORDER_UNAVAILABLE':
+      return 'These past items cannot be matched to the current menu. Open the business page to build a fresh cart.';
     default:
       return 'We couldn’t complete that step. Your cart is saved; check your connection and retry.';
   }

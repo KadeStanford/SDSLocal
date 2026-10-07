@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { SquareService } from './square-service';
 import { hash } from './square-security';
+import { pickupShortCodeHash } from './pickup-short-code';
 
 const orderId = '20000000-0000-4000-8000-000000000001';
 const businessId = '30000000-0000-4000-8000-000000000001';
@@ -34,6 +35,7 @@ describe('pickup QR boundary', () => {
     expect(writes).toHaveBeenCalledWith({
       order_id: orderId,
       token_hash: await hash(parts[2]!),
+      manual_hash: await pickupShortCodeHash(businessId, result.manualCode),
       expires_at: result.expiresAt,
     });
     expect(Date.parse(result.expiresAt) - Date.now()).toBeLessThanOrEqual(300000);

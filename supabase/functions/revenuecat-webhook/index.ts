@@ -31,6 +31,20 @@ Deno.serve(async (request) => {
     return json(400, { error: 'Invalid JSON.' });
   }
 
+  // Dashboard connection tests authenticate normally but never grant account access.
+  if (payload && typeof payload === 'object' && 'event' in payload) {
+    const testEvent = (payload as { event?: { type?: unknown; environment?: unknown } }).event;
+    if (testEvent?.type === 'TEST') {
+      if (
+        testEvent.environment !== 'SANDBOX' ||
+        (Deno.env.get('BILLING_ENVIRONMENT') ?? 'sandbox') !== 'sandbox'
+      ) {
+        return json(202, { accepted: false, reason: 'environment_mismatch' });
+      }
+      return json(200, { processed: true, test: true });
+    }
+  }
+
   let event;
   try {
     event = parseRevenueCatWebhook(payload);

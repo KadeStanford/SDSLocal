@@ -30,8 +30,8 @@ export function InviteLinkActions({ url }: { readonly url: string }) {
     try {
       if (navigator.share) {
         await navigator.share({
-          title: 'SDS Local staff invite',
-          text: 'Join this business on SDS Local as a staff member:',
+          title: 'Parish Pass staff invite',
+          text: 'Join this business on Parish Pass as a staff member:',
           url,
         });
         setStatus('Share menu opened');

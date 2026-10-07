@@ -1,0 +1,134 @@
+[
+  {
+    "id": "98000000-0000-4000-8000-000000000001",
+    "slug": "demo-discovery-boutiques-1",
+    "name": "Willow & Thread Boutique",
+    "category": "Boutiques",
+    "description": "Curated accessories and seasonal boutique collections.",
+    "photo": "photo-1441986300917-64674bd600d8",
+    "color": "#543E43",
+    "latitude": 30.5004,
+    "longitude": -90.4605
+  },
+  {
+    "id": "98000000-0000-4000-8000-000000000002",
+    "slug": "demo-discovery-boutiques-2",
+    "name": "Rue Magnolia Boutique",
+    "category": "Boutiques",
+    "description": "Curated accessories and seasonal boutique collections.",
+    "photo": "photo-1483985988355-763728e1935b",
+    "color": "#436653",
+    "latitude": 30.5008,
+    "longitude": -90.461
+  },
+  {
+    "id": "98000000-0000-4000-8000-000000000003",
+    "slug": "demo-discovery-boutiques-3",
+    "name": "The Sunday Edit",
+    "category": "Boutiques",
+    "description": "Curated accessories and seasonal boutique collections.",
+    "photo": "photo-1445205170230-053b83016050",
+    "color": "#785844",
+    "latitude": 30.5012,
+    "longitude": -90.46149999999999
+  },
+  {
+    "id": "98000000-0000-4000-8000-000000000004",
+    "slug": "demo-discovery-clothing-1",
+    "name": "Oak & Hem Clothing",
+    "category": "Clothing shops",
+    "description": "Everyday clothing, apparel, and wardrobe essentials.",
+    "photo": "photo-1489987707025-afc232f7ea0f",
+    "color": "#543E43",
+    "latitude": 30.5016,
+    "longitude": -90.46199999999999
+  },
+  {
+    "id": "98000000-0000-4000-8000-000000000005",
+    "slug": "demo-discovery-clothing-2",
+    "name": "Parish Outfitters",
+    "category": "Clothing shops",
+    "description": "Everyday clothing, apparel, and wardrobe essentials.",
+    "photo": "photo-1445205170230-053b83016050",
+    "color": "#436653",
+    "latitude": 30.502,
+    "longitude": -90.46249999999999
+  },
+  {
+    "id": "98000000-0000-4000-8000-000000000006",
+    "slug": "demo-discovery-clothing-3",
+    "name": "Cotton Row Apparel",
+    "category": "Clothing shops",
+    "description": "Everyday clothing, apparel, and wardrobe essentials.",
+    "photo": "photo-1441986300917-64674bd600d8",
+    "color": "#785844",
+    "latitude": 30.5024,
+    "longitude": -90.463
+  },
+  {
+    "id": "98000000-0000-4000-8000-000000000007",
+    "slug": "demo-discovery-gifts-1",
+    "name": "Little Parish Gifts",
+    "category": "Gift shops",
+    "description": "Thoughtful gifts, greeting cards, and gift wrapping.",
+    "photo": "photo-1549465220-1a8b9238cd48",
+    "color": "#543E43",
+    "latitude": 30.5028,
+    "longitude": -90.4635
+  },
+  {
+    "id": "98000000-0000-4000-8000-000000000008",
+    "slug": "demo-discovery-gifts-2",
+    "name": "The Giving Room",
+    "category": "Gift shops",
+    "description": "Thoughtful gifts, greeting cards, and gift wrapping.",
+    "photo": "photo-1473181488821-2d23949a045a",
+    "color": "#436653",
+    "latitude": 30.5032,
+    "longitude": -90.464
+  },
+  {
+    "id": "98000000-0000-4000-8000-000000000009",
+    "slug": "demo-discovery-gifts-3",
+    "name": "Paper & Pine Gifts",
+    "category": "Gift shops",
+    "description": "Thoughtful gifts, greeting cards, and gift wrapping.",
+    "photo": "photo-1513201099705-a9746e1e201f",
+    "color": "#785844",
+    "latitude": 30.5036,
+    "longitude": -90.46449999999999
+  },
+  {
+    "id": "98000000-0000-4000-8000-000000000010",
+    "slug": "demo-discovery-florists-1",
+    "name": "Petal & Stem Florist",
+    "category": "Florists",
+    "description": "Fresh flowers, bouquets, and floral arrangements for every occasion.",
+    "photo": "photo-1490750967868-88aa4486c946",
+    "color": "#543E43",
+    "latitude": 30.504,
+    "longitude": -90.46499999999999
+  },
+  {
+    "id": "98000000-0000-4000-8000-000000000011",
+    "slug": "demo-discovery-florists-2",
+    "name": "Hammond Flower House",
+    "category": "Florists",
+    "description": "Fresh flowers, bouquets, and floral arrangements for every occasion.",
+    "photo": "photo-1561181286-d3fee7d55364",
+    "color": "#436653",
+    "latitude": 30.5044,
+    "longitude": -90.46549999999999
+  },
+  {
+    "id": "98000000-0000-4000-8000-000000000012",
+    "slug": "demo-discovery-florists-3",
+    "name": "Bloom on Cate",
+    "category": "Florists",
+    "description": "Fresh flowers, bouquets, and floral arrangements for every occasion.",
+    "photo": "photo-1457089328109-e5d9bd499191",
+    "color": "#785844",
+    "latitude": 30.5048,
+    "longitude": -90.466
+  }
+]

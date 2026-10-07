@@ -1,0 +1,153 @@
+{
+  "status": "Published and verified on preview OTA",
+  "summary": [
+    {
+      "id": "I01",
+      "area": "Business → Contact → Website",
+      "result": "URL keyboard, URL autofill and no autocorrection."
+    },
+    {
+      "id": "I02",
+      "area": "Account → Profile → State / region",
+      "result": "Searchable chooser for supported US states, DC and Puerto Rico; optional clearing. Stores validated abbreviations."
+    },
+    {
+      "id": "I03",
+      "area": "Account profile and business contact/location",
+      "result": "Name, email, phone, street, city and postal autofill added. Postal codes remain strings; existing US ZIP validation is preserved."
+    },
+    {
+      "id": "I04",
+      "area": "Business-authored request questions",
+      "result": "Explicit Email address, Phone number and Website link question types with client and server validation. Database migration is ready for release."
+    },
+    {
+      "id": "I05",
+      "area": "Request form → Gate and yard access instructions",
+      "result": "Known landscape demo access question changed to Long answer in seed; scoped existing-data correction is prepared for release."
+    },
+    {
+      "id": "I06",
+      "area": "Events search, public menu search and pickup-menu search",
+      "result": "Search return keys and capitalization/correction settings aligned across Events, public menus, pickup menus and shared search controls."
+    }
+  ],
+  "mobileFiles": [
+    "apps/mobile/src/app/(tabs)/account.tsx",
+    "apps/mobile/src/components/account-brand-header.tsx",
+    "apps/mobile/src/components/booking-time-field.tsx",
+    "apps/mobile/src/components/date-field.tsx",
+    "apps/mobile/src/components/date-picker-control.tsx",
+    "apps/mobile/src/components/date-picker-control.web.tsx",
+    "apps/mobile/src/components/event-directory.tsx",
+    "apps/mobile/src/components/event-filter-sheet.tsx",
+    "apps/mobile/src/components/input-controls.test.tsx",
+    "apps/mobile/src/components/request-question-fields.tsx",
+    "apps/mobile/src/lib/date-input.test.ts",
+    "apps/mobile/src/lib/date-input.ts",
+    "apps/mobile/src/components/merchant-ui.test.tsx",
+    "apps/mobile/src/components/app-chrome.tsx",
+    "apps/mobile/src/app/business-new.tsx",
+    "apps/mobile/src/components/business-workspace.tsx",
+    "apps/mobile/src/components/choice-picker.tsx",
+    "apps/mobile/src/components/public-business-page.tsx",
+    "apps/mobile/src/components/pickup/pickup-menu.tsx",
+    "apps/mobile/src/components/discovery-search-bar.tsx",
+    "apps/mobile/src/components/merchant-ui.tsx",
+    "apps/mobile/src/components/business-screen-header.tsx",
+    "apps/mobile/src/lib/input-presets.ts",
+    "apps/mobile/src/lib/service-request-schema.ts",
+    "apps/mobile/src/lib/service-request-schema.test.ts",
+    "apps/mobile/src/components/account-data-panel.tsx"
+  ],
+  "backendFiles": [
+    "supabase/migrations/20260930000100_request_contact_input_types.sql",
+    "supabase/tests/request_contact_input_types.sql",
+    "scripts/staging-playground/build.cjs"
+  ],
+  "releaseOrder": [
+    "Apply 20260930000100_request_contact_input_types.sql before publishing the mobile bundle. This adds the three question types and corrects only matching landscape demo access questions.",
+    "Include all existing unpublished input controls, event filter, account header, date picker and autofill changes in the approved OTA.",
+    "Smoke test native autofill suggestions, keyboards and date picker on iOS and Android."
+  ],
+  "validation": {
+    "mobileTests": 1052,
+    "testFiles": 82,
+    "typecheck": "passed",
+    "newLintFindings": 0,
+    "sql": "Existing service request regression and new contact tests passed in staging; entire transaction rolled back",
+    "visualStates": 19,
+    "themes": [
+      "dark",
+      "light"
+    ],
+    "viewportChecks": 76
+  },
+  "review": "F:/BusinessApp/.codex-tmp/input-controls-review/index.html",
+  "published": true,
+  "accountDataRefinement": {
+    "summary": "Action-first account data page, optional deletion details, review/confirmation preserved",
+    "review": "F:/BusinessApp/.codex-tmp/account-data-review/index.html",
+    "focusedTests": 10,
+    "viewportChecks": 16
+  },
+  "release": {
+    "verifiedAt": "2026-09-30T21:15:44.842Z",
+    "channel": "preview",
+    "environment": "staging",
+    "runtime": "0.1.0",
+    "group": "4cd157f2-0c17-42c4-8b95-0d56bf2bef10",
+    "updates": [
+      {
+        "platform": "android",
+        "id": "01a0f42c-2fc7-7473-88de-00da2f0b9fea"
+      },
+      {
+        "platform": "ios",
+        "id": "01a0f42c-2fc7-7f8c-a86e-eeaab5533974"
+      }
+    ]
+  },
+  "backend": {
+    "project": "lgddhdexvwclfrnzjtly",
+    "migration": "20260930000100",
+    "sha256": "cc2c79229897e7b49eb62df6977af02e9081d905b8f34ac635f17c99400be415",
+    "verifiedAt": "2026-09-30T21:14:22.683Z",
+    "tests": "Existing and new request form regression suites passed with fixtures rolled back",
+    "checks": [
+      {
+        "migration_rows": 1,
+        "remaining_short_demo_instructions": 0
+      }
+    ]
+  },
+  "changedSincePreviousOTA": [
+    "apps/mobile/src/app/(tabs)/account.tsx",
+    "apps/mobile/src/app/business-new.tsx",
+    "apps/mobile/src/components/account-data-panel.tsx",
+    "apps/mobile/src/components/app-chrome.tsx",
+    "apps/mobile/src/components/booking-time-field.tsx",
+    "apps/mobile/src/components/business-workspace.tsx",
+    "apps/mobile/src/components/choice-picker.tsx",
+    "apps/mobile/src/components/discovery-search-bar.tsx",
+    "apps/mobile/src/components/event-directory.tsx",
+    "apps/mobile/src/components/merchant-ui.test.tsx",
+    "apps/mobile/src/components/merchant-ui.tsx",
+    "apps/mobile/src/components/pickup/pickup-menu.tsx",
+    "apps/mobile/src/components/public-business-page.tsx",
+    "apps/mobile/src/components/request-question-fields.tsx",
+    "apps/mobile/src/lib/service-request-schema.ts",
+    "apps/mobile/src/components/account-brand-header.tsx",
+    "apps/mobile/src/components/date-field.tsx",
+    "apps/mobile/src/components/date-picker-control.tsx",
+    "apps/mobile/src/components/date-picker-control.web.tsx",
+    "apps/mobile/src/components/event-filter-sheet.tsx",
+    "apps/mobile/src/components/input-controls.test.tsx",
+    "apps/mobile/src/lib/date-input.test.ts",
+    "apps/mobile/src/lib/date-input.ts",
+    "apps/mobile/src/lib/input-presets.ts",
+    "apps/mobile/src/lib/service-request-schema.test.ts"
+  ],
+  "sourceManifest": ".codex-tmp/input-complete-source.json",
+  "reviewNotes": "Browser previews use fixture data. Native autofill suggestions and keyboard behavior remain for phone acceptance testing."
+}

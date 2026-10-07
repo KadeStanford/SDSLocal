@@ -45,7 +45,8 @@ export function pickupReadiness(
   owner: OwnerConnection | null,
   provider: 'square' | 'stripe' = 'square',
 ) {
-  const connected = owner?.connection?.state === 'connected';
+  const payoutsReady = provider !== 'stripe' || owner?.account?.payoutsEnabled === true;
+  const connected = owner?.connection?.state === 'connected' && payoutsReady;
   // owner_status returns only currently active Square locations.
   const locationSelected =
     provider === 'stripe' ? connected : Boolean(owner?.connection?.locationId);
@@ -59,7 +60,9 @@ export function pickupReadiness(
   const hasItems = Number.isFinite(variations) && variations > 0;
   const providerName = provider === 'stripe' ? 'Stripe' : 'Square';
   const reason = !connected
-    ? `Connect ${providerName} before enabling pickup ordering.`
+    ? provider === 'stripe' && owner?.connection?.state === 'connected' && !payoutsReady
+      ? 'Finish Stripe payout verification before enabling pickup ordering.'
+      : `Connect ${providerName} before enabling pickup ordering.`
     : !activeLocation
       ? provider === 'stripe'
         ? 'Finish Stripe account verification before enabling pickup ordering.'

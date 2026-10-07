@@ -6,11 +6,15 @@ declare
   first_business uuid;
   second_business uuid;
   billing_state jsonb;
+  event_time_ms bigint := floor(extract(epoch from now()) * 1000)::bigint;
 begin
-  select id into owner_id from public.profiles order by created_at limit 1;
-  if owner_id is null then
-    raise exception 'Listing billing test requires a seeded profile';
-  end if;
+  owner_id := gen_random_uuid();
+  insert into auth.users(id,raw_user_meta_data)
+  values(owner_id,'{"display_name":"Legacy billing fixture"}');
+  -- Exercise grandfathered capacity independently of the current store rollout.
+  update public.billing_plans set is_active=true where code in ('single','multi');
+  update public.billing_products set is_active=true
+  where provider='test_store' and plan_code in ('single','multi');
 
   insert into public.businesses (created_by, slug, name, business_type)
   values (
@@ -52,18 +56,18 @@ begin
   end;
 
   perform public.apply_listing_subscription_event(
-    'billing-event-initial',
+    'billing-event-initial' || owner_id,
     'INITIAL_PURCHASE',
     owner_id,
     'test_store',
     'listing_single_monthly_v1',
     'active',
     'sandbox',
-    'billing-test-transaction',
+    'billing-test-transaction' || owner_id,
     now(),
     now() + interval '1 month',
     true,
-    '{"fixture":true}'::jsonb
+    jsonb_build_object('fixture', true, 'event', jsonb_build_object('event_timestamp_ms', event_time_ms))
   );
 
   billing_state := public.assign_my_business_listing(first_business);
@@ -84,18 +88,18 @@ begin
   set status = 'active', approved_at = now()
   where id = first_business;
   perform public.apply_listing_subscription_event(
-    'billing-event-expired',
+    'billing-event-expired' || owner_id,
     'EXPIRATION',
     owner_id,
     'test_store',
     'listing_single_monthly_v1',
     'expired',
     'sandbox',
-    'billing-test-transaction',
+    'billing-test-transaction' || owner_id,
     now() - interval '1 month',
     now() - interval '1 second',
     false,
-    '{"fixture":true}'::jsonb
+    jsonb_build_object('fixture', true, 'event', jsonb_build_object('event_timestamp_ms', event_time_ms + 1000))
   );
   perform set_config('request.jwt.claim.role', 'authenticated', true);
   if not exists (
@@ -106,18 +110,18 @@ begin
   end if;
 
   perform public.apply_listing_subscription_event(
-    'billing-event-renewed',
+    'billing-event-renewed' || owner_id,
     'RENEWAL',
     owner_id,
     'test_store',
     'listing_single_monthly_v1',
     'active',
     'sandbox',
-    'billing-test-transaction',
+    'billing-test-transaction' || owner_id,
     now(),
     now() + interval '1 month',
     true,
-    '{"fixture":true}'::jsonb
+    jsonb_build_object('fixture', true, 'event', jsonb_build_object('event_timestamp_ms', event_time_ms + 2000))
   );
   if not exists (
     select 1 from public.businesses

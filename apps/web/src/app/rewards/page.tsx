@@ -13,6 +13,10 @@ interface WalletCard {
   rewards_ready: number;
   progress_stamps: number;
   stamps_required: number;
+  program_type: string;
+  progress_points: number;
+  points_required: number;
+  available_points: number;
 }
 
 export const metadata = { title: 'Your rewards' };
@@ -22,14 +26,14 @@ export default async function RewardsPage({ searchParams }: PageProps<'/rewards'
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getUser();
   if (!authData.user) redirect('/auth?next=/rewards');
-  const { data, error } = await supabase.rpc('get_loyalty_wallet');
+  const { data, error } = await supabase.rpc('get_loyalty_wallet_v2');
   const cards = (data ?? []) as WalletCard[];
 
   return (
     <main className="page-shell">
       <nav className="topbar">
         <Link className="brand" href="/">
-          SDS Local
+          Parish Pass
         </Link>
         <div className="nav-actions">
           <Link href="/explore">Explore</Link>
@@ -55,15 +59,15 @@ export default async function RewardsPage({ searchParams }: PageProps<'/rewards'
             <p>{card.business_name}</p>
             <h2>{card.program_name}</h2>
             <span>{card.reward_description}</span>
-            <div className="stamp-progress" aria-hidden="true">
+            {card.program_type === 'points' ? <p>{card.available_points} points available · {card.points_required} points per reward</p> : <div className="stamp-progress" aria-hidden="true">
               {Array.from({ length: card.stamps_required }, (_, index) => (
                 <i className={index < card.progress_stamps ? 'stamp-earned' : ''} key={index} />
               ))}
-            </div>
+            </div>}
             <strong>
               {card.rewards_ready
                 ? `${card.rewards_ready} reward ready`
-                : `${card.progress_stamps} / ${card.stamps_required} visits`}
+                : card.program_type === 'points' ? `${card.progress_points} / ${card.points_required} points toward your next reward` : `${card.progress_stamps} / ${card.stamps_required} visits`}
             </strong>
           </Link>
         ))}

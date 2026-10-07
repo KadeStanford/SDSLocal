@@ -6,7 +6,7 @@ export function hasCustomization(product: Product) {
 }
 export function simpleQuantity(cart: readonly CartLine[], product: Product) {
   return cart
-    .filter((l) => l.variationId === product.id && !l.modifierIds.length)
+    .filter((l) => l.variationId === product.id && !l.modifierIds.length && !l.rewardClaim)
     .reduce((sum, l) => sum + l.quantity, 0);
 }
 /** Local cart only: no quote, checkout, payment or order side effects. */
@@ -15,7 +15,9 @@ export function changeSimpleQuantity(cart: CartLine[], product: Product, delta: 
   const quantity = simpleQuantity(cart, product);
   const next = quantity + delta;
   if (next < 0 || (delta > 0 && next > 20)) throw new Error('You can add up to 20 of this item.');
-  const remaining = cart.filter((l) => l.variationId !== product.id || l.modifierIds.length > 0);
+  const remaining = cart.filter(
+    (l) => l.variationId !== product.id || l.modifierIds.length > 0 || !!l.rewardClaim,
+  );
   if (!next) return remaining;
   const issue = itemIssue(product, [], Math.min(next, 20));
   if (issue && delta > 0) throw new Error(issue);

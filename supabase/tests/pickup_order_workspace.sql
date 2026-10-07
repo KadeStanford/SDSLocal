@@ -21,14 +21,16 @@ do $$ declare f workspace_fixtures; u uuid; b uuid; begin
  insert into public.square_orders(id,business_id,business_name,merchant_id,location_id,pickup_at,pickup_timezone,pickup_address,recipient,subtotal_minor,tax_minor,total_minor,currency,status,idempotency_key,request_hash,provider_request)
  select gen_random_uuid(),f.business_id,'Workspace fixture','fixture-merchant','fixture-location',now()+interval '1 hour','America/Chicago','Fixture address','{}',100,0,100,'USD',state,gen_random_uuid(),'fixture','{}'
  from unnest(array['placed','preparing','ready','completed','refund_pending']) state;
- if public.square_queue_counts(f.business_id) <> '{"active":3,"placed":1,"preparing":1,"ready":1,"attention":1}'::jsonb then raise exception 'Incorrect operational counts'; end if;
+ if not (public.square_queue_counts(f.business_id) @> '{"active":3,"placed":1,"preparing":1,"ready":1,"attention":1}'::jsonb) then raise exception 'Incorrect operational counts'; end if;
  if (public.square_queue_counts(f.other_id)->>'active')::integer<>0 then raise exception 'Cross-business counts leaked'; end if;
  if jsonb_array_length(public.square_operator_businesses(f.staff_id))<>1 then raise exception 'Active staff should see its eligible business only'; end if;
  if public.square_operator_businesses(f.inactive_id)<>'[]' or public.square_operator_businesses(f.customer_id)<>'[]' then raise exception 'Unauthorized membership exposed'; end if;
  if public.square_operator_businesses(f.staff_id)->0->>'canRefund'<>'false' then raise exception 'Staff financial permission'; end if;
  if public.square_operator_businesses(f.owner_id)->0->>'canRefund'<>'true' then raise exception 'Owner permission missing'; end if;
  update public.square_ordering_settings set enabled=false where business_id=f.business_id;
- if public.square_operator_businesses(f.staff_id)<>'[]' then raise exception 'Disabled tab eligible'; end if;
+ if jsonb_array_length(public.square_operator_businesses(f.staff_id))<>1
+   or public.square_operator_businesses(f.staff_id)->0->>'orderingReady'<>'false'
+ then raise exception 'Disabled ordering must retain authorized order history without being ready'; end if;
  update public.square_ordering_settings set enabled=true,is_open=false where business_id=f.business_id;
  update public.platform_settings set value=jsonb_build_object('enabled',true,'public_environment','staging','business_ids',jsonb_build_array(f.business_id)) where key='square_commerce';
  if (select pickup_status from public.get_pickup_status(array[f.business_id])) is distinct from 'paused' then raise exception 'Paused state missing'; end if;

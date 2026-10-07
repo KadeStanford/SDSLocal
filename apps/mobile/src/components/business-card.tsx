@@ -3,13 +3,14 @@ import { Image } from 'expo-image';
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Colors, Spacing } from '@/constants/theme';
 import { businessAssetPath } from '@/lib/business-identity';
 import {
   businessCardAccessibilityLabel,
   businessStatusIndicators,
   canonicalCategoryLabel,
   type BusinessStatusIndicator,
+  type BusinessHour,
 } from '@/lib/discovery-core';
 import {
   initialPickupModule,
@@ -20,6 +21,12 @@ import { storagePublicUrl } from '@/lib/storage-url';
 import { BusinessLogo } from './business-logo';
 import { ThemedText } from './themed-text';
 import { PickupNavigationButton } from './pickup-navigation-button';
+import { BusinessRating } from './business-rating';
+import { AppButton } from './app-button';
+import {
+  businessRatingAccessibilityLabel,
+  type BusinessReviewSummary,
+} from '@/lib/business-review-summary';
 export interface BusinessCardData {
   readonly id: string;
   readonly name: string;
@@ -28,17 +35,26 @@ export interface BusinessCardData {
   readonly offering_search_text: string;
   readonly city: string | null;
   readonly region_code: string | null;
+  readonly timezone?: string;
+  readonly hours?: readonly BusinessHour[];
+  readonly latitude?: number | null;
+  readonly longitude?: number | null;
+  readonly distanceMiles?: number | null;
+  readonly isOpenNow?: boolean;
   readonly created_at: string;
   readonly primary_color: string;
   readonly status: string;
   readonly business_type: string;
   readonly has_active_rewards?: boolean;
+  readonly reviewSummary?: BusinessReviewSummary;
   readonly supportsPickupOrdering?: boolean;
   readonly pickupStatus?: 'accepting' | 'paused' | undefined;
   readonly stops?: readonly {
     readonly starts_at: string;
     readonly ends_at: string;
     readonly is_published: boolean;
+    readonly latitude?: number | null;
+    readonly longitude?: number | null;
   }[];
   readonly loyalty_programs:
     | readonly { readonly id: string; readonly is_active: boolean }[]
@@ -71,10 +87,14 @@ export function BusinessCard({
   business,
   isFollowing,
   onPress,
+  presentation = 'featured',
+  stretch = false,
 }: {
   readonly business: BusinessCardData;
   readonly isFollowing: boolean;
   readonly onPress: () => void;
+  readonly presentation?: 'featured' | 'compact';
+  readonly stretch?: boolean;
 }) {
   const [failedCover, setFailedCover] = useState<string | null>(null);
   const colors = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
@@ -105,85 +125,117 @@ export function BusinessCard({
     <View
       style={[
         styles.businessCard,
+        stretch && { flex: 1 },
         {
           backgroundColor: colors.backgroundElement,
           borderColor: colors.divider,
-          borderLeftColor: business.primary_color,
         },
       ]}
     >
       <Pressable
-        accessibilityLabel={businessCardAccessibilityLabel({
-          name: business.name,
-          supportsPickupOrdering: pickup.kind === 'open',
-        })}
+        accessibilityLabel={
+          businessCardAccessibilityLabel({
+            name: business.name,
+            supportsPickupOrdering: pickup.kind === 'open',
+          }) +
+          (business.reviewSummary
+            ? `. ${businessRatingAccessibilityLabel(business.reviewSummary)}`
+            : '')
+        }
         accessibilityRole="button"
         onPress={onPress}
         style={({ pressed }) => [
           styles.compactCard,
+          stretch && { flex: 1 },
           {
             backgroundColor: colors.backgroundElement,
             borderColor: colors.divider,
-            borderLeftColor: business.primary_color,
           },
           pressed && styles.pressed,
         ]}
       >
-        <View style={[styles.cardImageWrap, styles.compactImageWrap]}>
-          {coverUrl && coverUrl !== failedCover ? (
+        {coverUrl && coverUrl !== failedCover && (
+          <View style={styles.cardImageWrap}>
             <Image
               accessibilityLabel=""
               cachePolicy="memory-disk"
               contentFit="cover"
               onError={() => setFailedCover(coverUrl)}
               source={{ uri: coverUrl }}
-              style={[styles.cardImage, styles.compactImage]}
+              style={[styles.cardImage, presentation === 'compact' && { aspectRatio: 3.1 }]}
               transition={180}
             />
-          ) : (
-            <View
-              style={[
-                styles.cardImage,
-                styles.compactImage,
-                styles.cardFallback,
-                { backgroundColor: colors.backgroundSelected },
-              ]}
-            >
-              <ThemedText style={[styles.fallbackLetter, { color: colors.textSecondary }]}>
+          </View>
+        )}
+        <View style={styles.cardCopy}>
+          <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+            <BusinessLogo
+              name={business.name}
+              photos={business.business_photos}
+              size={presentation === 'featured' ? 58 : 52}
+              decorative
+            />
+            <View style={{ flex: 1, minWidth: 0, gap: 5 }}>
+              <ThemedText style={styles.businessName}>{business.name}</ThemedText>
+              <ThemedText themeColor="textSecondary" type="small">
                 {canonicalCategoryLabel(business.category_summary)}
               </ThemedText>
+              <LocationChip business={business} />
             </View>
-          )}
-          <View style={styles.cardLogo}>
-            <BusinessLogo name={business.name} photos={business.business_photos} decorative />
           </View>
-        </View>
-        <View style={styles.cardCopy}>
-          <ThemedText numberOfLines={2} style={styles.businessName}>
-            {business.name}
-          </ThemedText>
-          <View style={styles.categoryRow}>
-            <ThemedText themeColor="textSecondary" type="smallBold" numberOfLines={1}>
-              {canonicalCategoryLabel(business.category_summary)}
-            </ThemedText>
+          <View style={styles.cardMeta}>
+            {business.reviewSummary && (
+              <View
+                style={{
+                  backgroundColor: colors.backgroundSelected,
+                  borderRadius: 20,
+                  paddingHorizontal: 9,
+                  paddingVertical: 5,
+                }}
+              >
+                <BusinessRating summary={business.reviewSummary} compact />
+              </View>
+            )}
+            {business.isOpenNow && (
+              <View
+                style={{
+                  backgroundColor: colors.backgroundSelected,
+                  borderRadius: 20,
+                  paddingHorizontal: 9,
+                  paddingVertical: 5,
+                }}
+              >
+                <ThemedText
+                  type="small"
+                  style={{ color: colors.accent, fontSize: 12, lineHeight: 16 }}
+                >
+                  ● Open now
+                </ThemedText>
+              </View>
+            )}
+            {indicators
+              .filter((indicator) => indicator !== 'pickup')
+              .map((indicator) => (
+                <FeatureChip key={indicator} kind={indicator} />
+              ))}
           </View>
-          <LocationChip business={business} />
-          {indicators.length > 0 && (
-            <View style={styles.cardMeta}>
-              {indicators
-                .filter((indicator) => indicator !== 'pickup')
-                .map((indicator) => (
-                  <FeatureChip key={indicator} kind={indicator} />
-                ))}
-            </View>
-          )}
         </View>
       </Pressable>
       {indicators.includes('pickup') && (
-        <View style={{ padding: 12, paddingTop: 0 }}>
+        <View
+          style={{
+            paddingHorizontal: 18,
+            paddingTop: 0,
+            paddingBottom: 16,
+            borderTopWidth: 0,
+            borderTopColor: colors.divider,
+            backgroundColor: colors.backgroundElement,
+          }}
+        >
           {pickup.kind === 'open' ? (
             <PickupNavigationButton
               label="Order ahead"
+              variant="primary"
               destination={{ pathname: '/order', params: { businessId: business.id } }}
             />
           ) : (
@@ -197,25 +249,36 @@ export function BusinessCard({
           )}
         </View>
       )}
+      {!indicators.includes('pickup') && (
+        <View style={{ paddingHorizontal: 18, paddingBottom: 16 }}>
+          <AppButton label="View business" variant="secondary" onPress={onPress} />
+        </View>
+      )}
     </View>
   );
 }
 
 function LocationChip({ business }: { readonly business: BusinessCardData }) {
   const colors = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
-  const location =
-    [business.city, business.region_code].filter(Boolean).join(', ') ||
-    'Location details coming soon';
+  const distance =
+    typeof business.distanceMiles === 'number' && Number.isFinite(business.distanceMiles)
+      ? business.distanceMiles < 0.1
+        ? '< 0.1 mi'
+        : `${business.distanceMiles.toFixed(1)} mi`
+      : null;
+  const location = [business.city, business.region_code].filter(Boolean).join(', ');
+  const displayLocation = distance ? [distance, location].filter(Boolean).join(' · ') : location;
+  if (!displayLocation) return null;
 
   return (
-    <View accessibilityLabel={`Location: ${location}`} style={styles.locationChip}>
+    <View accessibilityLabel={`Location: ${displayLocation}`} style={styles.locationChip}>
       <SymbolView
         name={{ ios: 'mappin.and.ellipse', android: 'location_on', web: 'location_on' }}
         tintColor={colors.textSecondary}
         style={styles.locationIcon}
       />
       <ThemedText numberOfLines={1} style={styles.locationText} themeColor="textSecondary">
-        {location}
+        {displayLocation}
       </ThemedText>
     </View>
   );
@@ -249,7 +312,17 @@ function FeatureChip({ kind }: { readonly kind: BusinessStatusIndicator }) {
   )[kind];
 
   return (
-    <View style={styles.featureChip}>
+    <View
+      style={[
+        styles.featureChip,
+        {
+          backgroundColor: colors.backgroundSelected,
+          borderRadius: 20,
+          paddingHorizontal: 9,
+          paddingVertical: 5,
+        },
+      ]}
+    >
       <SymbolView
         name={content.name}
         tintColor={colors.textSecondary}
@@ -275,20 +348,17 @@ export function hasActiveLoyalty(programs: BusinessCardData['loyalty_programs'])
 const styles = StyleSheet.create({
   businessCard: {
     overflow: 'hidden',
-    borderRadius: Radius.medium,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderLeftWidth: 3,
+    borderRadius: 16,
+    borderWidth: 1,
   },
-  compactCard: { minHeight: 124, flexDirection: 'row', alignItems: 'flex-start' },
+  compactCard: { flexDirection: 'column' },
   pressed: { opacity: 0.72 },
-  cardLogo: { position: 'absolute', right: 6, bottom: 6 },
-  cardImageWrap: { position: 'relative' },
-  cardImage: { width: '100%', aspectRatio: 1.9 },
-  compactImageWrap: { width: 98, height: 124, flexShrink: 0 },
-  compactImage: { width: 98, height: 124, aspectRatio: undefined },
+  cardLogo: { position: 'absolute', left: 14, bottom: 12, padding: 3, borderRadius: 13 },
+  cardImageWrap: { position: 'relative', width: '100%', overflow: 'hidden' },
+  cardImage: { width: '100%', aspectRatio: 2.1 },
+  imagePlaceholder: { height: 100 },
   cardFallback: { alignItems: 'center', justifyContent: 'center' },
-  fallbackLetter: { fontSize: 13, lineHeight: 18, textAlign: 'center', padding: 8 },
-  cardCopy: { flex: 1, minHeight: 124, justifyContent: 'center', padding: 14, gap: 6 },
+  cardCopy: { width: '100%', padding: 18, gap: 6 },
   businessName: { fontSize: 18, lineHeight: 23, fontWeight: '700' },
   categoryRow: { flexDirection: 'row', alignItems: 'center' },
   locationChip: {
@@ -298,13 +368,13 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
   },
   locationIcon: { width: 17, height: 17 },
-  locationText: { fontSize: 14, lineHeight: 20, fontWeight: '600' },
-  cardMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 2 },
+  locationText: { fontSize: 13, lineHeight: 19, fontWeight: '400' },
+  cardMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
   featureChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
   },
   featureChipIcon: { width: 17, height: 17 },
-  featureChipText: { fontSize: 14, lineHeight: 20, fontWeight: '600' },
+  featureChipText: { fontSize: 12, lineHeight: 16, fontWeight: '600' },
 });

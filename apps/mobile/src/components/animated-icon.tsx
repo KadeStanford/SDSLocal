@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
 import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
+import { ThemedText } from './themed-text';
+import parishPassIcon from '../../assets/branding/parish-pass/icon-dark.png';
 
 const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
 const DURATION = 600;
@@ -35,7 +37,27 @@ export function AnimatedSplashOverlay() {
     },
   });
 
-  const image = <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />;
+  const image = (
+    <View style={{ alignItems: 'center', gap: 14 }}>
+      <Image
+        style={{ width: 96, height: 96, borderRadius: 22 }}
+        source={parishPassIcon}
+        contentFit="contain"
+        accessible={false}
+      />
+      <ThemedText
+        style={{
+          color: '#F4F2E9',
+          fontSize: 28,
+          lineHeight: 34,
+          fontWeight: '800',
+          letterSpacing: -0.8,
+        }}
+      >
+        Parish Pass
+      </ThemedText>
+    </View>
+  );
 
   return animate ? (
     <Animated.View
@@ -145,7 +167,7 @@ const styles = StyleSheet.create({
   },
   splashOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#208AEF',
+    backgroundColor: '#102D25',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,

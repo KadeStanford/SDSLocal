@@ -18,6 +18,17 @@ Deno.serve(async (request) => {
         },
       });
     }
+    if (url.searchParams.has('appointment')) {
+      const id = uuid(url.searchParams.get('appointment'));
+      return new Response(null, {
+        status: 302,
+        headers: {
+          Location: `sdslocal://appointment?appointmentId=${id}`,
+          'Cache-Control': 'no-store',
+          'Referrer-Policy': 'no-referrer',
+        },
+      });
+    }
     const { state, code } = parseOAuthCallback(url);
     const result = await runtime().finishOAuth(state, code);
     return new Response(null, {

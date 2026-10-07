@@ -1,4 +1,5 @@
-import { TextInput, View, Switch, type TextInputProps } from 'react-native';
+import { View, Switch, type TextInputProps } from 'react-native';
+import { AppTextInput as TextInput } from '@/components/app-text-input';
 import { useTheme } from '@/hooks/use-theme';
 import { Radius, Spacing } from '@/constants/theme';
 import { ThemedText } from './themed-text';
@@ -14,9 +15,11 @@ export function CommerceField({ label, ...props }: TextInputProps & { readonly l
         placeholderTextColor={colors.textSecondary}
         style={[
           {
-            minHeight: 48,
+            minHeight: 52,
             padding: Spacing.three,
             borderRadius: Radius.small,
+            borderWidth: 1,
+            borderColor: colors.inputBorder,
             backgroundColor: colors.backgroundElement,
             color: colors.text,
             fontSize: 16,
@@ -44,7 +47,7 @@ export function CommerceToggle({
   return (
     <View
       style={{
-        minHeight: 48,
+        minHeight: 52,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',

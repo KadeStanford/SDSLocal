@@ -20,7 +20,7 @@ export default async function AuthPage({ searchParams }: PageProps<'/auth'>) {
     <main className="page-shell">
       <nav className="topbar">
         <Link className="brand" href="/">
-          SDS Local
+          Parish Pass
         </Link>
         <Link href="/">Back home</Link>
       </nav>

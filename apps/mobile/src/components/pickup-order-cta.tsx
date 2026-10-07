@@ -137,7 +137,7 @@ export function PickupOrderCtaContent({
             params: view.kind === 'order' ? { orderId: state.orderId! } : { businessId },
           }}
         />
-      ) : view.kind === 'paused' ? null : (
+      ) : (
         <AppButton label={view.action} variant="secondary" onPress={onRefresh} />
       )}
     </View>

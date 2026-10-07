@@ -6,6 +6,7 @@ export const SQUARE_SCOPES = [
   'ORDERS_WRITE',
   'PAYMENTS_READ',
   'PAYMENTS_WRITE',
+  'DISPUTES_READ',
 ] as const;
 export class CommerceError extends Error {
   constructor(
@@ -29,7 +30,7 @@ export function string(value: unknown, max = 200): string {
     fail('INVALID_REQUEST', 'Check the information and try again.');
   return value.trim();
 }
-export function uuid(value: unknown): string {
+export function uuid(value: unknown, _field?: string): string {
   const result = string(value, 36);
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(result))
     fail('INVALID_REQUEST', 'Invalid identifier.');
@@ -219,6 +220,8 @@ export function stripeConfig(env: (key: string) => string | undefined): StripeCo
         : env('STRIPE_COMMERCE_ENABLED') === 'true',
     allowedOrigin:
       env('STRIPE_ALLOWED_ORIGIN') ?? env('SQUARE_ALLOWED_ORIGIN') ?? env('SUPABASE_URL') ?? '',
-    applicationFeeMinor: Math.max(0, Number(env('STRIPE_APPLICATION_FEE_MINOR') ?? 0) || 0),
+    // SDS does not charge businesses a platform/application fee for Stripe orders.
+    // Keep this hard-coded so a stale hosted secret cannot silently add a fee.
+    applicationFeeMinor: 0,
   };
 }

@@ -1,5 +1,16 @@
-export type ListingPlanCode = 'single' | 'multi';
-export type BillingPeriod = 'monthly' | 'yearly';
+import type { BusinessSubscriptionPlanCode as ListingPlanCode } from '@sds/business-logic';
+
+export {
+  businessSubscriptionPlans as listingPlans,
+  businessSubscriptionBenefits as listingPlanBenefits,
+  businessSubscriptionProductMetadata as listingProductMetadata,
+  offeredBusinessSubscriptionProductMetadata as offeredListingProductMetadata,
+  isBusinessSubscriptionDowngrade as isListingDowngrade,
+} from '@sds/business-logic';
+export type {
+  BusinessSubscriptionPlanCode as ListingPlanCode,
+  BusinessSubscriptionPeriod as BillingPeriod,
+} from '@sds/business-logic';
 
 export interface ListingBillingSummary {
   readonly billingEnabled: boolean;
@@ -18,35 +29,44 @@ export interface ListingBillingSummary {
   readonly businessIds: readonly string[];
 }
 
-export const listingPlans = [
-  {
-    code: 'single',
-    name: 'Single',
-    listingLimit: 1,
-    description: 'For an owner publishing one local business.',
-  },
-  {
-    code: 'multi',
-    name: 'Multi',
-    listingLimit: 3,
-    description: 'For owners managing up to three local businesses.',
-  },
-] as const;
+export type BusinessCreationAccess = 'checking' | 'preview' | 'subscribe' | 'full' | 'ready';
 
-export function listingProductMetadata(productId: string) {
-  const normalized = productId.toLowerCase();
-  const planCode: ListingPlanCode | null = normalized.includes('listing_single_')
-    ? 'single'
-    : normalized.includes('listing_multi_')
-      ? 'multi'
-      : null;
-  const period: BillingPeriod | null =
-    normalized.includes('_monthly_') || normalized.endsWith(':monthly')
-      ? 'monthly'
-      : normalized.includes('_yearly_') || normalized.endsWith(':yearly')
-        ? 'yearly'
-        : null;
-  return planCode && period ? { planCode, period } : null;
+export function businessCreationAccess(
+  summary: ListingBillingSummary | null,
+  loading: boolean,
+): BusinessCreationAccess {
+  if (loading || !summary) return 'checking';
+  if (!summary.billingEnabled) return 'preview';
+  if (!summary.canPublish) return 'subscribe';
+  if (summary.availableListings <= 0) return 'full';
+  return 'ready';
+}
+
+export function storeSubscriptionManagementUrl(provider: 'apple' | 'google') {
+  return provider === 'apple'
+    ? 'https://apps.apple.com/account/subscriptions'
+    : 'https://play.google.com/store/account/subscriptions';
+}
+
+export function subscriptionLegalUrl(value: string | undefined) {
+  if (!value) return null;
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== 'https:' || parsed.username || parsed.password) return null;
+    const hostname = parsed.hostname.toLowerCase();
+    if (
+      hostname === 'localhost' ||
+      hostname === '[::1]' ||
+      /^(127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.)/.test(hostname) ||
+      /(^|\.)example\.(com|org|net)$/.test(hostname) ||
+      hostname.endsWith('.local') ||
+      hostname.endsWith('.test')
+    )
+      return null;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
 }
 
 export function annualSavingsLabel(monthlyPrice: number, yearlyPrice: number) {

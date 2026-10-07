@@ -7,6 +7,9 @@ import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Brand, Colors, Radius, Spacing } from '@/constants/theme';
 import { ThemedText } from '@/components/themed-text';
 import { haptics } from '@/lib/haptics';
+import { FormField } from './form-field';
+import { AppTextInput } from './app-text-input';
+import { inputPresets } from '@/lib/input-presets';
 
 export function ChoicePicker<T extends string>({
   label,
@@ -15,7 +18,13 @@ export function ChoicePicker<T extends string>({
   placeholder = 'Choose an option',
   onChange,
   disabled = false,
+  businessStyle = false,
+  searchable = false,
+  searchPlaceholder = 'Search options',
 }: {
+  readonly searchable?: boolean;
+  readonly searchPlaceholder?: string;
+  readonly businessStyle?: boolean;
   readonly label: string;
   readonly value: T | null;
   readonly options: readonly { readonly value: T; readonly label: string }[];
@@ -27,11 +36,18 @@ export function ChoicePicker<T extends string>({
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const filteredOptions = options.filter(
+    (option) =>
+      !searchable ||
+      `${option.label} ${option.value}`
+        .toLocaleLowerCase()
+        .includes(query.trim().toLocaleLowerCase()),
+  );
   const selectedLabel = options.find((option) => option.value === value)?.label;
 
   return (
-    <View style={styles.field}>
-      <ThemedText type="smallBold">{label}</ThemedText>
+    <FormField label={label}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${label}: ${selectedLabel ?? placeholder}`}
@@ -39,21 +55,30 @@ export function ChoicePicker<T extends string>({
         disabled={disabled}
         onPress={() => {
           void haptics.selection();
+          setQuery('');
           setOpen(true);
         }}
         style={({ pressed }) => [
           styles.trigger,
           { backgroundColor: colors.background, borderColor: colors.inputBorder },
+          businessStyle && {
+            borderWidth: 0,
+            borderRadius: 10,
+            backgroundColor: colors.backgroundSelected,
+            paddingVertical: 14,
+          },
           pressed && styles.pressed,
           disabled && styles.disabled,
         ]}
       >
         {selectedLabel ? (
-          <ThemedText style={{ flex: 1 }}>{selectedLabel}</ThemedText>
+          <ThemedText type={businessStyle ? 'smallBold' : 'default'} style={{ flex: 1 }}>
+            {selectedLabel}
+          </ThemedText>
         ) : (
           <ThemedText themeColor="textSecondary">{placeholder}</ThemedText>
         )}
-        <ThemedText themeColor="textSecondary">⌄</ThemedText>
+        <ThemedText themeColor="textSecondary">{businessStyle ? 'Change  ⌄' : '⌄'}</ThemedText>
       </Pressable>
       <Modal animationType="fade" onRequestClose={() => setOpen(false)} transparent visible={open}>
         <View style={[styles.backdrop, { backgroundColor: colors.backdrop }]}>
@@ -76,10 +101,32 @@ export function ChoicePicker<T extends string>({
               <ThemedText style={{ flex: 1 }} type="subtitle">
                 {label}
               </ThemedText>
-              <AppButton label="Done" variant="tertiary" onPress={() => setOpen(false)} />
+              <AppButton
+                label="Done"
+                variant={businessStyle ? 'secondary' : 'tertiary'}
+                onPress={() => setOpen(false)}
+              />
             </View>
-            <ScrollView style={styles.optionList} contentContainerStyle={styles.optionContent}>
-              {options.map((option) => {
+            {searchable && (
+              <AppTextInput
+                accessibilityLabel={searchPlaceholder}
+                placeholder={searchPlaceholder}
+                value={query}
+                onChangeText={setQuery}
+                {...inputPresets.search}
+              />
+            )}
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              style={styles.optionList}
+              contentContainerStyle={styles.optionContent}
+            >
+              {filteredOptions.length === 0 && (
+                <ThemedText themeColor="textSecondary">
+                  No matches. Try a state name or abbreviation.
+                </ThemedText>
+              )}
+              {filteredOptions.map((option) => {
                 const selected = option.value === value;
                 return (
                   <Pressable
@@ -109,12 +156,11 @@ export function ChoicePicker<T extends string>({
           </View>
         </View>
       </Modal>
-    </View>
+    </FormField>
   );
 }
 
 const styles = StyleSheet.create({
-  field: { gap: Spacing.one },
   trigger: {
     minHeight: 50,
     flexDirection: 'row',

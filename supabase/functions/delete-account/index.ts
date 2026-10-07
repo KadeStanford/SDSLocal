@@ -5,6 +5,7 @@ import { squareConfig, stripeConfig, CommerceError } from '../_shared/square-sec
 
 import {
   bearerToken,
+  deletionBlockerCode,
   customerDeletionError,
   mergeStorageTargets,
   normalizeStorageTargets,
@@ -107,7 +108,10 @@ Deno.serve(async (request) => {
   if (request.method === 'GET') {
     const { data, error } = await admin.rpc('get_account_deletion_impact', { p_user_id: userId });
     if (error) return json(request, 500, { error: customerDeletionError(500) });
-    return json(request, 200, { impact: data });
+    const blockers = await admin.from('appointments').select('id').eq('customer_id', userId)
+      .or('status.not.in.(cancelled,completed,no_show),payment_status.in.(pending,refund_pending,refund_failed,review)').limit(1);
+    if (blockers.error) return json(request, 503, { error: 'We couldn’t check outstanding bookings. Please retry.' });
+    return json(request, 200, { impact: data, blockers: blockers.data?.length ? ['appointments'] : [] });
   }
 
   let body: unknown;
@@ -124,7 +128,8 @@ Deno.serve(async (request) => {
     p_user_id: userId,
   });
   if (startError || !started) {
-    return json(request, 409, { error: customerDeletionError(409) });
+    const blocker = deletionBlockerCode(startError?.message);
+    return json(request, 409, { error: blocker ? 'Resolve active appointments or outstanding booking payments before deleting your account.' : customerDeletionError(409), blockers: blocker ? [blocker] : [] });
   }
 
   const job = started as Record<string, unknown>;

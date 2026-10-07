@@ -104,7 +104,7 @@ export default async function ExplorePage({ searchParams }: PageProps<'/explore'
     <main className="page-shell">
       <nav className="topbar">
         <Link className="brand" href="/">
-          SDS Local
+          Parish Pass
         </Link>
         <div className="nav-actions">
           <Link href="/events">Events</Link>

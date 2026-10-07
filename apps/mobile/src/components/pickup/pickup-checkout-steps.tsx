@@ -1,6 +1,6 @@
+import { CustomerAction, CustomerSurface } from '../customer-ui';
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
-import { AppButton } from '../app-button';
 import { ThemedText } from '../themed-text';
 import { ReceiptItem, ReceiptTotal } from './order-presentation';
 import { QuantityStepper } from './quantity-stepper';
@@ -22,6 +22,7 @@ export function PickupCart({
   onRemove,
   onQuantity,
   disabled = false,
+  rewardDiscount = 0,
 }: {
   cart: CartLine[];
   products: Product[];
@@ -29,6 +30,7 @@ export function PickupCart({
   onRemove: (index: number) => void;
   onQuantity?: (index: number, delta: 1 | -1) => void;
   disabled?: boolean;
+  rewardDiscount?: number;
 }) {
   const c = useTheme();
   const review = cartReview(cart, products);
@@ -50,7 +52,14 @@ export function PickupCart({
         return (
           <View
             key={index}
-            style={{ padding: 16, borderRadius: 16, backgroundColor: c.backgroundElement, gap: 12 }}
+            style={{
+              padding: 20,
+              borderRadius: 14,
+              borderWidth: 1,
+              borderColor: c.divider,
+              backgroundColor: c.backgroundElement,
+              gap: 12,
+            }}
           >
             <View style={{ gap: 4 }}>
               <ThemedText type="card">{p?.name ?? 'Item no longer available'}</ThemedText>
@@ -65,6 +74,11 @@ export function PickupCart({
                   ]
                     .filter(Boolean)
                     .join(' · ')}
+                </ThemedText>
+              )}
+              {line.rewardClaim && rewardDiscount > 0 && (
+                <ThemedText type="caption" style={{ color: c.accent }}>
+                  Reward applied to one base item
                 </ThemedText>
               )}
               <ThemedText type="smallBold">
@@ -91,18 +105,20 @@ export function PickupCart({
                 <ThemedText>Quantity {line.quantity}</ThemedText>
               )}
               {p && p.available !== false && (
-                <AppButton
+                <CustomerAction
                   label="Edit"
+                  icon="edit"
+                  iconOnly
                   accessibilityLabel={`Edit ${p.name}`}
-                  variant="tertiary"
                   disabled={disabled}
                   onPress={() => onEdit(index)}
                 />
               )}
-              <AppButton
+              <CustomerAction
                 label="Remove"
+                icon="remove"
+                iconOnly
                 accessibilityLabel={`Remove ${p?.name ?? 'item'}`}
-                variant="tertiary"
                 disabled={disabled}
                 onPress={() => onRemove(index)}
               />
@@ -110,10 +126,17 @@ export function PickupCart({
           </View>
         );
       })}
+      {rewardDiscount > 0 && (
+        <ReceiptTotal
+          label="Reward discount"
+          value={-rewardDiscount}
+          currency={products[0]?.currency ?? 'USD'}
+        />
+      )}
       {!!cart.length && (
         <ReceiptTotal
           label="Estimated items"
-          value={review.subtotal}
+          value={review.subtotal - rewardDiscount}
           currency={products[0]?.currency ?? 'USD'}
           strong
         />
@@ -138,16 +161,23 @@ function ReviewSection({
 }) {
   const c = useTheme();
   return (
-    <View style={{ padding: 16, borderRadius: 16, backgroundColor: c.backgroundElement, gap: 8 }}>
+    <View
+      style={{
+        paddingVertical: 18,
+        borderBottomWidth: 1,
+        borderBottomColor: c.divider,
+        gap: 8,
+      }}
+    >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <ThemedText type="card" style={{ flex: 1 }}>
           {title}
         </ThemedText>
         {onEdit && (
-          <AppButton
+          <CustomerAction
             label="Edit"
+            icon="edit"
             accessibilityLabel={`Edit ${title.toLowerCase()}`}
-            variant="tertiary"
             onPress={onEdit}
           />
         )}
@@ -174,64 +204,67 @@ export function PickupReview({
   onEdit?: ((step: 'cart' | 'pickup' | 'contact') => void) | undefined;
 }) {
   return (
-    <View style={{ gap: 12 }}>
-      <ReviewSection title="Pickup" onEdit={onEdit ? () => onEdit('pickup') : undefined}>
-        <ThemedText>{pickupLabel(quote.slot)}</ThemedText>
-        <ThemedText themeColor="textSecondary">{quote.slot.title}</ThemedText>
-        <ThemedText themeColor="textSecondary">{quote.slot.address}</ThemedText>
-      </ReviewSection>
-      <ReviewSection title="Contact" onEdit={onEdit ? () => onEdit('contact') : undefined}>
-        <ThemedText>{name}</ThemedText>
-        <ThemedText themeColor="textSecondary">{formattedPickupPhone(phone)}</ThemedText>
-      </ReviewSection>
-      <ReviewSection title="Order summary" onEdit={onEdit ? () => onEdit('cart') : undefined}>
-        {cart.map((line, i) => {
-          const p = products.find((p) => p.id === line.variationId);
-          return (
-            <ReceiptItem
-              key={i}
-              currency={quote.currency}
-              item={{
-                name: p?.name ?? 'Item unavailable',
-                quantity: String(line.quantity),
-                variation_name: p?.variation ?? '',
-                modifiers:
-                  p?.groups
-                    .flatMap((g) => g.modifiers)
-                    .filter((m) => line.modifierIds.includes(m.id))
-                    .map((m) => ({ name: m.name })) ?? [],
-                total_money: {
-                  amount: cartReview([line], products).subtotal,
-                  currency: quote.currency,
-                },
-              }}
-            />
-          );
-        })}
-        <View style={{ gap: 8, paddingTop: 8 }}>
-          <ReceiptTotal label="Subtotal" value={quote.subtotal} currency={quote.currency} />
-          {quote.reward && quote.reward.discountMinor > 0 && (
-            <ReceiptTotal
-              label={quote.reward.label || 'Rewards discount'}
-              value={-quote.reward.discountMinor}
-              currency={quote.currency}
-            />
-          )}
-          <ReceiptTotal label="Tax" value={quote.tax} currency={quote.currency} />
-          {quote.tip > 0 && (
-            <ReceiptTotal label="Tip" value={quote.tip} currency={quote.currency} />
-          )}
-          <ReceiptTotal label="Total" value={quote.total} currency={quote.currency} strong />
-        </View>
-      </ReviewSection>
+    <View style={{ gap: 16 }}>
+      <CustomerSurface style={{ gap: 0, paddingTop: 0, paddingBottom: 0 }}>
+        <ReviewSection title="Pickup" onEdit={onEdit ? () => onEdit('pickup') : undefined}>
+          <ThemedText>{pickupLabel(quote.slot)}</ThemedText>
+          <ThemedText themeColor="textSecondary">{quote.slot.title}</ThemedText>
+          <ThemedText themeColor="textSecondary">{quote.slot.address}</ThemedText>
+        </ReviewSection>
+        <ReviewSection title="Contact" onEdit={onEdit ? () => onEdit('contact') : undefined}>
+          <ThemedText>{name}</ThemedText>
+          <ThemedText themeColor="textSecondary">{formattedPickupPhone(phone)}</ThemedText>
+        </ReviewSection>
+        <ReviewSection title="Order summary" onEdit={onEdit ? () => onEdit('cart') : undefined}>
+          {cart.map((line, i) => {
+            const p = products.find((p) => p.id === line.variationId);
+            return (
+              <ReceiptItem
+                key={i}
+                currency={quote.currency}
+                item={{
+                  name: p?.name ?? 'Item unavailable',
+                  quantity: String(line.quantity),
+                  variation_name: p?.variation ?? '',
+                  modifiers:
+                    p?.groups
+                      .flatMap((g) => g.modifiers)
+                      .filter((m) => line.modifierIds.includes(m.id))
+                      .map((m) => ({ name: m.name })) ?? [],
+                  total_money: {
+                    amount: cartReview([line], products).subtotal,
+                    currency: quote.currency,
+                  },
+                }}
+              />
+            );
+          })}
+          <View style={{ gap: 8, paddingTop: 8 }}>
+            <ReceiptTotal label="Subtotal" value={quote.subtotal} currency={quote.currency} />
+            {quote.reward && quote.reward.discountMinor > 0 && (
+              <ReceiptTotal
+                label={quote.reward.label || 'Rewards discount'}
+                value={-quote.reward.discountMinor}
+                currency={quote.currency}
+              />
+            )}
+            <ReceiptTotal label="Tax" value={quote.tax} currency={quote.currency} />
+            {quote.tip > 0 && (
+              <ReceiptTotal label="Tip" value={quote.tip} currency={quote.currency} />
+            )}
+            <ReceiptTotal label="Total" value={quote.total} currency={quote.currency} strong />
+          </View>
+        </ReviewSection>
+      </CustomerSurface>
       <ThemedText type="small" themeColor="textSecondary">
         {quote.reward
           ? `Rewards applied · ${quote.reward.label}`
-          : 'Rewards are checked automatically when you are signed in.'}
+          : 'Choose available rewards in your cart before placing your order.'}
       </ThemedText>
       <ThemedText type="small" themeColor="textSecondary">
-        Secure checkout ·{' '}
-        {quote.provider === 'stripe' ? 'Stripe test payment' : 'Square Sandbox test payment'}
+        {quote.total === 0
+          ? 'Covered by your reward · no payment required'
+          : `Secure checkout · ${quote.provider === 'stripe' ? 'Stripe test payment' : 'Square Sandbox test payment'}`}
       </ThemedText>
       {expired && (
         <ThemedText accessibilityLiveRegion="polite">

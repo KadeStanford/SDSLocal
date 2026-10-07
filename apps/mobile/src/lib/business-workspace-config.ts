@@ -5,6 +5,7 @@ export type BusinessSection =
   | 'profile'
   | 'contact'
   | 'hours'
+  | 'appointments'
   | 'ordering'
   | 'location'
   | 'mobile-location'
@@ -19,6 +20,15 @@ export type BusinessSection =
   | 'review';
 
 export type BusinessHubGroup = 'CUSTOMER EXPERIENCE' | 'OPERATIONS' | 'MARKETING AND VISIBILITY';
+
+export function publishingCheckSection(key: string, mobile: boolean): BusinessSection | null {
+  if (key === 'description' || key === 'category') return 'profile';
+  if (key === 'contact') return 'contact';
+  if (key === 'location') return mobile ? 'mobile-location' : 'location';
+  if (key === 'hours') return 'hours';
+  if (key === 'logo' || key === 'cover') return 'photos';
+  return null;
+}
 
 export interface BusinessHubDestination {
   readonly key: BusinessSection;
@@ -48,30 +58,37 @@ export const businessHubDestinations: readonly BusinessHubDestination[] = [
   {
     key: 'profile',
     group: 'CUSTOMER EXPERIENCE',
-    title: 'Profile and branding',
+    title: 'Profile',
     icon: 'person.crop.circle',
   },
   {
     key: 'contact',
     group: 'CUSTOMER EXPERIENCE',
-    title: 'Contact information',
+    title: 'Contact',
     icon: 'phone.fill',
   },
   {
     key: 'offerings',
     group: 'CUSTOMER EXPERIENCE',
-    title: 'Offerings or menu',
+    title: 'Offerings',
     icon: 'list.bullet.rectangle',
   },
   {
     key: 'photos',
     group: 'CUSTOMER EXPERIENCE',
-    title: 'Photos and gallery',
+    title: 'Photos',
     icon: 'photo.on.rectangle',
   },
   { key: 'updates', group: 'CUSTOMER EXPERIENCE', title: 'Updates', icon: 'megaphone.fill' },
   { key: 'events', group: 'CUSTOMER EXPERIENCE', title: 'Events', icon: 'calendar' },
   { key: 'hours', group: 'OPERATIONS', title: 'Hours', icon: 'clock.fill' },
+  {
+    key: 'appointments',
+    group: 'OPERATIONS',
+    title: 'Appointments',
+    icon: 'calendar',
+    ownerOnly: true,
+  },
   {
     key: 'ordering',
     group: 'OPERATIONS',
@@ -79,26 +96,26 @@ export const businessHubDestinations: readonly BusinessHubDestination[] = [
     icon: 'list.bullet.rectangle',
     ownerOnly: true,
   },
-  { key: 'location', group: 'OPERATIONS', title: 'Locations and service area', icon: 'map.fill' },
+  { key: 'location', group: 'OPERATIONS', title: 'Location and service area', icon: 'map.fill' },
   {
     key: 'mobile-location',
     group: 'OPERATIONS',
-    title: 'Mobile-business location controls',
+    title: 'Current location',
     icon: 'mappin.and.ellipse',
     mobileOnly: true,
   },
-  { key: 'rewards', group: 'OPERATIONS', title: 'Rewards', icon: 'gift.fill' },
+  { key: 'rewards', group: 'MARKETING AND VISIBILITY', title: 'Rewards', icon: 'gift.fill' },
   {
     key: 'staff',
     group: 'OPERATIONS',
-    title: 'Staff and scanner access',
+    title: 'Staff access',
     icon: 'person.2.fill',
     ownerOnly: true,
   },
   {
     key: 'qr',
     group: 'MARKETING AND VISIBILITY',
-    title: 'QR and promotional materials',
+    title: 'QR materials',
     icon: 'qrcode',
   },
   {
@@ -110,7 +127,7 @@ export const businessHubDestinations: readonly BusinessHubDestination[] = [
   {
     key: 'review',
     group: 'MARKETING AND VISIBILITY',
-    title: 'Publishing and visibility',
+    title: 'Publish business',
     icon: 'checkmark.seal.fill',
   },
 ] as const;
@@ -124,10 +141,13 @@ export const businessHubGroups: readonly BusinessHubGroup[] = [
 export function visibleBusinessHubDestinations(input: {
   readonly isMobile: boolean;
   readonly canEdit: boolean;
+  readonly businessType?: BusinessType;
 }) {
   return businessHubDestinations.filter(
     (destination) =>
-      (!destination.mobileOnly || input.isMobile) && (!destination.ownerOnly || input.canEdit),
+      (!destination.mobileOnly || input.isMobile) &&
+      (!destination.ownerOnly || input.canEdit) &&
+      (destination.key !== 'appointments' || input.businessType === 'services'),
   );
 }
 
@@ -140,12 +160,13 @@ export type UploadRole = 'logo' | 'cover' | 'gallery' | 'offering' | 'event' | '
 
 export const sections: readonly { readonly key: BusinessSection; readonly label: string }[] = [
   { key: 'preview', label: 'Page preview' },
-  { key: 'profile', label: 'Profile and branding' },
-  { key: 'contact', label: 'Contact information' },
+  { key: 'profile', label: 'Profile' },
+  { key: 'contact', label: 'Contact' },
   { key: 'hours', label: 'Hours' },
-  { key: 'ordering', label: 'Ordering & payments' },
-  { key: 'location', label: 'Locations and service area' },
-  { key: 'mobile-location', label: 'Mobile location' },
+  { key: 'appointments', label: 'Appointments' },
+  { key: 'ordering', label: 'Ordering and payments' },
+  { key: 'location', label: 'Location and service area' },
+  { key: 'mobile-location', label: 'Current location' },
   { key: 'offerings', label: 'Services' },
   { key: 'photos', label: 'Photos' },
   { key: 'events', label: 'Events' },
@@ -158,22 +179,23 @@ export const sections: readonly { readonly key: BusinessSection; readonly label:
 ];
 
 export const sectionDescriptions: Record<BusinessSection, string> = {
-  preview: 'See the customer-facing page exactly as visitors will see it.',
-  profile: 'Shape the identity customers see across SDS Local.',
-  contact: 'Keep the ways customers reach you accurate.',
-  hours: 'Set a normal weekly schedule customers can rely on.',
-  ordering: 'Connect Square or Stripe, configure pickup, and manage customer orders.',
-  location: 'Set the address and area where you serve customers.',
-  'mobile-location': 'Publish where your mobile business will be and when.',
-  offerings: 'Organize the products or services customers can browse.',
-  events: 'Create events, add a cover and gallery, then publish or schedule them.',
-  updates: 'Send a useful announcement or special offer to followers who opted in.',
-  rewards: 'Set up the loyalty program customers can join.',
-  photos: 'Add polished images, captions, and the order they appear in.',
-  staff: 'Give trusted team members limited access to Staff Scan.',
-  qr: 'Create branded materials customers can scan.',
-  sharing: 'Share your customer page from the app.',
-  review: 'Check your profile and submit it for SDS review.',
+  preview: 'Preview your public business page.',
+  profile: 'Update your business name, description, logo, and colors.',
+  contact: 'Manage the contact details customers use to reach you.',
+  hours: 'Set the days and times you are open.',
+  appointments: 'Set up service booking and manage appointment requests.',
+  ordering: 'Manage pickup, payments, and customer orders.',
+  location: 'Set your business address and service area.',
+  'mobile-location': 'Set where your mobile business will be and when.',
+  offerings: 'Add and update products or services.',
+  events: 'Create and schedule events.',
+  updates: 'Post announcements and offers for followers.',
+  rewards: 'Manage your customer loyalty program.',
+  photos: 'Add photos and arrange them on your page.',
+  staff: 'Invite staff to scan and redeem rewards.',
+  qr: 'Create a QR code that opens your business page.',
+  sharing: 'Copy or share your business page link.',
+  review: 'Review your details and submit them for approval.',
 };
 
 /** Labels used by the workspace so owners see language that matches their business. */
@@ -184,11 +206,12 @@ export function workspaceSectionLabel(
   if (section === 'preview') return 'Page preview';
   if (section !== 'offerings')
     return sections.find((item) => item.key === section)?.label ?? section;
-  return businessType === 'food_drink' || businessType === 'mobile' ? 'Menu' : 'Services';
+  return businessType === 'food_drink' || businessType === 'mobile' ? 'Menu' : businessType === 'services' ? 'Services' : businessType === 'retail' ? 'Products' : 'Offerings';
 }
 
 export function workspaceOfferingTerminology(businessType?: BusinessType | null) {
   const menu = businessType === 'food_drink' || businessType === 'mobile';
+  if (!menu && businessType !== 'services') return { item: businessType === 'retail' ? 'product' : 'offering', items: businessType === 'retail' ? 'products' : 'offerings', section: 'category', sections: 'categories' };
   return menu
     ? { item: 'menu item', items: 'menu', section: 'menu category', sections: 'menu categories' }
     : {

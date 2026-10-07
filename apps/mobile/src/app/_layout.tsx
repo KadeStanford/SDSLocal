@@ -5,7 +5,7 @@ import '@/lib/sqlite-storage';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { ParishSplash } from '@/components/parish-splash';
 import { RootNavigator } from '@/components/root-navigator';
 import { AuthProvider } from '@/providers/auth-provider';
 import { AppModeProvider } from '@/providers/app-mode-provider';
@@ -27,7 +27,7 @@ export default function TabLayout() {
             <AppModeProvider>
               <NotificationProvider>
                 <NearbyAlertsProvider>
-                  <AnimatedSplashOverlay />
+                  <ParishSplash />
                   <TabOverlayProvider>
                     <PickupWorkspaceProvider>
                       <RootNavigator />

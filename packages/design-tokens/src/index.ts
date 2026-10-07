@@ -34,6 +34,7 @@ export const themeColors = {
     destructive: '#B42318',
     divider: '#DEE4DF',
     inputBorder: '#7B8980',
+    inputSurface: '#EAF0EA',
     infoSurface: '#E8EFF7',
     infoText: '#153B62',
     skeleton: '#DEE4DF',
@@ -64,6 +65,7 @@ export const themeColors = {
     destructive: '#FFB4AB',
     divider: '#35493D',
     inputBorder: '#7C9284',
+    inputSurface: '#2A3D32',
     infoSurface: '#203344',
     infoText: '#C0DDF6',
     skeleton: '#35493D',
@@ -76,6 +78,36 @@ export const themeColors = {
     warningText: '#F2D992',
     errorSurface: '#432526',
     errorText: '#F2B8B8',
+  },
+} as const;
+
+/** Merchant lists and focused editors use the app's shared surface palette. */
+export const merchantThemeColors = {
+  light: {
+    background: themeColors.light.background,
+    surface: themeColors.light.backgroundElement,
+    text: '#171A1F',
+    secondary: '#59616B',
+    border: themeColors.light.divider,
+    onAction: '#FFFFFF',
+    success: '#166644',
+    warning: '#805516',
+    danger: themeColors.light.errorText,
+    dangerSurface: themeColors.light.errorSurface,
+    attention: themeColors.light.warningSurface,
+  },
+  dark: {
+    background: themeColors.dark.background,
+    surface: themeColors.dark.backgroundElement,
+    text: '#F7F8FA',
+    secondary: '#B1B7C0',
+    border: themeColors.dark.divider,
+    onAction: '#101214',
+    success: '#75D7A5',
+    warning: '#F2C277',
+    danger: themeColors.dark.errorText,
+    dangerSurface: themeColors.dark.errorSurface,
+    attention: themeColors.dark.warningSurface,
   },
 } as const;
 

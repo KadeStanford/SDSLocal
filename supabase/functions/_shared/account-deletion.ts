@@ -55,3 +55,8 @@ export function customerDeletionError(status: number) {
   if (status === 400) return 'Type DELETE to confirm account deletion.';
   return 'Account deletion did not complete. Your account is still available. Please try again.';
 }
+
+/** Only classify a known server constraint; never expose raw database errors. */
+export function deletionBlockerCode(message: unknown) {
+  return typeof message === 'string' && message.includes('Resolve upcoming appointments and outstanding payments') ? 'appointments' : null;
+}

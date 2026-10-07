@@ -1,0 +1,5280 @@
+{
+  "auditDate": "2026-09-30 America/Chicago",
+  "method": "Read-only archive/plist, AAPT protobuf, and ELF program-header inspection. No installation, signature validation, generated APK zipalign or runtime test. Protobuf string attributes follow the official AAPT2 Resources.proto schema. No private keys or full provisioning device identifiers included.",
+  "artifacts": [
+    {
+      "path": ".codex-tmp\\parish-pass-preview.ipa",
+      "sha256": "0f6ea1326e699a24201ee44f929c1eb60c4e46feaabaaf710dd6e3143b0f622c",
+      "bytes": 27891273,
+      "status": "Preview/sandbox artifact; production acceptance unverified",
+      "infoPlist": {
+        "CFBundleDisplayName": "Parish Pass",
+        "CFBundleIdentifier": "com.stanforddevelopmentsolutions.sdslocal",
+        "CFBundleShortVersionString": "0.1.0",
+        "CFBundleVersion": "1",
+        "DTSDKName": "iphoneos26.5",
+        "DTXcode": "2660",
+        "DTXcodeBuild": "17F113",
+        "ITSAppUsesNonExemptEncryption": false,
+        "MinimumOSVersion": "18.0",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSAllowsLocalNetworking": true
+        },
+        "NSCalendarsUsageDescription": "Allow ParishPass to access your calendars",
+        "NSCalendarsWriteOnlyAccessUsageDescription": "SDS Local adds events to your calendar only when you choose Add to Calendar.",
+        "NSCameraUsageDescription": "SDS Local uses your camera so you can take photos for your business page.",
+        "NSContactsUsageDescription": "SDS Local uses your contacts only when you choose to invite friends.",
+        "NSFaceIDUsageDescription": "SDS Local does not use Face ID in the current app flow.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "SDS Local uses your location in the background only when you enable alerts for nearby mobile businesses.",
+        "NSLocationAlwaysUsageDescription": "Allow ParishPass to access your location",
+        "NSLocationWhenInUseUsageDescription": "SDS Local uses your location to show nearby businesses and mobile business stops.",
+        "NSMotionUsageDescription": "Allow ParishPass to detect your current motion activity",
+        "NSPhotoLibraryAddUsageDescription": "SDS Local saves images to your photo library only when you choose Save.",
+        "NSPhotoLibraryUsageDescription": "SDS Local accesses your photos only when you choose an image to upload.",
+        "NSRemindersFullAccessUsageDescription": "Allow ParishPass to access your reminders",
+        "NSRemindersUsageDescription": "Allow ParishPass to access your reminders",
+        "UIBackgroundModes": [
+          "fetch",
+          "location"
+        ],
+        "UIDeviceFamily": [
+          1,
+          2
+        ]
+      },
+      "expoUpdates": {
+        "EXUpdatesCheckOnLaunch": "ALWAYS",
+        "EXUpdatesEnableBsdiffPatchSupport": true,
+        "EXUpdatesEnabled": true,
+        "EXUpdatesLaunchWaitMs": 0,
+        "EXUpdatesRequestHeaders": {
+          "expo-channel-name": "preview"
+        },
+        "EXUpdatesRuntimeVersion": "0.1.0",
+        "EXUpdatesURL": "https://u.expo.dev/2406d47e-390c-4a39-932c-325b2ec5ab99"
+      },
+      "privacyManifests": [
+        {
+          "path": "Payload/ParishPass.app/React-timing_privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategorySystemBootTime",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "35F9.1"
+                ]
+              }
+            ],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/Stripe3DS2.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeProductInteraction",
+                "NSPrivacyCollectedDataTypeLinked": false,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAnalytics",
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              }
+            ],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/ExpoSystemUI_privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false,
+            "NSPrivacyTrackingDomains": [],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/ReachabilitySwift.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/FBLPromises_Privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false,
+            "NSPrivacyTrackingDomains": []
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/ExpoConstants_privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false,
+            "NSPrivacyTrackingDomains": [],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/StripeBundle.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeProductInteraction",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAnalytics",
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              },
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePaymentInfo",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              }
+            ],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/React-cxxreact_privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "C617.1"
+                ]
+              }
+            ],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/GTMAppAuth_Privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyAccessedAPITypes": [],
+            "NSPrivacyTrackingDomains": [],
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/RevenueCat.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ],
+            "NSPrivacyCollectedDataTypes": [
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePurchaseHistory",
+                "NSPrivacyCollectedDataTypeLinked": false,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              }
+            ],
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/ExpoApplication_privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false,
+            "NSPrivacyTrackingDomains": [],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "C617.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/GTMSessionFetcher_Core_Privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false,
+            "NSPrivacyTrackingDomains": []
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/GoogleSignIn.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyTracking": false,
+            "NSPrivacyTrackingDomains": [],
+            "NSPrivacyCollectedDataTypes": [
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeName",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              },
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeEmailAddress",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              },
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePhoneNumber",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              },
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeOtherDataTypes",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+                  "NSPrivacyCollectedDataTypePurposeAnalytics"
+                ]
+              },
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeCoarseLocation",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              },
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeUserID",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+                  "NSPrivacyCollectedDataTypePurposeAnalytics"
+                ]
+              },
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeDeviceID",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAnalytics"
+                ]
+              },
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeOtherUsageData",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAnalytics"
+                ]
+              }
+            ],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ],
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults"
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/AppAuthCore_Privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTrackingDomains": [],
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/GoogleUtilities_Privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyTracking": false,
+            "NSPrivacyTrackingDomains": [],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "C617.1"
+                ]
+              },
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "C56D.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/ExpoTaskManager_privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false,
+            "NSPrivacyTrackingDomains": [],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/ExpoDevice_privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false,
+            "NSPrivacyTrackingDomains": [],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategorySystemBootTime",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "35F9.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "C617.1"
+                ]
+              },
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1",
+                  "C56D.1"
+                ]
+              },
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategorySystemBootTime",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "35F9.1"
+                ]
+              }
+            ],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/ExpoNotifications_privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false,
+            "NSPrivacyTrackingDomains": [],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/PurchasesHybridCommon.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ],
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults"
+              }
+            ],
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/StripeFinancialConnectionsBundle.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeProductInteraction",
+                "NSPrivacyCollectedDataTypeLinked": false,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAnalytics",
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              },
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePaymentInfo",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              }
+            ],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/Frameworks/ReactNativeDependencies.framework/ReactNativeDependencies_folly.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "C617.1"
+                ]
+              }
+            ],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/Frameworks/ReactNativeDependencies.framework/ReactNativeDependencies_glog.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "C617.1"
+                ]
+              }
+            ],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/Frameworks/ReactNativeDependencies.framework/ReactNativeDependencies_boost.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "C617.1"
+                ]
+              },
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategorySystemBootTime",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "35F9.1"
+                ]
+              }
+            ],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/StripeCoreBundle.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeProductInteraction",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAnalytics",
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              }
+            ],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/StripePaymentSheetBundle.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeProductInteraction",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAnalytics",
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              },
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePaymentInfo",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              }
+            ],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/React-Core_privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "C617.1"
+                ]
+              },
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/Promises_Privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false,
+            "NSPrivacyTrackingDomains": []
+          }
+        }
+      ],
+      "provisioningSummary": {
+        "profileExpiration": "2027-09-16 07:14:13",
+        "allDevices": false,
+        "deviceCount": 1,
+        "entitlementNames": [
+          "application-identifier",
+          "aps-environment",
+          "com.apple.developer.applesignin",
+          "com.apple.developer.associated-domains",
+          "com.apple.developer.team-identifier",
+          "get-task-allow",
+          "keychain-access-groups"
+        ],
+        "appleSignIn": [
+          "Default"
+        ],
+        "associatedDomains": "*"
+      }
+    },
+    {
+      "path": ".codex-tmp\\ios-subscription-diagnosis\\native-build.ipa",
+      "sha256": "0f6ea1326e699a24201ee44f929c1eb60c4e46feaabaaf710dd6e3143b0f622c",
+      "bytes": 27891273,
+      "status": "Preview/sandbox artifact; production acceptance unverified",
+      "infoPlist": {
+        "CFBundleDisplayName": "Parish Pass",
+        "CFBundleIdentifier": "com.stanforddevelopmentsolutions.sdslocal",
+        "CFBundleShortVersionString": "0.1.0",
+        "CFBundleVersion": "1",
+        "DTSDKName": "iphoneos26.5",
+        "DTXcode": "2660",
+        "DTXcodeBuild": "17F113",
+        "ITSAppUsesNonExemptEncryption": false,
+        "MinimumOSVersion": "18.0",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSAllowsLocalNetworking": true
+        },
+        "NSCalendarsUsageDescription": "Allow ParishPass to access your calendars",
+        "NSCalendarsWriteOnlyAccessUsageDescription": "SDS Local adds events to your calendar only when you choose Add to Calendar.",
+        "NSCameraUsageDescription": "SDS Local uses your camera so you can take photos for your business page.",
+        "NSContactsUsageDescription": "SDS Local uses your contacts only when you choose to invite friends.",
+        "NSFaceIDUsageDescription": "SDS Local does not use Face ID in the current app flow.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "SDS Local uses your location in the background only when you enable alerts for nearby mobile businesses.",
+        "NSLocationAlwaysUsageDescription": "Allow ParishPass to access your location",
+        "NSLocationWhenInUseUsageDescription": "SDS Local uses your location to show nearby businesses and mobile business stops.",
+        "NSMotionUsageDescription": "Allow ParishPass to detect your current motion activity",
+        "NSPhotoLibraryAddUsageDescription": "SDS Local saves images to your photo library only when you choose Save.",
+        "NSPhotoLibraryUsageDescription": "SDS Local accesses your photos only when you choose an image to upload.",
+        "NSRemindersFullAccessUsageDescription": "Allow ParishPass to access your reminders",
+        "NSRemindersUsageDescription": "Allow ParishPass to access your reminders",
+        "UIBackgroundModes": [
+          "fetch",
+          "location"
+        ],
+        "UIDeviceFamily": [
+          1,
+          2
+        ]
+      },
+      "expoUpdates": {
+        "EXUpdatesCheckOnLaunch": "ALWAYS",
+        "EXUpdatesEnableBsdiffPatchSupport": true,
+        "EXUpdatesEnabled": true,
+        "EXUpdatesLaunchWaitMs": 0,
+        "EXUpdatesRequestHeaders": {
+          "expo-channel-name": "preview"
+        },
+        "EXUpdatesRuntimeVersion": "0.1.0",
+        "EXUpdatesURL": "https://u.expo.dev/2406d47e-390c-4a39-932c-325b2ec5ab99"
+      },
+      "privacyManifests": [
+        {
+          "path": "Payload/ParishPass.app/React-timing_privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategorySystemBootTime",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "35F9.1"
+                ]
+              }
+            ],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/Stripe3DS2.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeProductInteraction",
+                "NSPrivacyCollectedDataTypeLinked": false,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAnalytics",
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              }
+            ],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/ExpoSystemUI_privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false,
+            "NSPrivacyTrackingDomains": [],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/ReachabilitySwift.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/FBLPromises_Privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false,
+            "NSPrivacyTrackingDomains": []
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/ExpoConstants_privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false,
+            "NSPrivacyTrackingDomains": [],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/StripeBundle.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeProductInteraction",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAnalytics",
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              },
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePaymentInfo",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              }
+            ],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/React-cxxreact_privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "C617.1"
+                ]
+              }
+            ],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/GTMAppAuth_Privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyAccessedAPITypes": [],
+            "NSPrivacyTrackingDomains": [],
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/RevenueCat.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ],
+            "NSPrivacyCollectedDataTypes": [
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePurchaseHistory",
+                "NSPrivacyCollectedDataTypeLinked": false,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              }
+            ],
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/ExpoApplication_privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false,
+            "NSPrivacyTrackingDomains": [],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "C617.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/GTMSessionFetcher_Core_Privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false,
+            "NSPrivacyTrackingDomains": []
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/GoogleSignIn.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyTracking": false,
+            "NSPrivacyTrackingDomains": [],
+            "NSPrivacyCollectedDataTypes": [
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeName",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              },
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeEmailAddress",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              },
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePhoneNumber",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              },
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeOtherDataTypes",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+                  "NSPrivacyCollectedDataTypePurposeAnalytics"
+                ]
+              },
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeCoarseLocation",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              },
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeUserID",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+                  "NSPrivacyCollectedDataTypePurposeAnalytics"
+                ]
+              },
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeDeviceID",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAnalytics"
+                ]
+              },
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeOtherUsageData",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAnalytics"
+                ]
+              }
+            ],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ],
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults"
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/AppAuthCore_Privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTrackingDomains": [],
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/GoogleUtilities_Privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyTracking": false,
+            "NSPrivacyTrackingDomains": [],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "C617.1"
+                ]
+              },
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "C56D.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/ExpoTaskManager_privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false,
+            "NSPrivacyTrackingDomains": [],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/ExpoDevice_privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false,
+            "NSPrivacyTrackingDomains": [],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategorySystemBootTime",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "35F9.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "C617.1"
+                ]
+              },
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1",
+                  "C56D.1"
+                ]
+              },
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategorySystemBootTime",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "35F9.1"
+                ]
+              }
+            ],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/ExpoNotifications_privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false,
+            "NSPrivacyTrackingDomains": [],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/PurchasesHybridCommon.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ],
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults"
+              }
+            ],
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/StripeFinancialConnectionsBundle.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeProductInteraction",
+                "NSPrivacyCollectedDataTypeLinked": false,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAnalytics",
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              },
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePaymentInfo",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              }
+            ],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/Frameworks/ReactNativeDependencies.framework/ReactNativeDependencies_folly.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "C617.1"
+                ]
+              }
+            ],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/Frameworks/ReactNativeDependencies.framework/ReactNativeDependencies_glog.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "C617.1"
+                ]
+              }
+            ],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/Frameworks/ReactNativeDependencies.framework/ReactNativeDependencies_boost.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "C617.1"
+                ]
+              },
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategorySystemBootTime",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "35F9.1"
+                ]
+              }
+            ],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/StripeCoreBundle.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeProductInteraction",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAnalytics",
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              }
+            ],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/StripePaymentSheetBundle.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyCollectedDataTypes": [
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeProductInteraction",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAnalytics",
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              },
+              {
+                "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePaymentInfo",
+                "NSPrivacyCollectedDataTypeLinked": true,
+                "NSPrivacyCollectedDataTypeTracking": false,
+                "NSPrivacyCollectedDataTypePurposes": [
+                  "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+                ]
+              }
+            ],
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/React-Core_privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "C617.1"
+                ]
+              },
+              {
+                "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+                "NSPrivacyAccessedAPITypeReasons": [
+                  "CA92.1"
+                ]
+              }
+            ],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false
+          }
+        },
+        {
+          "path": "Payload/ParishPass.app/Promises_Privacy.bundle/PrivacyInfo.xcprivacy",
+          "contents": {
+            "NSPrivacyAccessedAPITypes": [],
+            "NSPrivacyCollectedDataTypes": [],
+            "NSPrivacyTracking": false,
+            "NSPrivacyTrackingDomains": []
+          }
+        }
+      ],
+      "provisioningSummary": {
+        "profileExpiration": "2027-09-16 07:14:13",
+        "allDevices": false,
+        "deviceCount": 1,
+        "entitlementNames": [
+          "application-identifier",
+          "aps-environment",
+          "com.apple.developer.applesignin",
+          "com.apple.developer.associated-domains",
+          "com.apple.developer.team-identifier",
+          "get-task-allow",
+          "keychain-access-groups"
+        ],
+        "appleSignIn": [
+          "Default"
+        ],
+        "associatedDomains": "*"
+      }
+    },
+    {
+      "path": ".codex-tmp\\parish-pass-play-sandbox.aab",
+      "sha256": "b1d39abb1d778ab39e80c52ab7d2dbed869952148e3293ea9eb80e4293b01c4a",
+      "bytes": 112736526,
+      "status": "Preview/sandbox artifact; production acceptance unverified",
+      "androidManifest": {
+        "name": "manifest",
+        "attrs": {
+          "package": "com.stanforddevelopmentsolutions.sdslocal",
+          "versionCode": "3",
+          "versionName": "0.1.0",
+          "compileSdkVersion": "36",
+          "platformBuildVersionCode": "36",
+          "compileSdkVersionCodename": "16",
+          "platformBuildVersionName": "16"
+        },
+        "children": [
+          {
+            "name": "uses-sdk",
+            "attrs": {
+              "minSdkVersion": "24",
+              "targetSdkVersion": "36"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.ACCESS_BACKGROUND_LOCATION"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.ACCESS_COARSE_LOCATION"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.ACCESS_FINE_LOCATION"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.CAMERA"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.FOREGROUND_SERVICE"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.FOREGROUND_SERVICE_LOCATION"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.INTERNET"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.READ_CALENDAR"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.READ_CONTACTS"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "maxSdkVersion": "32",
+              "name": "android.permission.READ_EXTERNAL_STORAGE"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.READ_MEDIA_IMAGES"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.READ_MEDIA_VISUAL_USER_SELECTED"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.SYSTEM_ALERT_WINDOW"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.USE_BIOMETRIC"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.USE_FINGERPRINT"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.VIBRATE"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.WRITE_CALENDAR"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.WRITE_CONTACTS"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "maxSdkVersion": "32",
+              "name": "android.permission.WRITE_EXTERNAL_STORAGE"
+            },
+            "children": []
+          },
+          {
+            "name": "queries",
+            "attrs": {},
+            "children": [
+              {
+                "name": "intent",
+                "attrs": {},
+                "children": [
+                  {
+                    "name": "action",
+                    "attrs": {
+                      "name": "android.intent.action.VIEW"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "category",
+                    "attrs": {
+                      "name": "android.intent.category.BROWSABLE"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "data",
+                    "attrs": {
+                      "scheme": "https"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "intent",
+                "attrs": {},
+                "children": [
+                  {
+                    "name": "action",
+                    "attrs": {
+                      "name": "org.chromium.intent.action.PAY"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "intent",
+                "attrs": {},
+                "children": [
+                  {
+                    "name": "action",
+                    "attrs": {
+                      "name": "org.chromium.intent.action.IS_READY_TO_PAY"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "intent",
+                "attrs": {},
+                "children": [
+                  {
+                    "name": "action",
+                    "attrs": {
+                      "name": "org.chromium.intent.action.UPDATE_PAYMENT_DETAILS"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "intent",
+                "attrs": {},
+                "children": [
+                  {
+                    "name": "action",
+                    "attrs": {
+                      "name": "android.intent.action.OPEN_DOCUMENT_TREE"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "intent",
+                "attrs": {},
+                "children": [
+                  {
+                    "name": "action",
+                    "attrs": {
+                      "name": "android.intent.action.SEND"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "data",
+                    "attrs": {
+                      "mimeType": "*/*"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "intent",
+                "attrs": {},
+                "children": [
+                  {
+                    "name": "action",
+                    "attrs": {
+                      "name": "android.intent.action.VIEW"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "data",
+                    "attrs": {
+                      "scheme": "http"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "intent",
+                "attrs": {},
+                "children": [
+                  {
+                    "name": "action",
+                    "attrs": {
+                      "name": "android.intent.action.VIEW"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "data",
+                    "attrs": {
+                      "scheme": "content"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "intent",
+                "attrs": {},
+                "children": [
+                  {
+                    "name": "action",
+                    "attrs": {
+                      "name": "android.intent.action.SEND"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "category",
+                    "attrs": {
+                      "name": "android.intent.category.DEFAULT"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "data",
+                    "attrs": {
+                      "mimeType": "application/octet-stream"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "intent",
+                "attrs": {},
+                "children": [
+                  {
+                    "name": "action",
+                    "attrs": {
+                      "name": "android.intent.action.SEND"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "category",
+                    "attrs": {
+                      "name": "android.intent.category.DEFAULT"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "data",
+                    "attrs": {
+                      "mimeType": "text/x-vcard"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "intent",
+                "attrs": {},
+                "children": [
+                  {
+                    "name": "action",
+                    "attrs": {
+                      "name": "android.intent.action.SEND"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "category",
+                    "attrs": {
+                      "name": "android.intent.category.DEFAULT"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "data",
+                    "attrs": {
+                      "mimeType": "text/vcard"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "intent",
+                "attrs": {},
+                "children": [
+                  {
+                    "name": "action",
+                    "attrs": {
+                      "name": "android.intent.action.EDIT"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "intent",
+                "attrs": {},
+                "children": [
+                  {
+                    "name": "action",
+                    "attrs": {
+                      "name": "android.intent.action.INSERT"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "intent",
+                "attrs": {},
+                "children": [
+                  {
+                    "name": "action",
+                    "attrs": {
+                      "name": "android.intent.action.OPEN_DOCUMENT"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "category",
+                    "attrs": {
+                      "name": "android.intent.category.DEFAULT"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "category",
+                    "attrs": {
+                      "name": "android.intent.category.OPENABLE"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "data",
+                    "attrs": {
+                      "mimeType": "*/*"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "intent",
+                "attrs": {},
+                "children": [
+                  {
+                    "name": "action",
+                    "attrs": {
+                      "name": "android.media.action.IMAGE_CAPTURE"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "intent",
+                "attrs": {},
+                "children": [
+                  {
+                    "name": "action",
+                    "attrs": {
+                      "name": "android.media.action.ACTION_VIDEO_CAPTURE"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "intent",
+                "attrs": {},
+                "children": [
+                  {
+                    "name": "action",
+                    "attrs": {
+                      "name": "android.support.customtabs.action.CustomTabsService"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "package",
+                "attrs": {
+                  "name": "com.android.chrome"
+                },
+                "children": []
+              },
+              {
+                "name": "intent",
+                "attrs": {},
+                "children": [
+                  {
+                    "name": "action",
+                    "attrs": {
+                      "name": "androidx.camera.extensions.action.VENDOR_ACTION"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "intent",
+                "attrs": {},
+                "children": [
+                  {
+                    "name": "action",
+                    "attrs": {
+                      "name": "android.intent.action.GET_CONTENT"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "category",
+                    "attrs": {
+                      "name": "android.intent.category.OPENABLE"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "data",
+                    "attrs": {
+                      "mimeType": "*/*"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "intent",
+                "attrs": {},
+                "children": [
+                  {
+                    "name": "action",
+                    "attrs": {
+                      "name": "com.android.vending.billing.InAppBillingService.BIND"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "intent",
+                "attrs": {},
+                "children": [
+                  {
+                    "name": "action",
+                    "attrs": {
+                      "name": "com.google.android.apps.play.billingtestcompanion.BillingOverrideService.BIND"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "package",
+                "attrs": {
+                  "name": "com.google.android.apps.maps"
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.ACCESS_NETWORK_STATE"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.ACCESS_WIFI_STATE"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.MODIFY_AUDIO_SETTINGS"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.RECEIVE_BOOT_COMPLETED"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.POST_NOTIFICATIONS"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "com.android.vending.BILLING"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.WAKE_LOCK"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "com.google.android.c2dm.permission.RECEIVE"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-feature",
+            "attrs": {
+              "glEsVersion": "0x00020000",
+              "required": "true"
+            },
+            "children": []
+          },
+          {
+            "name": "permission",
+            "attrs": {
+              "name": "com.stanforddevelopmentsolutions.sdslocal.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
+              "protectionLevel": "signature"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "com.stanforddevelopmentsolutions.sdslocal.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "com.sec.android.provider.badge.permission.READ"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "com.sec.android.provider.badge.permission.WRITE"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "com.htc.launcher.permission.READ_SETTINGS"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "com.htc.launcher.permission.UPDATE_SHORTCUT"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "com.sonyericsson.home.permission.BROADCAST_BADGE"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "com.sonymobile.home.permission.PROVIDER_INSERT_BADGE"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "com.anddoes.launcher.permission.UPDATE_COUNT"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "com.majeur.launcher.permission.UPDATE_BADGE"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "com.huawei.android.launcher.permission.CHANGE_BADGE"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "com.huawei.android.launcher.permission.READ_SETTINGS"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "com.huawei.android.launcher.permission.WRITE_SETTINGS"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "android.permission.READ_APP_BADGE"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "com.oppo.launcher.permission.READ_SETTINGS"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "com.oppo.launcher.permission.WRITE_SETTINGS"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "me.everything.badger.permission.BADGE_COUNT_READ"
+            },
+            "children": []
+          },
+          {
+            "name": "uses-permission",
+            "attrs": {
+              "name": "me.everything.badger.permission.BADGE_COUNT_WRITE"
+            },
+            "children": []
+          },
+          {
+            "name": "application",
+            "attrs": {
+              "allowBackup": "true",
+              "appComponentFactory": "androidx.core.app.CoreComponentFactory",
+              "enableOnBackInvokedCallback": "true",
+              "extractNativeLibs": "false",
+              "icon": "@mipmap/ic_launcher",
+              "label": "@string/app_name",
+              "name": "com.stanforddevelopmentsolutions.sdslocal.MainApplication",
+              "requestLegacyExternalStorage": "true",
+              "roundIcon": "@mipmap/ic_launcher_round",
+              "supportsRtl": "true",
+              "theme": "@style/AppTheme"
+            },
+            "children": [
+              {
+                "name": "meta-data",
+                "attrs": {
+                  "name": "com.google.firebase.messaging.default_notification_channel_id",
+                  "value": "updates"
+                },
+                "children": []
+              },
+              {
+                "name": "meta-data",
+                "attrs": {
+                  "name": "com.google.firebase.messaging.default_notification_color",
+                  "resource": "@color/notification_icon_color"
+                },
+                "children": []
+              },
+              {
+                "name": "meta-data",
+                "attrs": {
+                  "name": "expo.modules.notifications.default_notification_color",
+                  "resource": "@color/notification_icon_color"
+                },
+                "children": []
+              },
+              {
+                "name": "meta-data",
+                "attrs": {
+                  "name": "expo.modules.updates.ENABLED",
+                  "value": "true"
+                },
+                "children": []
+              },
+              {
+                "name": "meta-data",
+                "attrs": {
+                  "name": "expo.modules.updates.ENABLE_BSDIFF_PATCH_SUPPORT",
+                  "value": "true"
+                },
+                "children": []
+              },
+              {
+                "name": "meta-data",
+                "attrs": {
+                  "name": "expo.modules.updates.EXPO_RUNTIME_VERSION",
+                  "value": "@string/expo_runtime_version"
+                },
+                "children": []
+              },
+              {
+                "name": "meta-data",
+                "attrs": {
+                  "name": "expo.modules.updates.EXPO_UPDATES_CHECK_ON_LAUNCH",
+                  "value": "ALWAYS"
+                },
+                "children": []
+              },
+              {
+                "name": "meta-data",
+                "attrs": {
+                  "name": "expo.modules.updates.EXPO_UPDATES_LAUNCH_WAIT_MS",
+                  "value": "0"
+                },
+                "children": []
+              },
+              {
+                "name": "meta-data",
+                "attrs": {
+                  "name": "expo.modules.updates.EXPO_UPDATE_URL",
+                  "value": "https://u.expo.dev/2406d47e-390c-4a39-932c-325b2ec5ab99"
+                },
+                "children": []
+              },
+              {
+                "name": "meta-data",
+                "attrs": {
+                  "name": "expo.modules.updates.UPDATES_CONFIGURATION_REQUEST_HEADERS_KEY",
+                  "value": "{\"expo-channel-name\":\"preview\"}"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "configChanges": "keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode|smallestScreenSize|assetsPaths",
+                  "exported": "true",
+                  "launchMode": "singleTask",
+                  "name": "com.stanforddevelopmentsolutions.sdslocal.MainActivity",
+                  "screenOrientation": "portrait",
+                  "theme": "@style/Theme.App.SplashScreen",
+                  "windowSoftInputMode": "adjustResize"
+                },
+                "children": [
+                  {
+                    "name": "intent-filter",
+                    "attrs": {},
+                    "children": [
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "android.intent.action.MAIN"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "category",
+                        "attrs": {
+                          "name": "android.intent.category.LAUNCHER"
+                        },
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "name": "intent-filter",
+                    "attrs": {},
+                    "children": [
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "android.intent.action.VIEW"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "category",
+                        "attrs": {
+                          "name": "android.intent.category.DEFAULT"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "category",
+                        "attrs": {
+                          "name": "android.intent.category.BROWSABLE"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "data",
+                        "attrs": {
+                          "scheme": "sdslocal"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "data",
+                        "attrs": {
+                          "scheme": "exp+sds-local"
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "excludeFromRecents": "true",
+                  "exported": "false",
+                  "launchMode": "singleTop",
+                  "name": "com.reactnativestripesdk.CustomPaymentMethodActivity",
+                  "noHistory": "true",
+                  "theme": "@style/Theme.StripeReactNative.Transparent"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "excludeFromRecents": "true",
+                  "exported": "true",
+                  "launchMode": "singleTask",
+                  "name": "com.reactnativestripesdk.StripeConnectDeepLinkInterceptorActivity",
+                  "noHistory": "true",
+                  "theme": "@android:style/Theme.Translucent.NoTitleBar"
+                },
+                "children": [
+                  {
+                    "name": "intent-filter",
+                    "attrs": {},
+                    "children": [
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "android.intent.action.VIEW"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "category",
+                        "attrs": {
+                          "name": "android.intent.category.DEFAULT"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "category",
+                        "attrs": {
+                          "name": "android.intent.category.BROWSABLE"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "data",
+                        "attrs": {
+                          "scheme": "stripe-connect"
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "provider",
+                "attrs": {
+                  "authorities": "com.stanforddevelopmentsolutions.sdslocal.fileprovider",
+                  "exported": "false",
+                  "grantUriPermissions": "true",
+                  "name": "com.reactnativestripesdk.StripeFileProvider"
+                },
+                "children": [
+                  {
+                    "name": "meta-data",
+                    "attrs": {
+                      "name": "android.support.FILE_PROVIDER_PATHS",
+                      "resource": "@xml/file_paths"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "provider",
+                "attrs": {
+                  "authorities": "com.stanforddevelopmentsolutions.sdslocal.fileprovider",
+                  "exported": "false",
+                  "grantUriPermissions": "true",
+                  "name": "com.reactnativecommunity.webview.RNCWebViewFileProvider"
+                },
+                "children": [
+                  {
+                    "name": "meta-data",
+                    "attrs": {
+                      "name": "android.support.FILE_PROVIDER_PATHS",
+                      "resource": "@xml/file_provider_paths"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "meta-data",
+                "attrs": {
+                  "name": "org.unimodules.core.AppLoader#react-native-headless",
+                  "value": "expo.modules.adapters.react.apploader.RNHeadlessAppLoader"
+                },
+                "children": []
+              },
+              {
+                "name": "meta-data",
+                "attrs": {
+                  "name": "com.facebook.soloader.enabled",
+                  "value": "true"
+                },
+                "children": []
+              },
+              {
+                "name": "provider",
+                "attrs": {
+                  "authorities": "com.stanforddevelopmentsolutions.sdslocal.FileSystemFileProvider",
+                  "exported": "false",
+                  "grantUriPermissions": "true",
+                  "name": "expo.modules.filesystem.FileSystemFileProvider"
+                },
+                "children": [
+                  {
+                    "name": "meta-data",
+                    "attrs": {
+                      "name": "android.support.FILE_PROVIDER_PATHS",
+                      "resource": "@xml/file_system_provider_paths"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "provider",
+                "attrs": {
+                  "authorities": "com.stanforddevelopmentsolutions.sdslocal.SharingFileProvider",
+                  "exported": "false",
+                  "grantUriPermissions": "true",
+                  "name": "expo.modules.sharing.SharingFileProvider"
+                },
+                "children": [
+                  {
+                    "name": "meta-data",
+                    "attrs": {
+                      "name": "android.support.FILE_PROVIDER_PATHS",
+                      "resource": "@xml/sharing_provider_paths"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "configChanges": "screenSize|smallestScreenSize|screenLayout|orientation|navigation",
+                  "name": "expo.modules.video.FullscreenPlayerActivity",
+                  "supportsPictureInPicture": "true",
+                  "theme": "@style/Fullscreen"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "true",
+                  "launchMode": "singleTask",
+                  "name": "com.stripe.android.financialconnections.FinancialConnectionsSheetRedirectActivity"
+                },
+                "children": [
+                  {
+                    "name": "intent-filter",
+                    "attrs": {},
+                    "children": [
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "android.intent.action.VIEW"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "category",
+                        "attrs": {
+                          "name": "android.intent.category.DEFAULT"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "category",
+                        "attrs": {
+                          "name": "android.intent.category.BROWSABLE"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "data",
+                        "attrs": {
+                          "host": "link-accounts",
+                          "pathPrefix": "/com.stanforddevelopmentsolutions.sdslocal/authentication_return",
+                          "scheme": "stripe-auth"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "data",
+                        "attrs": {
+                          "host": "link-native-accounts",
+                          "pathPrefix": "/com.stanforddevelopmentsolutions.sdslocal/authentication_return",
+                          "scheme": "stripe-auth"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "data",
+                        "attrs": {
+                          "host": "link-accounts",
+                          "path": "/com.stanforddevelopmentsolutions.sdslocal/success",
+                          "scheme": "stripe-auth"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "data",
+                        "attrs": {
+                          "host": "link-accounts",
+                          "path": "/com.stanforddevelopmentsolutions.sdslocal/cancel",
+                          "scheme": "stripe-auth"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "data",
+                        "attrs": {
+                          "host": "native-redirect",
+                          "pathPrefix": "/com.stanforddevelopmentsolutions.sdslocal",
+                          "scheme": "stripe-auth"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "data",
+                        "attrs": {
+                          "host": "auth-redirect",
+                          "pathPrefix": "/com.stanforddevelopmentsolutions.sdslocal",
+                          "scheme": "stripe"
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.stripe.android.financialconnections.FinancialConnectionsSheetActivity",
+                  "theme": "@style/StripeFinancialConnectionsDefaultTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.stripe.android.financialconnections.ui.FinancialConnectionsSheetNativeActivity",
+                  "theme": "@style/StripeFinancialConnectionsDefaultTheme",
+                  "windowSoftInputMode": "adjustResize"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "launchMode": "singleTop",
+                  "name": "com.stripe.android.paymentmethodmessaging.element.LearnMoreActivity",
+                  "theme": "@style/StripeLearnMoreTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "meta-data",
+                "attrs": {
+                  "name": "com.google.mlkit.vision.DEPENDENCIES",
+                  "value": "barcode_ui"
+                },
+                "children": []
+              },
+              {
+                "name": "provider",
+                "attrs": {
+                  "authorities": "com.stanforddevelopmentsolutions.sdslocal.ClipboardFileProvider",
+                  "exported": "false",
+                  "grantUriPermissions": "true",
+                  "name": "expo.modules.clipboard.ClipboardFileProvider"
+                },
+                "children": [
+                  {
+                    "name": "meta-data",
+                    "attrs": {
+                      "name": "expo.modules.clipboard.CLIPBOARD_FILE_PROVIDER_PATHS",
+                      "resource": "@xml/clipboard_provider_paths"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "service",
+                "attrs": {
+                  "enabled": "false",
+                  "exported": "false",
+                  "name": "com.google.android.gms.metadata.ModuleDependencies"
+                },
+                "children": [
+                  {
+                    "name": "intent-filter",
+                    "attrs": {},
+                    "children": [
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "com.google.android.gms.metadata.MODULE_DEPENDENCIES"
+                        },
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "name": "meta-data",
+                    "attrs": {
+                      "name": "photopicker_activity:0:required",
+                      "value": ""
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.canhub.cropper.CropImageActivity"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "expo.modules.imagepicker.ExpoCropImageActivity",
+                  "theme": "@style/Theme.AppCompat.DayNight"
+                },
+                "children": []
+              },
+              {
+                "name": "provider",
+                "attrs": {
+                  "authorities": "com.stanforddevelopmentsolutions.sdslocal.ImagePickerFileProvider",
+                  "exported": "false",
+                  "grantUriPermissions": "true",
+                  "name": "expo.modules.imagepicker.fileprovider.ImagePickerFileProvider"
+                },
+                "children": [
+                  {
+                    "name": "meta-data",
+                    "attrs": {
+                      "name": "android.support.FILE_PROVIDER_PATHS",
+                      "resource": "@xml/image_picker_provider_paths"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "service",
+                "attrs": {
+                  "exported": "false",
+                  "foregroundServiceType": "location",
+                  "name": "expo.modules.location.services.LocationTaskService"
+                },
+                "children": []
+              },
+              {
+                "name": "service",
+                "attrs": {
+                  "exported": "false",
+                  "name": "expo.modules.notifications.service.ExpoFirebaseMessagingService"
+                },
+                "children": [
+                  {
+                    "name": "intent-filter",
+                    "attrs": {
+                      "priority": "-1"
+                    },
+                    "children": [
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "com.google.firebase.MESSAGING_EVENT"
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "receiver",
+                "attrs": {
+                  "enabled": "true",
+                  "exported": "false",
+                  "name": "expo.modules.notifications.service.NotificationsService"
+                },
+                "children": [
+                  {
+                    "name": "intent-filter",
+                    "attrs": {
+                      "priority": "-1"
+                    },
+                    "children": [
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "expo.modules.notifications.NOTIFICATION_EVENT"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "android.intent.action.BOOT_COMPLETED"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "android.intent.action.REBOOT"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "android.intent.action.QUICKBOOT_POWERON"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "com.htc.intent.action.QUICKBOOT_POWERON"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "android.intent.action.MY_PACKAGE_REPLACED"
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "excludeFromRecents": "true",
+                  "exported": "false",
+                  "launchMode": "standard",
+                  "name": "expo.modules.notifications.service.NotificationForwarderActivity",
+                  "noHistory": "true",
+                  "taskAffinity": "",
+                  "theme": "@android:style/Theme.Translucent.NoTitleBar"
+                },
+                "children": []
+              },
+              {
+                "name": "receiver",
+                "attrs": {
+                  "exported": "false",
+                  "name": "expo.modules.taskManager.TaskBroadcastReceiver"
+                },
+                "children": [
+                  {
+                    "name": "intent-filter",
+                    "attrs": {},
+                    "children": [
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "expo.modules.taskManager.TaskBroadcastReceiver.INTENT_ACTION"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "android.intent.action.BOOT_COMPLETED"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "android.intent.action.MY_PACKAGE_REPLACED"
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "service",
+                "attrs": {
+                  "enabled": "true",
+                  "exported": "false",
+                  "name": "expo.modules.taskManager.TaskJobService",
+                  "permission": "android.permission.BIND_JOB_SERVICE"
+                },
+                "children": []
+              },
+              {
+                "name": "meta-data",
+                "attrs": {
+                  "name": "expo.modules.taskManager.oneAppId",
+                  "value": "true"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "launchMode": "singleTop",
+                  "name": "expo.modules.webbrowser.BrowserProxyActivity",
+                  "taskAffinity": ".webContainer",
+                  "theme": "@android:style/Theme.Translucent.NoTitleBar"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.stripe.android.paymentsheet.PaymentSheetActivity",
+                  "theme": "@style/StripePaymentSheetDefaultTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.stripe.android.paymentsheet.PaymentOptionsActivity",
+                  "theme": "@style/StripePaymentSheetDefaultTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.stripe.android.customersheet.CustomerSheetActivity",
+                  "theme": "@style/StripePaymentSheetDefaultTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.stripe.android.paymentsheet.addresselement.AddressElementActivity",
+                  "theme": "@style/StripePaymentSheetDefaultTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.stripe.android.paymentsheet.addresselement.AutocompleteActivity",
+                  "theme": "@style/StripePaymentSheetDefaultTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.stripe.android.paymentsheet.paymentdatacollection.bacs.BacsMandateConfirmationActivity",
+                  "theme": "@style/StripePaymentSheetDefaultTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.stripe.android.paymentsheet.paymentdatacollection.polling.PollingActivity",
+                  "theme": "@style/StripePaymentSheetDefaultTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.stripe.android.paymentsheet.ui.SepaMandateActivity",
+                  "theme": "@style/StripePaymentSheetDefaultTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.stripe.android.paymentsheet.ExternalPaymentMethodProxyActivity",
+                  "theme": "@style/StripePayLauncherDefaultTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.stripe.android.paymentelement.confirmation.cpms.CustomPaymentMethodProxyActivity",
+                  "theme": "@style/StripePayLauncherDefaultTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "name": "com.stripe.android.paymentsheet.paymentdatacollection.cvcrecollection.CvcRecollectionActivity",
+                  "theme": "@style/StripePaymentSheetDefaultTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "name": "com.stripe.android.paymentelement.embedded.form.FormActivity",
+                  "theme": "@style/StripePaymentSheetDefaultTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "name": "com.stripe.android.paymentelement.embedded.manage.ManageActivity",
+                  "theme": "@style/StripePaymentSheetDefaultTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "name": "com.stripe.android.common.taptoadd.TapToAddActivity",
+                  "theme": "@style/StripePaymentSheetTapToAddTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.stripe.android.attestation.AttestationActivity",
+                  "theme": "@style/StripeTransparentTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "autoRemoveFromRecents": "true",
+                  "exported": "false",
+                  "label": "@string/stripe_link",
+                  "name": "com.stripe.android.link.LinkActivity",
+                  "theme": "@style/StripePaymentSheetDefaultTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "autoRemoveFromRecents": "true",
+                  "configChanges": "orientation|keyboard|keyboardHidden|screenLayout|screenSize|smallestScreenSize",
+                  "launchMode": "singleTop",
+                  "name": "com.stripe.android.link.LinkForegroundActivity",
+                  "theme": "@style/StripeTransparentTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "autoRemoveFromRecents": "true",
+                  "exported": "true",
+                  "launchMode": "singleInstance",
+                  "name": "com.stripe.android.link.LinkRedirectHandlerActivity",
+                  "theme": "@style/StripeTransparentTheme"
+                },
+                "children": [
+                  {
+                    "name": "intent-filter",
+                    "attrs": {},
+                    "children": [
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "android.intent.action.VIEW"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "category",
+                        "attrs": {
+                          "name": "android.intent.category.DEFAULT"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "category",
+                        "attrs": {
+                          "name": "android.intent.category.BROWSABLE"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "data",
+                        "attrs": {
+                          "host": "complete",
+                          "path": "/com.stanforddevelopmentsolutions.sdslocal",
+                          "scheme": "link-popup"
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "name": "com.stripe.android.shoppay.ShopPayActivity",
+                  "theme": "@style/StripePaymentSheetDefaultTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.stripe.android.view.PaymentAuthWebViewActivity",
+                  "theme": "@style/StripeDefaultTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.stripe.android.view.PaymentRelayActivity",
+                  "theme": "@style/StripeTransparentTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "launchMode": "singleTask",
+                  "name": "com.stripe.android.payments.StripeBrowserLauncherActivity",
+                  "theme": "@style/StripeTransparentTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "true",
+                  "launchMode": "singleTask",
+                  "name": "com.stripe.android.payments.StripeBrowserProxyReturnActivity",
+                  "theme": "@style/StripeTransparentTheme"
+                },
+                "children": [
+                  {
+                    "name": "intent-filter",
+                    "attrs": {},
+                    "children": [
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "android.intent.action.VIEW"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "category",
+                        "attrs": {
+                          "name": "android.intent.category.DEFAULT"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "category",
+                        "attrs": {
+                          "name": "android.intent.category.BROWSABLE"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "data",
+                        "attrs": {
+                          "host": "payment_return_url",
+                          "path": "/com.stanforddevelopmentsolutions.sdslocal",
+                          "scheme": "stripesdk"
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.stripe.android.payments.core.authentication.threeds2.Stripe3ds2TransactionActivity",
+                  "theme": "@style/StripeDefaultTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.stripe.android.googlepaylauncher.GooglePayLauncherActivity",
+                  "theme": "@style/StripeGooglePayDefaultTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.stripe.android.googlepaylauncher.GooglePayPaymentMethodLauncherActivity",
+                  "theme": "@style/StripeGooglePayDefaultTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.stripe.android.payments.paymentlauncher.PaymentLauncherConfirmationActivity",
+                  "theme": "@style/StripePayLauncherDefaultTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.stripe.android.payments.bankaccount.ui.CollectBankAccountActivity",
+                  "theme": "@style/StripeTransparentTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.stripe.android.challenge.passive.PassiveChallengeActivity",
+                  "theme": "@style/StripeTransparentTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.stripe.android.challenge.passive.warmer.activity.PassiveChallengeWarmerActivity",
+                  "theme": "@style/StripeTransparentTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.stripe.android.challenge.confirmation.IntentConfirmationChallengeActivity",
+                  "theme": "@style/StripePaymentSheetBaseTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "configChanges": "orientation|screenSize",
+                  "exported": "false",
+                  "name": "com.stripe.android.stripe3ds2.views.ChallengeActivity",
+                  "theme": "@style/Stripe3DS2Theme"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "true",
+                  "launchMode": "singleTask",
+                  "name": "com.stripe.android.financialconnections.lite.FinancialConnectionsSheetLiteRedirectActivity"
+                },
+                "children": [
+                  {
+                    "name": "intent-filter",
+                    "attrs": {},
+                    "children": [
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "android.intent.action.VIEW"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "category",
+                        "attrs": {
+                          "name": "android.intent.category.DEFAULT"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "category",
+                        "attrs": {
+                          "name": "android.intent.category.BROWSABLE"
+                        },
+                        "children": []
+                      },
+                      {
+                        "name": "data",
+                        "attrs": {
+                          "host": "financial-connections-lite",
+                          "pathPrefix": "/com.stanforddevelopmentsolutions.sdslocal/auth_redirect",
+                          "scheme": "stripe"
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "name": "com.stripe.android.financialconnections.lite.FinancialConnectionsSheetLiteActivity",
+                  "theme": "@style/StripeBottomSheetActivityTheme"
+                },
+                "children": []
+              },
+              {
+                "name": "uses-library",
+                "attrs": {
+                  "name": "androidx.camera.extensions.impl",
+                  "required": "false"
+                },
+                "children": []
+              },
+              {
+                "name": "service",
+                "attrs": {
+                  "enabled": "false",
+                  "exported": "false",
+                  "name": "androidx.camera.core.impl.MetadataHolderService"
+                },
+                "children": [
+                  {
+                    "name": "meta-data",
+                    "attrs": {
+                      "name": "androidx.camera.core.impl.MetadataHolderService.DEFAULT_CONFIG_PROVIDER",
+                      "value": "androidx.camera.camera2.Camera2Config$DefaultProvider"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "provider",
+                "attrs": {
+                  "authorities": "com.stanforddevelopmentsolutions.sdslocal.cropper.fileprovider",
+                  "exported": "false",
+                  "grantUriPermissions": "true",
+                  "name": "com.canhub.cropper.CropFileProvider"
+                },
+                "children": [
+                  {
+                    "name": "meta-data",
+                    "attrs": {
+                      "name": "android.support.FILE_PROVIDER_PATHS",
+                      "resource": "@xml/cropper_library_file_paths"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.google.mlkit.vision.codescanner.internal.GmsBarcodeScanningDelegateActivity",
+                  "screenOrientation": "portrait"
+                },
+                "children": []
+              },
+              {
+                "name": "service",
+                "attrs": {
+                  "directBootAware": "true",
+                  "exported": "false",
+                  "name": "com.google.mlkit.common.internal.MlKitComponentDiscoveryService"
+                },
+                "children": [
+                  {
+                    "name": "meta-data",
+                    "attrs": {
+                      "name": "com.google.firebase.components:com.google.mlkit.vision.barcode.internal.BarcodeRegistrar",
+                      "value": "com.google.firebase.components.ComponentRegistrar"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "meta-data",
+                    "attrs": {
+                      "name": "com.google.firebase.components:com.google.mlkit.vision.common.internal.VisionCommonRegistrar",
+                      "value": "com.google.firebase.components.ComponentRegistrar"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "meta-data",
+                    "attrs": {
+                      "name": "com.google.firebase.components:com.google.mlkit.common.internal.CommonComponentRegistrar",
+                      "value": "com.google.firebase.components.ComponentRegistrar"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "provider",
+                "attrs": {
+                  "authorities": "com.stanforddevelopmentsolutions.sdslocal.mlkitinitprovider",
+                  "exported": "false",
+                  "initOrder": "99",
+                  "name": "com.google.mlkit.common.internal.MlKitInitProvider"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "excludeFromRecents": "true",
+                  "exported": "false",
+                  "name": "com.google.android.gms.auth.api.signin.internal.SignInHubActivity",
+                  "theme": "@android:style/Theme.Translucent.NoTitleBar"
+                },
+                "children": []
+              },
+              {
+                "name": "service",
+                "attrs": {
+                  "exported": "true",
+                  "name": "com.google.android.gms.auth.api.signin.RevocationBoundService",
+                  "permission": "com.google.android.gms.auth.api.signin.permission.REVOCATION_NOTIFICATION",
+                  "visibleToInstantApps": "true"
+                },
+                "children": []
+              },
+              {
+                "name": "receiver",
+                "attrs": {
+                  "exported": "true",
+                  "name": "com.amazon.device.iap.ResponseReceiver",
+                  "permission": "com.amazon.inapp.purchasing.Permission.NOTIFY"
+                },
+                "children": [
+                  {
+                    "name": "intent-filter",
+                    "attrs": {},
+                    "children": [
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "com.amazon.inapp.purchasing.NOTIFY"
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "configChanges": "keyboard|keyboardHidden|screenLayout|screenSize|orientation",
+                  "name": "com.revenuecat.purchases.amazon.purchasing.ProxyAmazonBillingActivity",
+                  "theme": "@android:style/Theme.Translucent.NoTitleBar"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "configChanges": "orientation|screenSize",
+                  "excludeFromRecents": "true",
+                  "name": "com.revenuecat.purchases.SimulatedStoreErrorDialogActivity",
+                  "theme": "@android:style/Theme.Material.Dialog.Alert"
+                },
+                "children": []
+              },
+              {
+                "name": "meta-data",
+                "attrs": {
+                  "name": "com.google.android.play.billingclient.version",
+                  "value": "8.3.0"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "configChanges": "keyboard|keyboardHidden|screenLayout|screenSize|orientation",
+                  "exported": "false",
+                  "name": "com.android.billingclient.api.ProxyBillingActivity",
+                  "theme": "@android:style/Theme.Translucent.NoTitleBar"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "configChanges": "keyboard|keyboardHidden|screenLayout|screenSize|orientation",
+                  "exported": "false",
+                  "name": "com.android.billingclient.api.ProxyBillingActivityV2",
+                  "theme": "@android:style/Theme.Translucent.NoTitleBar"
+                },
+                "children": []
+              },
+              {
+                "name": "receiver",
+                "attrs": {
+                  "exported": "true",
+                  "name": "com.google.firebase.iid.FirebaseInstanceIdReceiver",
+                  "permission": "com.google.android.c2dm.permission.SEND"
+                },
+                "children": [
+                  {
+                    "name": "intent-filter",
+                    "attrs": {},
+                    "children": [
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "com.google.android.c2dm.intent.RECEIVE"
+                        },
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "name": "meta-data",
+                    "attrs": {
+                      "name": "com.google.android.gms.cloudmessaging.FINISHED_AFTER_HANDLED",
+                      "value": "true"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "service",
+                "attrs": {
+                  "directBootAware": "true",
+                  "exported": "false",
+                  "name": "com.google.firebase.messaging.FirebaseMessagingService"
+                },
+                "children": [
+                  {
+                    "name": "intent-filter",
+                    "attrs": {
+                      "priority": "-500"
+                    },
+                    "children": [
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "com.google.firebase.MESSAGING_EVENT"
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "service",
+                "attrs": {
+                  "directBootAware": "true",
+                  "exported": "false",
+                  "name": "com.google.firebase.components.ComponentDiscoveryService"
+                },
+                "children": [
+                  {
+                    "name": "meta-data",
+                    "attrs": {
+                      "name": "com.google.firebase.components:com.google.firebase.messaging.FirebaseMessagingKtxRegistrar",
+                      "value": "com.google.firebase.components.ComponentRegistrar"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "meta-data",
+                    "attrs": {
+                      "name": "com.google.firebase.components:com.google.firebase.messaging.FirebaseMessagingRegistrar",
+                      "value": "com.google.firebase.components.ComponentRegistrar"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "meta-data",
+                    "attrs": {
+                      "name": "com.google.firebase.components:com.google.firebase.installations.FirebaseInstallationsKtxRegistrar",
+                      "value": "com.google.firebase.components.ComponentRegistrar"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "meta-data",
+                    "attrs": {
+                      "name": "com.google.firebase.components:com.google.firebase.installations.FirebaseInstallationsRegistrar",
+                      "value": "com.google.firebase.components.ComponentRegistrar"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "meta-data",
+                    "attrs": {
+                      "name": "com.google.firebase.components:com.google.firebase.FirebaseCommonKtxRegistrar",
+                      "value": "com.google.firebase.components.ComponentRegistrar"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "meta-data",
+                    "attrs": {
+                      "name": "com.google.firebase.components:com.google.firebase.datatransport.TransportRegistrar",
+                      "value": "com.google.firebase.components.ComponentRegistrar"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "uses-library",
+                "attrs": {
+                  "name": "org.apache.http.legacy",
+                  "required": "false"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.google.android.gms.common.api.GoogleApiActivity",
+                  "theme": "@android:style/Theme.Translucent.NoTitleBar"
+                },
+                "children": []
+              },
+              {
+                "name": "meta-data",
+                "attrs": {
+                  "name": "com.bumptech.glide.integration.okhttp3.OkHttpGlideModule",
+                  "value": "GlideModule"
+                },
+                "children": []
+              },
+              {
+                "name": "provider",
+                "attrs": {
+                  "authorities": "com.stanforddevelopmentsolutions.sdslocal.firebaseinitprovider",
+                  "directBootAware": "true",
+                  "exported": "false",
+                  "initOrder": "100",
+                  "name": "com.google.firebase.provider.FirebaseInitProvider"
+                },
+                "children": []
+              },
+              {
+                "name": "provider",
+                "attrs": {
+                  "authorities": "com.stanforddevelopmentsolutions.sdslocal.androidx-startup",
+                  "exported": "false",
+                  "name": "androidx.startup.InitializationProvider"
+                },
+                "children": [
+                  {
+                    "name": "meta-data",
+                    "attrs": {
+                      "name": "androidx.emoji2.text.EmojiCompatInitializer",
+                      "value": "androidx.startup"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "meta-data",
+                    "attrs": {
+                      "name": "androidx.lifecycle.ProcessLifecycleInitializer",
+                      "value": "androidx.startup"
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "meta-data",
+                    "attrs": {
+                      "name": "androidx.profileinstaller.ProfileInstallerInitializer",
+                      "value": "androidx.startup"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "uses-library",
+                "attrs": {
+                  "name": "androidx.window.extensions",
+                  "required": "false"
+                },
+                "children": []
+              },
+              {
+                "name": "uses-library",
+                "attrs": {
+                  "name": "androidx.window.sidecar",
+                  "required": "false"
+                },
+                "children": []
+              },
+              {
+                "name": "service",
+                "attrs": {
+                  "directBootAware": "true",
+                  "exported": "false",
+                  "name": "androidx.room.MultiInstanceInvalidationService"
+                },
+                "children": []
+              },
+              {
+                "name": "meta-data",
+                "attrs": {
+                  "name": "com.google.android.gms.version",
+                  "value": "@integer/google_play_services_version"
+                },
+                "children": []
+              },
+              {
+                "name": "receiver",
+                "attrs": {
+                  "directBootAware": "false",
+                  "enabled": "true",
+                  "exported": "true",
+                  "name": "androidx.profileinstaller.ProfileInstallReceiver",
+                  "permission": "android.permission.DUMP"
+                },
+                "children": [
+                  {
+                    "name": "intent-filter",
+                    "attrs": {},
+                    "children": [
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "androidx.profileinstaller.action.INSTALL_PROFILE"
+                        },
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "name": "intent-filter",
+                    "attrs": {},
+                    "children": [
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "androidx.profileinstaller.action.SKIP_FILE"
+                        },
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "name": "intent-filter",
+                    "attrs": {},
+                    "children": [
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "androidx.profileinstaller.action.SAVE_PROFILE"
+                        },
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "name": "intent-filter",
+                    "attrs": {},
+                    "children": [
+                      {
+                        "name": "action",
+                        "attrs": {
+                          "name": "androidx.profileinstaller.action.BENCHMARK_OPERATION"
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "service",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
+                },
+                "children": [
+                  {
+                    "name": "meta-data",
+                    "attrs": {
+                      "name": "backend:com.google.android.datatransport.cct.CctBackendFactory",
+                      "value": "cct"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "service",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService",
+                  "permission": "android.permission.BIND_JOB_SERVICE"
+                },
+                "children": []
+              },
+              {
+                "name": "receiver",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver"
+                },
+                "children": []
+              },
+              {
+                "name": "meta-data",
+                "attrs": {
+                  "name": "aia-compat-api-min-version",
+                  "value": "1"
+                },
+                "children": []
+              },
+              {
+                "name": "activity",
+                "attrs": {
+                  "exported": "false",
+                  "name": "com.google.android.play.core.common.PlayCoreDialogWrapperActivity",
+                  "stateNotNeeded": "true",
+                  "theme": "@style/Theme.PlayCore.Transparent"
+                },
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      "nativeLibraries": [
+        {
+          "path": "base/lib/arm64-v8a/libandroidx.graphics.path.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libanimation-decoder-gif.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libappmodules.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libavif_android.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 0
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libbarhopper_v3.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 0
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libc++_shared.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libdatastore_shared_counter.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libexpo-modules-core.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libexpo-sqlite.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libexpo-updates.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 0
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libfbjni.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libgesturehandler.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libgifimage.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libhermestooling.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libhermesvm.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libimage_processing_util_jni.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 0
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libimagepipeline.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libjsi.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libnative-filters.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libnative-imagetranscoder.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libreact_codegen_rnscreens.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libreact_codegen_rnsvg.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libreact_codegen_safeareacontext.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libreactnative.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 0
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libreanimated.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/librnscreens.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libstatic-webp.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libsurface_util_jni.so",
+          "loadAlignments": [
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libworklets.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/arm64-v8a/libzstd-kmp.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libandroidx.graphics.path.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libanimation-decoder-gif.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libappmodules.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libavif_android.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libbarhopper_v3.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libc++_shared.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libdatastore_shared_counter.so",
+          "loadAlignments": [
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libexpo-modules-core.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libexpo-sqlite.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libexpo-updates.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libfbjni.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libgesturehandler.so",
+          "loadAlignments": [
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libgifimage.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libhermestooling.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 0
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libhermesvm.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 0
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libimage_processing_util_jni.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libimagepipeline.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libjsi.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 0
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libnative-filters.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libnative-imagetranscoder.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libreact_codegen_rnscreens.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libreact_codegen_rnsvg.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 0
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libreact_codegen_safeareacontext.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libreactnative.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libreanimated.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/librnscreens.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libstatic-webp.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libsurface_util_jni.so",
+          "loadAlignments": [
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libworklets.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/armeabi-v7a/libzstd-kmp.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libandroidx.graphics.path.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libanimation-decoder-gif.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 0
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libappmodules.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libavif_android.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 0
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libbarhopper_v3.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libc++_shared.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 0
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libdatastore_shared_counter.so",
+          "loadAlignments": [
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libexpo-modules-core.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libexpo-sqlite.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libexpo-updates.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libfbjni.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libgesturehandler.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libgifimage.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libhermestooling.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libhermesvm.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libimage_processing_util_jni.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libimagepipeline.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libjsi.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 0
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libnative-filters.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libnative-imagetranscoder.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libreact_codegen_rnscreens.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libreact_codegen_rnsvg.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libreact_codegen_safeareacontext.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libreactnative.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libreanimated.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/librnscreens.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 0
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libstatic-webp.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libsurface_util_jni.so",
+          "loadAlignments": [
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libworklets.so",
+          "loadAlignments": [
+            4096,
+            4096,
+            4096
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86/libzstd-kmp.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libandroidx.graphics.path.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libanimation-decoder-gif.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 0
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libappmodules.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libavif_android.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libbarhopper_v3.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libc++_shared.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libdatastore_shared_counter.so",
+          "loadAlignments": [
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libexpo-modules-core.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libexpo-sqlite.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libexpo-updates.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libfbjni.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libgesturehandler.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libgifimage.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libhermestooling.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libhermesvm.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libimage_processing_util_jni.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 0
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libimagepipeline.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libjsi.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libnative-filters.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libnative-imagetranscoder.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 0
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libreact_codegen_rnscreens.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libreact_codegen_rnsvg.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libreact_codegen_safeareacontext.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libreactnative.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 0
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libreanimated.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 0
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/librnscreens.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 0
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libstatic-webp.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libsurface_util_jni.so",
+          "loadAlignments": [
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 4096
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libworklets.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 8192
+            }
+          ]
+        },
+        {
+          "path": "base/lib/x86_64/libzstd-kmp.so",
+          "loadAlignments": [
+            16384,
+            16384,
+            16384
+          ],
+          "relro": [
+            {
+              "endModulo16k": 12288
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

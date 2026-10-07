@@ -53,7 +53,7 @@ describe('pickup customer presentation', () => {
     expect(restoreCart('not-json')).toEqual([]);
   });
   it('keeps checkout and refund pending until server state changes', () => {
-    expect(orderStatusLabel.checkout_pending).toBe('Confirming payment');
+    expect(orderStatusLabel.checkout_pending).toBe('Payment not confirmed');
     expect(orderStatusLabel.refund_pending).toBe('Refund pending');
     expect(nextPickupAction.checkout_pending).toBeUndefined();
     expect(pollDelay(12)).toBe(30000);

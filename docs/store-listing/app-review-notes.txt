@@ -1,0 +1,7 @@
+Parish Pass combines local business discovery with business-owner hosting and tools. Customer accounts and discovery are free. Creating a business requires a business-owner subscription; all three monthly plans cover up to three businesses and differ by features. Business plans includes localized store pricing, renewal terms, Restore purchases, cancellation management and public terms/privacy/support links. Business approval is separate from billing. Goods and services sold by businesses use supported payment processors separately from the app subscription.
+
+Optional nearby mobile-business alerts are disabled by default. A user enables them in Account > Notifications and sees a disclosure before permission requests. Always/background location allows device-local geofences to notify users when a followed mobile business has an active nearby published stop while the app is not in use. This does not continuously upload a customer location history or use background location for advertising. Users can disable nearby alerts and control permissions in device settings.
+
+Account deletion is available in Account > Account & data > Delete account, with an external request route at https://parish-pass--policies.expo.app/delete-account.html. Store subscriptions must be cancelled separately.
+
+Before submission: provide a dedicated review account, applicable business data and any location demonstration details for the final review build.

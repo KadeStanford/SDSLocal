@@ -1,0 +1,168 @@
+{
+  "project": "lgddhdexvwclfrnzjtly",
+  "deployedAt": "2026-10-01T10:02:23.134Z",
+  "migrations": [
+    {
+      "file": "20260930000200_business_feature_enforcement.sql",
+      "sha256": "005FB774EC99FC432148257AE8CD4FB07C694FE2F020574D48B3478D8E99853E",
+      "action": "applied"
+    },
+    {
+      "file": "20260930000300_private_rpc_execute_grants.sql",
+      "sha256": "BD0A057BC1BAAE5003F8B34D586DA51BC418709B509E6CA946720BD3485C5977",
+      "action": "applied"
+    },
+    {
+      "file": "20260930000400_moderation_report_result_types.sql",
+      "sha256": "0D35ABA56B1D6A895D31F1F30E7BDB91867E5069F37DCA94BA44C6F1104E7A73",
+      "action": "applied"
+    }
+  ],
+  "hostedHistory": [
+    {
+      "name": "20260930000200_business_feature_enforcement",
+      "version": "20261001100217"
+    },
+    {
+      "name": "20260930000300_private_rpc_execute_grants",
+      "version": "20261001100219"
+    },
+    {
+      "name": "20260930000400_moderation_report_result_types",
+      "version": "20261001100221"
+    },
+    {
+      "name": "20261001000100_existing_obligation_recovery",
+      "version": "20261001103316"
+    }
+  ],
+  "stagingTests": [
+    {
+      "test": "rpc_execute_boundaries.sql",
+      "passed": true,
+      "rolledBack": true
+    },
+    {
+      "test": "moderation_report_contract.sql",
+      "passed": true,
+      "rolledBack": true
+    },
+    {
+      "test": "business_feature_enforcement.sql",
+      "passed": true,
+      "rolledBack": true
+    }
+  ],
+  "localSqlTests": "36/36 passed; updated private recovery-helper ACL test also passed locally and in staging.",
+  "settings": {
+    "environment": "sandbox",
+    "productionBillingEnabled": false,
+    "sandboxCheckout": true,
+    "featureEnforcement": true
+  },
+  "warnings": {
+    "unusedVariables": 8,
+    "implicitEmptyLiteralCasts": 4,
+    "blocking": false
+  },
+  "notes": [
+    "Prelaunch app: no real merchants/orders; user explicitly requested staging enforcement and production-like tester readiness.",
+    "Private moderation helper is limited to its dedicated moderator role; test corrected to preserve this staging protection.",
+    "Test fixtures rolled back; no email, real payment, OTA or store submission.",
+    "Recovery migration and three Edge functions deployed; four staging regression suites passed with fixture rollback. Mobile code and tester native profile remain unpublished."
+  ],
+  "updatedAt": "2026-10-01T10:42:48.001Z",
+  "recoveryMigration": {
+    "project": "lgddhdexvwclfrnzjtly",
+    "at": "2026-10-01T10:33:17.660Z",
+    "file": "20261001000100_existing_obligation_recovery.sql",
+    "sha256": "F1133E506777C993B3C2203D0C501984C7745EB8FE84E8E6FD1B27CC0BECA281",
+    "action": "applied",
+    "tests": [
+      {
+        "name": "expired_business_recovery",
+        "passed": true,
+        "rolledBack": true
+      },
+      {
+        "name": "rpc_execute_boundaries",
+        "passed": true,
+        "rolledBack": true
+      },
+      {
+        "name": "business_feature_enforcement",
+        "passed": true,
+        "rolledBack": true
+      },
+      {
+        "name": "moderation_report_contract",
+        "passed": true,
+        "rolledBack": true
+      }
+    ]
+  },
+  "edgeFunctions": {
+    "project": "lgddhdexvwclfrnzjtly",
+    "at": "2026-10-01T10:34:06.801Z",
+    "before": [
+      {
+        "slug": "loyalty-token",
+        "version": 15,
+        "status": "ACTIVE",
+        "verify_jwt": true,
+        "updated_at": 1789857688209
+      },
+      {
+        "slug": "loyalty-transact",
+        "version": 14,
+        "status": "ACTIVE",
+        "verify_jwt": true,
+        "updated_at": 1790542976760
+      },
+      {
+        "slug": "square-commerce",
+        "version": 50,
+        "status": "ACTIVE",
+        "verify_jwt": false,
+        "updated_at": 1790736430594
+      }
+    ],
+    "after": [
+      {
+        "slug": "loyalty-token",
+        "version": 16,
+        "status": "ACTIVE",
+        "verify_jwt": true,
+        "updated_at": 1790850843665
+      },
+      {
+        "slug": "loyalty-transact",
+        "version": 15,
+        "status": "ACTIVE",
+        "verify_jwt": true,
+        "updated_at": 1790850843665
+      },
+      {
+        "slug": "square-commerce",
+        "version": 51,
+        "status": "ACTIVE",
+        "verify_jwt": false,
+        "updated_at": 1790850843665
+      }
+    ]
+  },
+  "functionAuthenticationSmoke": [
+    {
+      "function": "loyalty-token",
+      "unauthenticatedStatus": 401
+    },
+    {
+      "function": "loyalty-transact",
+      "unauthenticatedStatus": 401
+    },
+    {
+      "function": "square-commerce",
+      "unauthenticatedStatus": 401
+    }
+  ]
+}

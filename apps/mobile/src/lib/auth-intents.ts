@@ -2,9 +2,12 @@ export const authIntentKinds = [
   'follow',
   'join_rewards',
   'event_reminder',
+  'event_rsvp',
+  'service_request',
   'report_business',
   'report_event',
   'report_offering',
+  'report_review',
   'block_business',
   'create_business',
 ] as const;
@@ -71,7 +74,7 @@ export function parseCustomerAuthIntent(value: unknown): AuthIntent | null {
   }
   const businessName = cleanLabel(candidate.businessName);
   if (!businessName) return null;
-  const needsTarget = ['event_reminder', 'report_event', 'report_offering'].includes(
+  const needsTarget = ['event_reminder', 'event_rsvp', 'report_event', 'report_offering', 'report_review'].includes(
     candidate.kind,
   );
   const targetId =
@@ -111,10 +114,15 @@ export function authIntentExplanation(intent: AuthIntent) {
       return `Sign in to join ${intent.businessName}'s rewards program.`;
     case 'event_reminder':
       return `Sign in to save ${intent.targetName ?? 'this event'} and set a reminder.`;
+    case 'event_rsvp':
+      return `Sign in to reserve a place at ${intent.targetName ?? 'this event'}.`;
+    case 'service_request':
+      return `Sign in to contact ${intent.businessName} about its services.`;
     case 'report_business':
     case 'report_event':
     case 'report_offering':
-      return 'Sign in to send this report to SDS Local for review.';
+    case 'report_review':
+      return 'Sign in to send this report to Parish Pass for review.';
     case 'block_business':
       return `Sign in to block ${intent.businessName} from your discovery results.`;
     case 'create_business':

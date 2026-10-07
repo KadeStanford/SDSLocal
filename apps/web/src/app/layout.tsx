@@ -6,8 +6,8 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'SDS Local',
-    template: '%s · SDS Local',
+    default: 'Parish Pass',
+    template: '%s · Parish Pass',
   },
   description: 'Discover local businesses, see what is happening, and keep local rewards together.',
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),

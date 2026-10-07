@@ -1,3 +1,4 @@
+import { validRewardClaim } from './pickup-rewards';
 import type { CartLine } from './square-commerce-core';
 export interface CartStore {
   getItem(key: string): string | null;
@@ -41,6 +42,7 @@ export function decodePickupCart(
         variationId: l.variationId,
         quantity: l.quantity,
         modifierIds: [...l.modifierIds],
+        ...(validRewardClaim(l.rewardClaim) ? { rewardClaim: l.rewardClaim } : {}),
         ...(Number.isSafeInteger(l.lastKnownUnitPrice) && l.lastKnownUnitPrice! >= 0
           ? { lastKnownUnitPrice: l.lastKnownUnitPrice }
           : {}),
@@ -73,6 +75,7 @@ export function createPickupCartStorage(store: CartStore) {
                 variationId: l.variationId,
                 quantity: l.quantity,
                 modifierIds: l.modifierIds,
+                ...(validRewardClaim(l.rewardClaim) ? { rewardClaim: l.rewardClaim } : {}),
                 ...(l.lastKnownUnitPrice !== undefined
                   ? { lastKnownUnitPrice: l.lastKnownUnitPrice }
                   : {}),

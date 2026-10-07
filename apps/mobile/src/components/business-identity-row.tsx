@@ -9,8 +9,10 @@ export function BusinessIdentityRow({
   uri,
   size = 30,
   textStyle,
+  numberOfLines,
 }: {
   readonly name: string;
+  readonly numberOfLines?: number | undefined;
   readonly photos?: readonly IdentityPhoto[] | null | undefined;
   readonly uri?: string | null | undefined;
   readonly size?: number;
@@ -19,7 +21,12 @@ export function BusinessIdentityRow({
   return (
     <View style={styles.row}>
       <BusinessLogo name={name} photos={photos} uri={uri} size={size} decorative />
-      <ThemedText type="small" themeColor="textSecondary" style={[styles.name, textStyle]}>
+      <ThemedText
+        numberOfLines={numberOfLines}
+        type="small"
+        themeColor="textSecondary"
+        style={[styles.name, textStyle]}
+      >
         {name}
       </ThemedText>
     </View>

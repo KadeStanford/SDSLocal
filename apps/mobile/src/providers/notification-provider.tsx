@@ -4,6 +4,7 @@ import * as Crypto from 'expo-crypto';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { type Href, router } from 'expo-router';
+import { businessChimeStorage } from '@/lib/business-chime-storage';
 import {
   createContext,
   type PropsWithChildren,
@@ -25,6 +26,8 @@ import { useAppMode } from '@/providers/app-mode-provider';
 type NotificationStatus = 'available' | 'enabled' | 'denied' | 'error' | 'unsupported';
 
 interface NotificationContextValue {
+  readonly businessChime: boolean;
+  readonly setBusinessChime: (enabled: boolean) => void;
   readonly status: NotificationStatus;
   readonly errorMessage: string | null;
   readonly unreadCount: number;
@@ -114,6 +117,36 @@ export function NotificationProvider({ children }: PropsWithChildren) {
   const [status, setStatus] = useState<NotificationStatus>('available');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [chimePreference, setChimePreference] = useState<{
+    userId: string;
+    enabled: boolean;
+  } | null>(null);
+  const businessChime =
+    chimePreference?.userId === session?.user.id && chimePreference?.enabled === true;
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!session) {
+        setChimePreference(null);
+        return;
+      }
+      let enabled = false;
+      try {
+        enabled = businessChimeStorage.get('business-chime:' + session.user.id) === 'true';
+      } catch {}
+      setChimePreference({ userId: session.user.id, enabled });
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [session?.user.id]);
+  const setBusinessChime = useCallback(
+    (enabled: boolean) => {
+      if (!session) return;
+      setChimePreference({ userId: session.user.id, enabled });
+      try {
+        businessChimeStorage.set('business-chime:' + session.user.id, String(enabled));
+      } catch {}
+    },
+    [session?.user.id],
+  );
 
   const refreshUnreadCount = useCallback(async () => {
     if (!session) {
@@ -186,7 +219,11 @@ export function NotificationProvider({ children }: PropsWithChildren) {
       const url = notificationUrl(notification);
       if (url) {
         handledResponse.current = notification.request.identifier;
-        if (String(url).startsWith('/pickup-order?')) setMode('business');
+        if (
+          String(url).startsWith('/pickup-order?') ||
+          String(url).startsWith('/service-requests?')
+        )
+          setMode('business');
         router.push(url);
       }
     };
@@ -248,8 +285,26 @@ export function NotificationProvider({ children }: PropsWithChildren) {
   }, [session]);
 
   const value = useMemo(
-    () => ({ status, errorMessage, unreadCount, refreshUnreadCount, enable, deactivate }),
-    [status, errorMessage, unreadCount, refreshUnreadCount, enable, deactivate],
+    () => ({
+      status,
+      errorMessage,
+      unreadCount,
+      refreshUnreadCount,
+      enable,
+      deactivate,
+      businessChime,
+      setBusinessChime,
+    }),
+    [
+      status,
+      errorMessage,
+      unreadCount,
+      refreshUnreadCount,
+      enable,
+      deactivate,
+      businessChime,
+      setBusinessChime,
+    ],
   );
   return <NotificationContext.Provider value={value}>{children}</NotificationContext.Provider>;
 }

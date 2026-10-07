@@ -45,9 +45,20 @@ function environmentFor(value: unknown): ParsedRevenueCatEvent['environment'] {
   throw new Error('Unsupported subscription environment.');
 }
 
-function statusFor(type: string, expirationAt: string | null): ListingStatus {
-  if (type === 'BILLING_ISSUE') return 'billing_retry';
-  if (type === 'SUBSCRIPTION_PAUSED') return 'paused';
+function statusFor(
+  type: string,
+  expirationAt: string | null,
+  gracePeriodEnd: string | null,
+): ListingStatus {
+  if (type === 'BILLING_ISSUE') {
+    return gracePeriodEnd && new Date(gracePeriodEnd).getTime() > Date.now()
+      ? 'grace_period'
+      : 'billing_retry';
+  }
+  // This event schedules a pause; EXPIRATION ends access at the paid period boundary.
+  if (type === 'SUBSCRIPTION_PAUSED') {
+    return expirationAt && new Date(expirationAt).getTime() > Date.now() ? 'active' : 'paused';
+  }
   if (type === 'EXPIRATION') return 'expired';
   if (type === 'CANCELLATION') {
     return expirationAt && new Date(expirationAt).getTime() > Date.now() ? 'active' : 'expired';
@@ -74,6 +85,9 @@ export function parseRevenueCatWebhook(value: unknown): ParsedRevenueCatEvent {
   const event = root.event as Record<string, unknown>;
   const eventType = requiredString(event.type, 'event type');
   const eventId = requiredString(event.id, 'event id');
+  if (!Number.isSafeInteger(event.event_timestamp_ms) || !optionalDate(event.event_timestamp_ms)) {
+    throw new Error('Missing or invalid event timestamp.');
+  }
   const userId = requiredString(event.app_user_id, 'app user id');
   if (!uuidPattern.test(userId)) throw new Error('App user id must be a Supabase user UUID.');
 
@@ -84,14 +98,18 @@ export function parseRevenueCatWebhook(value: unknown): ParsedRevenueCatEvent {
     throw new Error('Event does not include the business listing entitlement.');
   }
 
-  const currentPeriodEnd = optionalDate(event.expiration_at_ms);
+  const gracePeriodEnd = optionalDate(event.grace_period_expiration_at_ms);
+  const currentPeriodEnd =
+    eventType === 'BILLING_ISSUE' && gracePeriodEnd
+      ? gracePeriodEnd
+      : optionalDate(event.expiration_at_ms);
   return {
     eventId,
     eventType,
     userId,
     provider: providerForStore(event.store),
     productId: requiredString(event.product_id, 'product id'),
-    status: statusFor(eventType, currentPeriodEnd),
+    status: statusFor(eventType, currentPeriodEnd, gracePeriodEnd),
     environment: environmentFor(event.environment),
     originalTransactionId: requiredString(
       event.original_transaction_id ?? event.transaction_id,
@@ -99,7 +117,10 @@ export function parseRevenueCatWebhook(value: unknown): ParsedRevenueCatEvent {
     ),
     purchasedAt: optionalDate(event.purchased_at_ms),
     currentPeriodEnd,
-    willRenew: eventType !== 'CANCELLATION' && eventType !== 'EXPIRATION',
+    willRenew:
+      eventType !== 'CANCELLATION' &&
+      eventType !== 'EXPIRATION' &&
+      eventType !== 'SUBSCRIPTION_PAUSED',
   };
 }
 

@@ -1,10 +1,27 @@
+import { inputPresets } from '@/lib/input-presets';
+import { EventDetailHeading } from './event-detail-heading';
+import { RewardProgramCard } from './reward-program-card';
+import { FlowSection } from '@/components/flow-layout';
+import { BusinessOfferingCard } from './business-offering-card';
+import { BusinessPhotoPreview } from './business-photo-preview';
+import {
+  BusinessPreviewSection,
+  BusinessPreviewCarousel,
+  BusinessOfferingPreview,
+} from './business-preview-section';
+import { EventCard } from './event-card';
+import { MerchantSheet } from './merchant-ui';
+import { BusinessDetailsDisclosure } from './business-details-disclosure';
 import { PickupOrderCta } from './pickup-order-cta';
-import { BusinessBrandHeader } from './business-brand-header';
+import { BusinessReviewSection } from './pickup/business-review-section';
+import { BusinessRating } from './business-rating';
+import { useBusinessReviewSummary } from '@/hooks/use-business-review-summary';
+import { EventRsvpControls, type EventRsvpSummary } from './event-rsvp-controls';
 import { AppButton } from './app-button';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { BusinessLogo } from '@/components/business-logo';
-import { BusinessIdentityRow } from '@/components/business-identity-row';
 import { Image } from 'expo-image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SymbolView } from 'expo-symbols';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -22,9 +39,10 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { AppTextInput as TextInput } from '@/components/app-text-input';
 
 import { ThemedText } from '@/components/themed-text';
-import { BusinessLocationMap } from '@/components/business-location-map';
+import { BusinessStopSchedule } from './business-stop-schedule';
 import { CustomerActionRow, type CustomerAction } from '@/components/customer-action-row';
 import { HorizontalScrollRow } from '@/components/horizontal-scroll-row';
 import { ReportDialog } from '@/components/report-dialog';
@@ -42,7 +60,6 @@ import {
   formatEventDateTime,
   getTodayHours,
   groupWeeklyHours,
-  shouldCollapseBusinessDescription,
 } from '@/lib/discovery-core';
 import { blockBusiness, shouldShowSafetyControls, type ReportTarget } from '@/lib/customer-safety';
 import { buildDirectionsUrl, normalizeWebsiteUrl } from '@/lib/external-actions';
@@ -50,6 +67,7 @@ import { businessPublicUrl } from '@/lib/share-links';
 import { storagePublicUrl } from '@/lib/storage-url';
 import { supabase } from '@/lib/supabase';
 import { userMessageFromError } from '@/lib/user-error';
+import { recordBusinessAnalyticsEvent } from '@/lib/business-analytics';
 import { useAuth } from '@/providers/auth-provider';
 import { useNearbyAlerts } from '@/providers/nearby-alerts-provider';
 import { getBusinessStatusLabel } from '@sds/business-logic';
@@ -143,7 +161,9 @@ interface EventData {
   readonly title: string;
   readonly description: string;
   readonly starts_at: string;
+  readonly location_mode?: 'business' | 'custom' | 'online';
   readonly address_text: string | null;
+  readonly rsvp_limit: number | null;
   readonly media_assets:
     | {
         readonly storage_path: string;
@@ -204,6 +224,7 @@ export function PublicBusinessPageContent({
   onBlocked,
   resumeAction,
   resumeTargetId,
+  initialOfferingQuery,
 }: {
   readonly businessId: string;
   readonly preview?: boolean;
@@ -213,39 +234,92 @@ export function PublicBusinessPageContent({
   readonly onBlocked?: (businessId: string) => void;
   readonly resumeAction?: string;
   readonly resumeTargetId?: string;
+  readonly initialOfferingQuery?: string | undefined;
 }) {
   const { session } = useAuth();
+  const reviewSummary = useBusinessReviewSummary(businessId, !preview);
   const nearbyAlerts = useNearbyAlerts();
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
+  const viewerInsets = useSafeAreaInsets();
   const [business, setBusiness] = useState<BusinessPageData | null>(null);
+  const [appointmentCapability, setAppointmentCapability] = useState<{
+    businessId: string;
+    available: boolean;
+  } | null>(null);
   const [photos, setPhotos] = useState<PhotoData[]>([]);
   const [sections, setSections] = useState<SectionData[]>([]);
   const [items, setItems] = useState<ItemData[]>([]);
   const [events, setEvents] = useState<EventData[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  useEffect(() => {
+    setSelectedEventId(null);
+  }, [businessId, session?.user.id]);
   const [loyalty, setLoyalty] = useState<LoyaltyData | null>(null);
   const [hours, setHours] = useState<HourData[]>([]);
-  const [aboutExpanded, setAboutExpanded] = useState(false);
+  const [detailsPanel, setDetailsPanel] = useState<
+    'menu' | 'contact' | 'reviews' | 'rewards' | null
+  >(initialOfferingQuery ? 'menu' : null);
+  const [offeringQuery, setOfferingQuery] = useState(initialOfferingQuery ?? '');
   const [selectedMenuSectionId, setSelectedMenuSectionId] = useState<string | null>(null);
   const [menuOptionsItem, setMenuOptionsItem] = useState<ItemData | null>(null);
   const [locationStops, setLocationStops] = useState<LocationStopData[]>([]);
+
+  const appointmentBusinessId = business?.id;
+  const appointmentBusinessType = business?.business_type;
+  const appointmentsAvailable =
+    appointmentCapability?.businessId === appointmentBusinessId &&
+    appointmentCapability?.available === true;
+
+  useEffect(() => {
+    let active = true;
+    if (!appointmentBusinessId || appointmentBusinessType !== 'services' || preview) return;
+    void supabase
+      .rpc('get_appointment_status', { p_business_id: appointmentBusinessId })
+      .then(({ data, error }) => {
+        if (active)
+          setAppointmentCapability({
+            businessId: appointmentBusinessId,
+            available: !error && data === true,
+          });
+      });
+    return () => {
+      active = false;
+    };
+  }, [appointmentBusinessId, appointmentBusinessType, preview]);
   const [following, setFollowing] = useState(false);
   const [eventReminders, setEventReminders] = useState<Record<string, boolean>>({});
+  const [eventRsvps, setEventRsvps] = useState<Record<string, EventRsvpSummary>>({});
+  const [eventPartySizes, setEventPartySizes] = useState<Record<string, number>>({});
   const [loyaltyMembership, setLoyaltyMembership] = useState<LoyaltyMembershipData | null>(null);
   const [actionPending, setActionPending] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const eventMutation = useRef(false);
+  const eventScope = businessId + ':' + (session?.user.id ?? '');
+  const eventScopeRef = useRef(eventScope);
+  eventScopeRef.current = eventScope;
+  useEffect(() => {
+    setActionPending(null);
+    setActionMessage(null);
+    return () => {
+      eventScopeRef.current = '';
+    };
+  }, [eventScope]);
   const [ownsBusiness, setOwnsBusiness] = useState(false);
   const [gateIntent, setGateIntent] = useState<CustomerAuthIntent | null>(null);
   const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null);
   const [safetyOpen, setSafetyOpen] = useState(false);
   const [viewerIndex, setViewerIndex] = useState(0);
+  const [viewerGrid, setViewerGrid] = useState(false);
   const [viewerVisible, setViewerVisible] = useState(false);
   const [viewerWidth, setViewerWidth] = useState(0);
   const [loadedAspectRatios, setLoadedAspectRatios] = useState<Record<string, number>>({});
   const [viewerScrollX] = useState(() => new Animated.Value(0));
   const viewerListRef = useRef<FlatList<GalleryPhoto>>(null);
   const [loading, setLoading] = useState(true);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [partialError, setPartialError] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const pageWidth = viewerWidth || windowWidth;
 
@@ -283,7 +357,7 @@ export function PublicBusinessPageContent({
       supabase
         .from('events')
         .select(
-          'id, title, description, starts_at, address_text, media_assets(storage_path, status, alt_text, width, height)',
+          'id, title, description, starts_at, location_mode, address_text, rsvp_limit, media_assets(storage_path, status, alt_text, width, height)',
         )
         .eq('business_id', businessId)
         .is('archived_at', null)
@@ -358,23 +432,19 @@ export function PublicBusinessPageContent({
         if (!active) return;
         const firstError = [
           businessResult.error,
-          photoResult.error,
-          sectionResult.error,
-          itemResult.error,
-          eventResult.error,
-          loyaltyResult.error,
-          hourResult.error,
+
+
+
+
+
+
           followResult.error,
           savesResult.error,
           membershipResult.error,
           ownerResult.error,
-          locationResult.error &&
-          !/function .*get_business_location_stops.*does not exist/i.test(
-            locationResult.error.message,
-          )
-            ? locationResult.error
-            : null,
+
         ].find(Boolean);
+        setPartialError(Boolean(photoResult.error || sectionResult.error || itemResult.error || eventResult.error || loyaltyResult.error || hourResult.error || locationResult.error));
         if (firstError)
           setError(userMessageFromError(firstError, 'We could not load this business page.'));
         else if (!businessResult.data) setError('This business page is unavailable.');
@@ -384,6 +454,22 @@ export function PublicBusinessPageContent({
           setSections((sectionResult.data ?? []) as SectionData[]);
           setItems((itemResult.data ?? []) as ItemData[]);
           setEvents((eventResult.data ?? []) as EventData[]);
+          void Promise.all(
+            (eventResult.data ?? []).map(async (event) => {
+              const { data } = await supabase.rpc('get_event_rsvp_group_summary', {
+                p_event_id: event.id,
+              });
+              const row = Array.isArray(data) ? data[0] : data;
+              return row ? ([event.id, row as EventRsvpSummary] as const) : null;
+            }),
+          ).then((summaries) => {
+            if (!active) return;
+            const loaded = summaries.filter(Boolean) as [string, EventRsvpSummary][];
+            setEventRsvps(Object.fromEntries(loaded));
+            setEventPartySizes(
+              Object.fromEntries(loaded.map(([id, summary]) => [id, summary.my_party_size ?? 1])),
+            );
+          });
           setLoyalty((loyaltyResult.data as LoyaltyData | null) ?? null);
           setHours((hourResult.data ?? []) as HourData[]);
           setLocationStops((locationResult.data ?? []) as LocationStopData[]);
@@ -400,6 +486,15 @@ export function PublicBusinessPageContent({
           );
           setLoyaltyMembership((membershipResult.data as LoyaltyMembershipData | null) ?? null);
           setOwnsBusiness(Boolean(ownerResult.data?.length));
+          if (!preview && businessResult.data.status === 'active') {
+            recordBusinessAnalyticsEvent(businessId, 'page_view');
+            for (const item of itemResult.data ?? []) {
+              recordBusinessAnalyticsEvent(businessId, 'offering_view', { subjectId: item.id });
+            }
+            for (const event of eventResult.data ?? []) {
+              recordBusinessAnalyticsEvent(businessId, 'event_view', { subjectId: event.id });
+            }
+          }
         }
         setLoading(false);
       },
@@ -407,7 +502,7 @@ export function PublicBusinessPageContent({
     return () => {
       active = false;
     };
-  }, [businessId, session]);
+  }, [businessId, preview, session, loadAttempt]);
 
   const resolvedPhotos = useMemo<GalleryPhoto[]>(
     () =>
@@ -490,30 +585,112 @@ export function PublicBusinessPageContent({
       }
       return;
     }
-    const existingReminder = Object.prototype.hasOwnProperty.call(eventReminders, eventId);
-    const isReminded = eventReminders[eventId] === true;
-    const nextEnabled = !isReminded;
-    setActionPending(`event:${eventId}`);
-    setActionMessage(null);
-    setEventReminders((current) => ({ ...current, [eventId]: nextEnabled }));
-    const result = existingReminder
-      ? await supabase
-          .from('event_saves')
-          .update({ reminder_enabled: nextEnabled })
-          .eq('event_id', eventId)
-          .eq('customer_id', session.user.id)
-      : await supabase.from('event_saves').insert({
-          event_id: eventId,
-          customer_id: session.user.id,
-          reminder_enabled: true,
-          reminder_minutes_before: 1440,
-        });
-    setActionPending(null);
-    if (result.error) {
-      setEventReminders((current) => ({ ...current, [eventId]: isReminded }));
-      setActionMessage(
-        userMessageFromError(result.error, 'We could not update that event reminder.'),
-      );
+    if (eventMutation.current) return;
+    eventMutation.current = true;
+    const scope = eventScopeRef.current;
+    const wasReminded = eventReminders[eventId] === true;
+    try {
+      const existingReminder = Object.prototype.hasOwnProperty.call(eventReminders, eventId);
+      const isReminded = eventReminders[eventId] === true;
+      const nextEnabled = !isReminded;
+      setActionPending(`event:${eventId}`);
+      setActionMessage(null);
+      setEventReminders((current) => ({ ...current, [eventId]: nextEnabled }));
+      const result = existingReminder
+        ? await supabase
+            .from('event_saves')
+            .update({ reminder_enabled: nextEnabled })
+            .eq('event_id', eventId)
+            .eq('customer_id', session.user.id)
+        : await supabase.from('event_saves').insert({
+            event_id: eventId,
+            customer_id: session.user.id,
+            reminder_enabled: true,
+            reminder_minutes_before: 1440,
+          });
+      if (scope !== eventScopeRef.current) return;
+      if (result.error) {
+        setEventReminders((current) => ({ ...current, [eventId]: isReminded }));
+        setActionMessage(
+          userMessageFromError(result.error, 'We could not update that event reminder.'),
+        );
+      }
+    } catch (cause) {
+      if (scope === eventScopeRef.current) {
+        setEventReminders((current) => ({ ...current, [eventId]: wasReminded }));
+        setActionMessage(
+          userMessageFromError(
+            cause,
+            'The reminder could not be confirmed. Refresh this event before trying again.',
+          ),
+        );
+      }
+    } finally {
+      eventMutation.current = false;
+      if (scope === eventScopeRef.current) setActionPending(null);
+    }
+  }
+
+  async function saveEventRsvp(eventId: string, isGoing: boolean, partySize: number) {
+    const event = events.find((candidate) => candidate.id === eventId);
+    if (!event || !business) return;
+    if (isGoing && !session) {
+      requireAccount({
+        kind: 'event_rsvp',
+        businessId: business.id,
+        businessName: business.name,
+        targetId: event.id,
+        targetName: event.title,
+      });
+      return;
+    }
+    if (eventMutation.current) return;
+    eventMutation.current = true;
+    const scope = eventScopeRef.current;
+    try {
+      setActionPending(`rsvp:${eventId}`);
+      setActionMessage(null);
+      const { data, error: rsvpError } = await supabase.rpc('set_event_rsvp_group', {
+        p_event_id: eventId,
+        p_is_going: isGoing,
+        p_party_size: partySize,
+      });
+      if (scope !== eventScopeRef.current) return;
+      if (rsvpError) {
+        setActionMessage(userMessageFromError(rsvpError, 'Your RSVP could not be updated.'));
+        return;
+      }
+      const row = Array.isArray(data) ? data[0] : data;
+      if (!row) {
+        setActionMessage('Your RSVP response was empty. Refresh this event before trying again.');
+        return;
+      }
+      setEventRsvps((current) => ({
+        ...current,
+        [eventId]: {
+          going_count: row.going_count,
+          waitlist_count: row.waitlist_count,
+          rsvp_limit: row.rsvp_limit,
+          my_status: row.rsvp_status,
+          my_party_size: row.my_party_size,
+          my_waitlist_position: row.my_waitlist_position,
+        },
+      }));
+      setEventPartySizes((current) => ({
+        ...current,
+        [eventId]: Number(row.my_party_size ?? 1),
+      }));
+    } catch (cause) {
+      if (scope === eventScopeRef.current)
+        setActionMessage(
+          userMessageFromError(
+            cause,
+            'Your RSVP could not be confirmed. Refresh this event before trying again.',
+          ),
+        );
+    } finally {
+      eventMutation.current = false;
+      if (scope === eventScopeRef.current) setActionPending(null);
     }
   }
 
@@ -628,6 +805,7 @@ export function PublicBusinessPageContent({
     return (
       <View style={styles.errorCard}>
         <ThemedText style={styles.errorText}>{error ?? 'Business unavailable.'}</ThemedText>
+        <AppButton label="Retry business page" onPress={() => { setError(null); setLoading(true); setLoadAttempt(n => n + 1); }} />
       </View>
     );
 
@@ -641,7 +819,6 @@ export function PublicBusinessPageContent({
   const visibleMenuCategories = activeMenuSectionId
     ? menuCategories.filter((category) => category.id === activeMenuSectionId)
     : menuCategories;
-  const collapseAbout = shouldCollapseBusinessDescription(business.description);
   const cover = resolvedPhotos.find((photo) => photo.role === 'cover');
   const logo = resolvedPhotos.find((photo) => photo.role === 'logo');
   const gallery = resolvedPhotos.filter((photo) => photo.role === 'gallery');
@@ -664,6 +841,11 @@ export function PublicBusinessPageContent({
   const publicUrl = businessPublicUrl(business.slug);
   const todayHours = getTodayHours(hours, new Date(), business.timezone);
   const nextStop = locationStops[0] ?? null;
+  const showAtAGlance =
+    business.business_type === 'mobile' ||
+    (business.business_type === 'services' && Boolean(business.service_area)) ||
+    Boolean(address) ||
+    hours.length > 0;
   const resumeIntent = parseCustomerAuthIntent({
     kind: resumeAction,
     businessId: business.id,
@@ -693,11 +875,13 @@ export function PublicBusinessPageContent({
             key: 'call',
             label: 'Call',
             icon: { ios: 'phone.fill', android: 'call', web: 'call' },
-            onPress: () =>
+            onPress: () => {
+              if (!preview) recordBusinessAnalyticsEvent(business.id, 'phone_click');
               void openExternal(
                 `tel:${business.phone}`,
                 'Calling is not available on this device.',
-              ),
+              );
+            },
           } satisfies CustomerAction,
         ]
       : []),
@@ -721,7 +905,10 @@ export function PublicBusinessPageContent({
             key: 'website',
             label: 'Website',
             icon: { ios: 'globe', android: 'language', web: 'language' },
-            onPress: () => void openExternal(websiteUrl, 'We could not open this website.'),
+            onPress: () => {
+              if (!preview) recordBusinessAnalyticsEvent(business.id, 'social_click');
+              void openExternal(websiteUrl, 'We could not open this website.');
+            },
           } satisfies CustomerAction,
         ]
       : []),
@@ -731,7 +918,10 @@ export function PublicBusinessPageContent({
             key: 'directions',
             label: 'Directions',
             icon: { ios: 'map.fill', android: 'directions', web: 'directions' },
-            onPress: () => void openExternal(directionsUrl, 'We could not open directions.'),
+            onPress: () => {
+              if (!preview) recordBusinessAnalyticsEvent(business.id, 'directions_click');
+              void openExternal(directionsUrl, 'We could not open directions.');
+            },
           } satisfies CustomerAction,
         ]
       : []),
@@ -755,9 +945,10 @@ export function PublicBusinessPageContent({
 
   return (
     <View style={styles.page}>
+      {partialError && <View style={{ gap: 10, padding: 16 }}><ThemedText>Some photos, offerings, events or hours are unavailable right now.</ThemedText><AppButton label="Retry missing details" variant="secondary" onPress={() => { setError(null); setLoadAttempt(n => n + 1); }} /></View>}
       {(preview || business.status !== 'active') && (
-        <View style={styles.previewBanner}>
-          <ThemedText style={styles.previewText} type="smallBold">
+        <View style={[styles.previewBanner, { backgroundColor: colors.infoSurface }]}>
+          <ThemedText style={{ color: colors.infoText }} type="smallBold">
             Private page preview · {getBusinessStatusLabel(business.status)}
           </ThemedText>
         </View>
@@ -776,93 +967,280 @@ export function PublicBusinessPageContent({
       <View style={styles.businessIdentity}>
         <BusinessLogo name={business.name} uri={logo?.url} size={64} decorative />
         <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-          <ThemedText themeColor="textSecondary" type="small">
-            {business.category_summary || 'Local business'}
-          </ThemedText>
           <ThemedText type="title">{business.name}</ThemedText>
+          {!!business.category_summary && (
+            <ThemedText themeColor="textSecondary" type="small">
+              {business.category_summary}
+            </ThemedText>
+          )}
+          {reviewSummary.id === business.id && reviewSummary.summary && (
+            <BusinessRating summary={reviewSummary.summary} />
+          )}
         </View>
       </View>
 
-      <View style={[styles.glance, { borderColor: colors.divider }]}>
-        <ThemedText type="subtitle">At a glance</ThemedText>
-        {business.business_type === 'mobile' ? (
-          nextStop ? (
-            <View style={styles.glanceRow}>
-              <SymbolView
-                name={{ ios: 'mappin.and.ellipse', android: 'location_on', web: 'location_on' }}
-                tintColor={business.primary_color}
-                style={styles.glanceIcon}
-              />
-              <View style={styles.glanceCopy}>
-                <ThemedText type="smallBold">
-                  Next stop · {formatStopDate(nextStop.starts_at)}
+      <View
+        style={{
+          borderWidth: 1,
+          borderColor: colors.divider,
+          borderRadius: 16,
+          overflow: 'hidden',
+          backgroundColor: colors.backgroundElement,
+        }}
+      >
+        {showAtAGlance ? (
+          <View
+            style={[
+              styles.glance,
+              { borderColor: colors.divider, borderTopWidth: 0, paddingHorizontal: 16 },
+            ]}
+          >
+            {business.business_type === 'mobile' ? (
+              nextStop ? (
+                <View style={styles.glanceRow}>
+                  <SymbolView
+                    name={{ ios: 'mappin.and.ellipse', android: 'location_on', web: 'location_on' }}
+                    tintColor={colors.textSecondary}
+                    style={styles.glanceIcon}
+                  />
+                  <View style={styles.glanceCopy}>
+                    <ThemedText type="smallBold">
+                      Next stop · {formatStopDate(nextStop.starts_at)}
+                    </ThemedText>
+                    <ThemedText themeColor="textSecondary" type="small">
+                      {nextStop.title} · {formatStopTimeRange(nextStop.starts_at, nextStop.ends_at)}
+                    </ThemedText>
+                    {nextStop.address_text ? (
+                      <ThemedText themeColor="textSecondary" type="small">
+                        {nextStop.address_text}
+                      </ThemedText>
+                    ) : null}
+                  </View>
+                </View>
+              ) : (
+                <ThemedText themeColor="textSecondary">
+                  No upcoming stop is published yet.
                 </ThemedText>
-                <ThemedText themeColor="textSecondary" type="small">
-                  {nextStop.title} · {formatStopTimeRange(nextStop.starts_at, nextStop.ends_at)}
-                </ThemedText>
-                <ThemedText themeColor="textSecondary" type="small">
-                  {nextStop.address_text || 'Map pin available'}
-                </ThemedText>
-              </View>
-            </View>
-          ) : (
-            <ThemedText themeColor="textSecondary">No upcoming stop is published yet.</ThemedText>
-          )
-        ) : business.business_type === 'services' && business.service_area ? (
-          <View style={styles.glanceRow}>
-            <SymbolView
-              name={{ ios: 'map', android: 'map', web: 'map' }}
-              tintColor={business.primary_color}
-              style={styles.glanceIcon}
-            />
-            <View style={styles.glanceCopy}>
-              <ThemedText type="smallBold">Service area</ThemedText>
-              <ThemedText themeColor="textSecondary">{business.service_area}</ThemedText>
-            </View>
-          </View>
-        ) : (
-          <>
-            <View style={styles.glanceRow}>
-              <SymbolView
-                name={{ ios: 'mappin', android: 'location_on', web: 'location_on' }}
-                tintColor={business.primary_color}
-                style={styles.glanceIcon}
-              />
-              <ThemedText style={styles.glanceCopy} themeColor="textSecondary">
-                {address || 'Location details coming soon.'}
-              </ThemedText>
-            </View>
-            {hours.length > 0 && (
+              )
+            ) : business.business_type === 'services' && business.service_area ? (
               <View style={styles.glanceRow}>
                 <SymbolView
-                  name={{ ios: 'clock', android: 'schedule', web: 'schedule' }}
-                  tintColor={business.primary_color}
+                  name={{ ios: 'map', android: 'map', web: 'map' }}
+                  tintColor={colors.textSecondary}
                   style={styles.glanceIcon}
                 />
-                <ThemedText style={styles.glanceCopy} type="smallBold">
-                  {todayHours.label}
-                </ThemedText>
+                <View style={styles.glanceCopy}>
+                  <ThemedText type="smallBold">Service area</ThemedText>
+                  <ThemedText themeColor="textSecondary">{business.service_area}</ThemedText>
+                </View>
               </View>
+            ) : (
+              <>
+                {address ? (
+                  <Pressable
+                    accessibilityRole="link"
+                    accessibilityLabel={`Open ${address} in Maps`}
+                    disabled={!directionsUrl}
+                    onPress={() => {
+                      if (directionsUrl) {
+                        if (!preview) recordBusinessAnalyticsEvent(business.id, 'directions_click');
+                        void openExternal(directionsUrl, 'We could not open directions.');
+                      }
+                    }}
+                    style={[styles.glanceRow, { minHeight: 44, alignItems: 'center' }]}
+                  >
+                    <SymbolView
+                      name={{
+                        ios: 'mappin.and.ellipse',
+                        android: 'location_on',
+                        web: 'location_on',
+                      }}
+                      tintColor={colors.textSecondary}
+                      style={styles.glanceIcon}
+                    />
+                    <ThemedText style={styles.glanceCopy} themeColor="textSecondary">
+                      {address}
+                    </ThemedText>
+                    {!!directionsUrl && (
+                      <SymbolView
+                        name={{ ios: 'arrow.up.right', android: 'north_east', web: 'north_east' }}
+                        tintColor={colors.accent}
+                        style={{ width: 18, height: 18 }}
+                      />
+                    )}
+                  </Pressable>
+                ) : null}
+              </>
             )}
-          </>
+          </View>
+        ) : null}
+
+        {business.business_type === 'mobile' &&
+          (locationStops.length > 0 || hours.length === 0) && (
+            <BusinessDetailsDisclosure
+              embedded
+              key={`${business.id}:schedule`}
+              title={businessScheduleLabel(
+                business.business_type,
+                locationStops.length,
+                hours.length,
+              )}
+              summary={
+                business.business_type === 'mobile' && locationStops.length > 0
+                  ? `${locationStops.length} upcoming stops`
+                  : todayHours.label
+              }
+            >
+              <BusinessStopSchedule
+                stops={locationStops}
+                timezone={business.timezone}
+                {...(onMapInteractionChange ? { onInteractionChange: onMapInteractionChange } : {})}
+                onDirections={(stop) => {
+                  const url = buildDirectionsUrl(directionsPlatform, {
+                    latitude: stop.latitude,
+                    longitude: stop.longitude,
+                    address: stop.address_text,
+                    label: stop.title,
+                  });
+                  if (url) void openExternal(url, 'We could not open directions.');
+                }}
+              />
+            </BusinessDetailsDisclosure>
+          )}
+
+        {(business.business_type !== 'mobile' ||
+          (locationStops.length === 0 && hours.length > 0)) && (
+          <BusinessDetailsDisclosure
+            embedded
+            key={`${business.id}:schedule`}
+            title={businessScheduleLabel(
+              business.business_type,
+              locationStops.length,
+              hours.length,
+            )}
+            summary={
+              business.business_type === 'mobile' && locationStops.length > 0
+                ? `${locationStops.length} upcoming stops`
+                : todayHours.label
+            }
+          >
+            <View style={styles.hoursStatus}>
+              <View
+                style={[
+                  styles.hoursStatusDot,
+                  todayHours.state === 'open'
+                    ? styles.hoursStatusDotOpen
+                    : styles.hoursStatusDotClosed,
+                ]}
+              />
+              <ThemedText style={styles.hoursStatusText} type="smallBold">
+                {todayHours.label}
+              </ThemedText>
+            </View>
+            {weeklyHours.length > 0 ? (
+              <View style={styles.hours}>
+                {weeklyHours.map((group) => (
+                  <View key={`${group.dayLabel}-${group.hoursLabel}`} style={styles.hourRow}>
+                    <ThemedText style={styles.hourDay} type="smallBold">
+                      {group.dayLabel}
+                    </ThemedText>
+                    <ThemedText
+                      style={group.isClosed ? styles.closedHours : styles.hourValue}
+                      themeColor="textSecondary"
+                    >
+                      {group.hoursLabel}
+                    </ThemedText>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <ThemedText themeColor="textSecondary">Weekly schedule unavailable.</ThemedText>
+            )}
+          </BusinessDetailsDisclosure>
         )}
       </View>
-
       <PickupOrderCta
         businessId={business.id}
         physicalState={todayHours.state}
         nextHours={todayHours.state === 'closed' ? todayHours.label : null}
       />
-      <CustomerActionRow
-        actions={customerActions}
-        colorScheme={scheme === 'dark' ? 'dark' : 'light'}
-      />
+      {!preview && appointmentsAvailable && business?.business_type === 'services' ? (
+        <AppButton
+          label="Book appointment"
+          onPress={() =>
+            router.push({
+              pathname: '/book-appointment',
+              params: { businessId: business.id },
+            } as never)
+          }
+        />
+      ) : null}
+      {!preview && business.business_type === 'services' && (
+        <AppButton
+          label="Request a quote or consultation"
+          variant={appointmentsAvailable ? 'secondary' : 'primary'}
+          onPress={() => {
+            if (!session) {
+              requireAccount({
+                kind: 'service_request',
+                businessId: business.id,
+                businessName: business.name,
+              });
+              return;
+            }
+            router.push({
+              pathname: '/service-request',
+              params: { businessId: business.id },
+            } as never);
+          }}
+        />
+      )}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        {!preview && (
+          <AppButton
+            label={following ? 'Following' : 'Follow'}
+            variant="secondary"
+            onPress={() => void toggleFollow()}
+            style={{ flex: 1 }}
+          />
+        )}
+        <AppButton
+          label="Contact & share"
+          variant="secondary"
+          onPress={() => setDetailsPanel('contact')}
+          style={{ flex: 1 }}
+        />
+      </View>
+      {!!business.description.trim() && (
+        <BusinessDetailsDisclosure
+          title="About this business"
+          summary={business.category_summary || business.name}
+        >
+          <ThemedText themeColor="textSecondary">{business.description.trim()}</ThemedText>
+        </BusinessDetailsDisclosure>
+      )}
+
+      <MerchantSheet
+        visible={detailsPanel === 'contact'}
+        title="Contact & share"
+        onClose={() => setDetailsPanel(null)}
+      >
+        <ThemedText type="card">{business.name}</ThemedText>
+        <CustomerActionRow
+          actions={customerActions.filter((a) => a.key !== 'follow')}
+          colorScheme={scheme === 'dark' ? 'dark' : 'light'}
+        />
+        {!!address && <ThemedText themeColor="textSecondary">{address}</ThemedText>}
+      </MerchantSheet>
+
       {resumeIntent && session ? (
         <View style={styles.resumeNotice}>
           <ThemedText type="smallBold">You’re signed in.</ThemedText>
           <ThemedText themeColor="textSecondary" type="small">
             Finish the action you started below.
           </ThemedText>
+          {resumeAction === 'report_review' && <AppButton label="Continue review report" onPress={() => setDetailsPanel('reviews')} />}
+          {resumeAction === 'report_offering' && resumeTargetId && <AppButton label="Continue item report" onPress={() => requestReport({ type: 'offering_item', businessId: business.id, offeringItemId: resumeTargetId, label: items.find(item => item.id === resumeTargetId)?.name ?? 'Item' })} />}
         </View>
       ) : null}
       {actionMessage ? (
@@ -871,482 +1249,596 @@ export function PublicBusinessPageContent({
         </View>
       ) : null}
 
-      {!!business.description.trim() && (
-        <View style={styles.aboutSection}>
-          <ThemedText type="subtitle">About</ThemedText>
-          <ThemedText
-            {...(!aboutExpanded && collapseAbout ? { numberOfLines: 5 } : {})}
-            style={styles.aboutText}
-            themeColor="textSecondary"
-          >
-            {business.description.trim()}
-          </ThemedText>
-          {collapseAbout && (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ expanded: aboutExpanded }}
-              onPress={() => setAboutExpanded((expanded) => !expanded)}
-              style={styles.aboutToggle}
-            >
-              <ThemedText type="smallBold">{aboutExpanded ? 'Show less' : 'Read more'}</ThemedText>
-            </Pressable>
-          )}
-        </View>
-      )}
-
-      {business.business_type === 'mobile' && (locationStops.length > 0 || hours.length === 0) && (
-        <PageSection
-          title={businessScheduleLabel(business.business_type, locationStops.length, hours.length)}
-        >
-          <ThemedText themeColor="textSecondary" type="small">
-            Scheduled stops from this mobile business. Tap Directions to open the pin in your map
-            app.
-          </ThemedText>
-          {locationStops.length ? (
-            <View style={styles.locationStops}>
-              <BusinessLocationMap
-                stops={locationStops}
-                height={220}
-                {...(onMapInteractionChange ? { onInteractionChange: onMapInteractionChange } : {})}
-              />
-              {locationStops.map((stop) => (
-                <View key={stop.id} style={styles.locationStop}>
-                  <View
-                    style={[styles.locationStopAccent, { backgroundColor: business.primary_color }]}
-                  />
-                  <View style={styles.locationStopBody}>
-                    <View style={styles.locationStopHeader}>
-                      <ThemedText style={{ color: business.primary_color }} type="smallBold">
-                        {formatStopDate(stop.starts_at)}
-                      </ThemedText>
-                    </View>
-                    <ThemedText type="subtitle">{stop.title}</ThemedText>
-                    <ThemedText themeColor="textSecondary" type="small">
-                      {formatStopTimeRange(stop.starts_at, stop.ends_at)}
-                    </ThemedText>
-                    <ThemedText themeColor="textSecondary" type="small">
-                      {stop.address_text || 'Map pin set'}
-                    </ThemedText>
-                    <Pressable
-                      accessibilityRole="link"
-                      onPress={() => {
-                        const url = buildDirectionsUrl(directionsPlatform, {
-                          latitude: stop.latitude,
-                          longitude: stop.longitude,
-                          address: stop.address_text,
-                          label: stop.title,
-                        });
-                        if (url) void openExternal(url, 'We could not open directions.');
-                      }}
-                      style={[styles.locationStopAction, { borderColor: business.primary_color }]}
-                    >
-                      <ThemedText style={{ color: business.primary_color }} type="smallBold">
-                        Get directions
-                      </ThemedText>
-                    </Pressable>
-                  </View>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <ThemedText themeColor="textSecondary" type="small">
-              No upcoming stops have been published yet.
-            </ThemedText>
-          )}
-        </PageSection>
-      )}
-
-      {(business.business_type !== 'mobile' ||
-        (locationStops.length === 0 && hours.length > 0)) && (
-        <PageSection
-          title={businessScheduleLabel(business.business_type, locationStops.length, hours.length)}
-        >
-          <View style={styles.hoursStatus}>
-            <View
-              style={[
-                styles.hoursStatusDot,
-                todayHours.state === 'open'
-                  ? styles.hoursStatusDotOpen
-                  : styles.hoursStatusDotClosed,
-              ]}
-            />
-            <ThemedText style={styles.hoursStatusText} type="smallBold">
-              {todayHours.label}
-            </ThemedText>
-          </View>
-          {weeklyHours.length > 0 ? (
-            <View style={styles.hours}>
-              {weeklyHours.map((group) => (
-                <View key={`${group.dayLabel}-${group.hoursLabel}`} style={styles.hourRow}>
-                  <ThemedText style={styles.hourDay} type="smallBold">
-                    {group.dayLabel}
-                  </ThemedText>
-                  <ThemedText
-                    style={group.isClosed ? styles.closedHours : styles.hourValue}
-                    themeColor="textSecondary"
-                  >
-                    {group.hoursLabel}
-                  </ThemedText>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <ThemedText themeColor="textSecondary">Weekly schedule unavailable.</ThemedText>
-          )}
-        </PageSection>
-      )}
-
       {menuCategories.length > 0 && (
-        <View style={styles.menuSection}>
-          <View style={styles.menuHeading}>
-            <ThemedText type="subtitle">
-              {isMenuBusiness ? 'Menu' : 'Products & services'}
-            </ThemedText>
-            <ThemedText themeColor="textSecondary">
-              {isMenuBusiness ? 'Browse what’s available.' : 'Explore what this business offers.'}
-            </ThemedText>
-          </View>
-          {menuCategories.length > 1 && (
-            <HorizontalScrollRow
-              accessibilityLabel={isMenuBusiness ? 'Menu categories' : 'Offering categories'}
-              contentContainerStyle={styles.menuCategorySelector}
-            >
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ selected: activeMenuSectionId === null }}
-                onPress={() => setSelectedMenuSectionId(null)}
-                style={[
-                  styles.menuCategoryChip,
-                  activeMenuSectionId === null && styles.menuCategoryChipSelected,
-                ]}
-              >
-                <ThemedText
-                  style={activeMenuSectionId === null ? styles.menuCategoryChipTextSelected : null}
-                  type="smallBold"
-                >
-                  All
-                </ThemedText>
-              </Pressable>
-              {menuCategories.map((category) => {
-                const selected = activeMenuSectionId === category.id;
+        <BusinessPreviewSection
+          title={isMenuBusiness ? 'Menu highlights' : 'Services & offerings'}
+          detail={`${items.length} offerings · ${menuCategories.length} categories`}
+          action={isMenuBusiness ? 'Full menu' : 'See all'}
+          onSeeAll={() => {
+            setSelectedMenuSectionId(null);
+            setOfferingQuery('');
+            setDetailsPanel('menu');
+          }}
+        >
+          <BusinessPreviewCarousel
+            label="Offering highlights"
+            count={Math.min(6, menuCategories.flatMap((c) => c.items).length)}
+          >
+            {menuCategories
+              .flatMap((c) => c.items)
+              .sort(
+                (a, b) =>
+                  Number((b.item as ItemData).is_featured) -
+                  Number((a.item as ItemData).is_featured),
+              )
+              .slice(0, 6)
+              .map((display) => {
+                const item = display.item as ItemData;
+                const asset = Array.isArray(item.media_assets)
+                  ? item.media_assets[0]
+                  : item.media_assets;
                 return (
-                  <Pressable
-                    key={category.id}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected }}
-                    onPress={() => setSelectedMenuSectionId(category.id)}
-                    style={[styles.menuCategoryChip, selected && styles.menuCategoryChipSelected]}
-                  >
-                    <ThemedText
-                      style={selected ? styles.menuCategoryChipTextSelected : null}
-                      type="smallBold"
-                    >
-                      {category.name}
-                    </ThemedText>
-                  </Pressable>
+                  <BusinessOfferingPreview
+                    key={item.id}
+                    name={display.name}
+                    description={display.description ?? ''}
+                    price={display.priceLabel ?? ''}
+                    imageUri={
+                      asset?.status === 'ready' ? storagePublicUrl(asset.storage_path) : null
+                    }
+                    onPress={() => {
+                      setSelectedMenuSectionId(item.section_id);
+                      setOfferingQuery('');
+                      setDetailsPanel('menu');
+                    }}
+                  />
                 );
               })}
-            </HorizontalScrollRow>
-          )}
-          {visibleMenuCategories.map((category) => (
-            <View key={category.id} style={styles.menuCategory}>
-              <View style={styles.menuCategoryHeading}>
-                <ThemedText style={styles.menuCategoryTitle}>{category.name}</ThemedText>
-                {category.description && (
-                  <ThemedText style={styles.menuCategoryDescription} themeColor="textSecondary">
-                    {category.description}
-                  </ThemedText>
-                )}
-              </View>
-              <View style={styles.menuItems}>
-                {category.items.map((display) => {
-                  const item = display.item as ItemData;
-                  const asset = Array.isArray(item.media_assets)
-                    ? item.media_assets[0]
-                    : item.media_assets;
-                  const imageUrl =
-                    asset?.status === 'ready' ? storagePublicUrl(asset.storage_path) : null;
-                  return (
-                    <View
-                      key={item.id}
-                      accessibilityLabel={
-                        `${display.name}${display.priceLabel ? `, ${display.priceLabel}` : ''}` +
-                        `${display.description ? `, ${display.description}` : ''}`
-                      }
-                      style={[
-                        styles.itemRow,
-                        { backgroundColor: colors.backgroundElement, borderColor: colors.divider },
-                      ]}
-                    >
-                      {imageUrl && (
-                        <Image
-                          accessibilityLabel={asset.alt_text ?? `${display.name} photo`}
-                          cachePolicy="memory-disk"
-                          contentFit="cover"
-                          source={{ uri: imageUrl }}
-                          style={styles.itemImage}
-                          transition={180}
-                        />
-                      )}
-                      <View style={styles.itemCopy}>
-                        <View style={styles.itemTitleRow}>
-                          <ThemedText style={styles.itemName}>{display.name}</ThemedText>
-                          {!!display.priceLabel && (
-                            <ThemedText numberOfLines={1} style={styles.itemPrice} type="smallBold">
-                              {display.priceLabel}
-                            </ThemedText>
-                          )}
-                        </View>
-                        {display.description && (
-                          <ThemedText
-                            numberOfLines={3}
-                            style={styles.itemDescription}
-                            themeColor="textSecondary"
-                          >
-                            {display.description}
-                          </ThemedText>
-                        )}
-                        {(item.is_featured || safetyAvailable) && (
-                          <View style={styles.itemFooter}>
-                            {item.is_featured ? (
-                              <View style={styles.itemFeaturedBadge}>
-                                <ThemedText style={styles.itemFeaturedText} type="smallBold">
-                                  Featured
-                                </ThemedText>
-                              </View>
-                            ) : (
-                              <View />
-                            )}
-                            {safetyAvailable && (
-                              <Pressable
-                                accessibilityLabel={display.reportAccessibilityLabel}
-                                accessibilityRole="button"
-                                onPress={() => setMenuOptionsItem(item)}
-                                style={styles.itemOverflow}
-                              >
-                                <SymbolView
-                                  name={{
-                                    ios: 'ellipsis',
-                                    android: 'more_horiz',
-                                    web: 'more_horiz',
-                                  }}
-                                  tintColor={colors.textSecondary}
-                                  style={styles.itemOverflowIcon}
-                                />
-                              </Pressable>
-                            )}
-                          </View>
-                        )}
-                      </View>
-                    </View>
-                  );
-                })}
-              </View>
-            </View>
-          ))}
-        </View>
+          </BusinessPreviewCarousel>
+        </BusinessPreviewSection>
       )}
+      <MerchantSheet
+        visible={detailsPanel === 'menu'}
+        title={
+          menuOptionsItem ? 'Item details' : isMenuBusiness ? 'Full menu' : 'Services & offerings'
+        }
+        onClose={() => {
+          setMenuOptionsItem(null);
+          setReportTarget(null);
+          setDetailsPanel(null);
+        }}
+      >
+        {menuOptionsItem ? (
+          <View style={{ gap: 18 }}>
+            <AppButton
+              label="Back to menu"
+              variant="tertiary"
+              onPress={() => {
+                setMenuOptionsItem(null);
+                setReportTarget(null);
+              }}
+              style={{ alignSelf: 'flex-start' }}
+            />
+            {(() => {
+              const asset = Array.isArray(menuOptionsItem.media_assets)
+                ? menuOptionsItem.media_assets[0]
+                : menuOptionsItem.media_assets;
+              return asset?.status === 'ready' ? (
+                <Image
+                  accessibilityLabel={menuOptionsItem.name}
+                  source={{ uri: storagePublicUrl(asset.storage_path) }}
+                  contentFit="cover"
+                  style={{ width: '100%', aspectRatio: 1.5, borderRadius: 18 }}
+                />
+              ) : null;
+            })()}
+            <ThemedText type="subtitle">{menuOptionsItem.name}</ThemedText>
+            <ThemedText type="card" themeColor="accent">
+              {menuOptionsItem.price_minor !== null
+                ? new Intl.NumberFormat(undefined, {
+                    style: 'currency',
+                    currency: menuOptionsItem.currency,
+                  }).format(menuOptionsItem.price_minor / 100)
+                : menuOptionsItem.price_text || 'Ask for pricing'}
+            </ThemedText>
+            <ThemedText themeColor="textSecondary">
+              {menuOptionsItem.description ||
+                'Ask the business for more information about this item.'}
+            </ThemedText>
+            {reportTarget ? (
+              <ReportDialog
+                embedded
+                target={reportTarget}
+                reporterId={session?.user.id ?? null}
+                onClose={() => setReportTarget(null)}
+                onSuccess={setActionMessage}
+              />
+            ) : (
+              <>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Something incorrect or inappropriate about this listing?
+                </ThemedText>
+                <FlowSection title="Report a problem" collapsible>
+                  <AppButton
+                    label={session ? 'Report item' : 'Sign in to report item'}
+                    variant="secondary"
+                    onPress={() => {
+                      requestReport({
+                        type: 'offering_item',
+                        businessId: business.id,
+                        offeringItemId: menuOptionsItem.id,
+                        label: menuOptionsItem.name,
+                      });
+                    }}
+                  />
+                </FlowSection>
+              </>
+            )}
+          </View>
+        ) : (
+          <>
+            <TextInput
+              accessibilityLabel="Search offerings"
+              placeholder="Search menu or services"
+              {...inputPresets.search}
+              placeholderTextColor={colors.textSecondary}
+              value={offeringQuery}
+              onChangeText={setOfferingQuery}
+              style={{
+                color: colors.text,
+                backgroundColor: colors.background,
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 12,
+                minHeight: 48,
+                paddingHorizontal: 14,
+                fontSize: 16,
+              }}
+            />
+            <View style={styles.menuSection}>
+              {menuCategories.length > 1 && (
+                <HorizontalScrollRow
+                  accessibilityLabel={isMenuBusiness ? 'Menu categories' : 'Offering categories'}
+                  contentContainerStyle={styles.menuCategorySelector}
+                >
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: activeMenuSectionId === null }}
+                    onPress={() => setSelectedMenuSectionId(null)}
+                    style={[
+                      styles.menuCategoryChip,
+                      activeMenuSectionId === null && styles.menuCategoryChipSelected,
+                    ]}
+                  >
+                    <ThemedText
+                      style={
+                        activeMenuSectionId === null ? styles.menuCategoryChipTextSelected : null
+                      }
+                      type="smallBold"
+                    >
+                      All
+                    </ThemedText>
+                  </Pressable>
+                  {menuCategories.map((category) => {
+                    const selected = activeMenuSectionId === category.id;
+                    return (
+                      <Pressable
+                        key={category.id}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected }}
+                        onPress={() => setSelectedMenuSectionId(category.id)}
+                        style={[
+                          styles.menuCategoryChip,
+                          selected && styles.menuCategoryChipSelected,
+                        ]}
+                      >
+                        <ThemedText
+                          style={selected ? styles.menuCategoryChipTextSelected : null}
+                          type="smallBold"
+                        >
+                          {category.name}
+                        </ThemedText>
+                      </Pressable>
+                    );
+                  })}
+                </HorizontalScrollRow>
+              )}
+              {!visibleMenuCategories.some((category) =>
+                category.items.some((display) =>
+                  `${display.name} ${display.description}`
+                    .toLowerCase()
+                    .includes(offeringQuery.trim().toLowerCase()),
+                ),
+              ) && (
+                <ThemedText themeColor="textSecondary">
+                  No matching offerings. Try another search or category.
+                </ThemedText>
+              )}
+              {visibleMenuCategories
+                .filter((category) =>
+                  category.items.some((display) =>
+                    `${display.name} ${display.description}`
+                      .toLowerCase()
+                      .includes(offeringQuery.trim().toLowerCase()),
+                  ),
+                )
+                .map((category) => (
+                  <View key={category.id} style={styles.menuCategory}>
+                    <View style={styles.menuCategoryHeading}>
+                      <ThemedText style={styles.menuCategoryTitle}>{category.name}</ThemedText>
+                      {category.description && (
+                        <ThemedText
+                          style={styles.menuCategoryDescription}
+                          themeColor="textSecondary"
+                        >
+                          {category.description}
+                        </ThemedText>
+                      )}
+                    </View>
+                    <View style={styles.menuItems}>
+                      {category.items
+                        .filter(
+                          (display) =>
+                            !offeringQuery.trim() ||
+                            `${display.name} ${display.description}`
+                              .toLowerCase()
+                              .includes(offeringQuery.trim().toLowerCase()),
+                        )
+                        .map((display) => {
+                          const item = display.item as ItemData;
+                          const asset = Array.isArray(item.media_assets)
+                            ? item.media_assets[0]
+                            : item.media_assets;
+                          const imageUrl =
+                            asset?.status === 'ready' ? storagePublicUrl(asset.storage_path) : null;
+                          return (
+                            <BusinessOfferingCard
+                              key={item.id}
+                              name={display.name}
+                              description={display.description ?? ''}
+                              price={display.priceLabel ?? null}
+                              image={imageUrl}
+                              featured={item.is_featured}
+                              {...(safetyAvailable
+                                ? { onOptions: () => setMenuOptionsItem(item) }
+                                : {})}
+                            />
+                          );
+                        })}
+                    </View>
+                  </View>
+                ))}
+            </View>
+          </>
+        )}
+      </MerchantSheet>
 
       {events.length > 0 && (
         <View style={styles.sectionGroup}>
-          <ThemedText type="subtitle">Coming up</ThemedText>
-          {events.map((event) => (
-            <View
-              key={event.id}
-              style={[
-                styles.eventCard,
-                { backgroundColor: colors.backgroundElement, borderColor: colors.divider },
-              ]}
+          <BusinessPreviewSection
+            title="Coming up"
+            detail="Events at this business"
+            onSeeAll={() =>
+              router.push({
+                pathname: '/calendar',
+                params: { scope: 'all-upcoming', businessId: business.id },
+              } as never)
+            }
+          >
+            <BusinessPreviewCarousel
+              label="Upcoming business events"
+              count={events.length}
+              width={290}
             >
-              <ThemedText style={styles.eventTitle}>{event.title}</ThemedText>
-              <BusinessIdentityRow name={business.name} uri={logo?.url} />
-              {(() => {
-                const eventAsset = Array.isArray(event.media_assets)
-                  ? event.media_assets[0]
-                  : event.media_assets;
-                return eventAsset?.status === 'ready' ? (
-                  <Image
-                    accessibilityLabel={eventAsset.alt_text ?? `${event.title} cover`}
-                    cachePolicy="memory-disk"
-                    contentFit="contain"
-                    source={{ uri: storagePublicUrl(eventAsset.storage_path) }}
-                    style={[
-                      styles.eventImage,
-                      {
-                        aspectRatio:
-                          eventAsset.width > 0 && eventAsset.height > 0
-                            ? eventAsset.width / eventAsset.height
-                            : 16 / 9,
-                      },
-                    ]}
-                    transition={180}
+              {events.map((event) => (
+                <View key={event.id} style={{ width: 290 }}>
+                  <EventCard
+                    carousel
+                    key={event.id}
+                    title={event.title}
+                    businessName={business.name}
+                    photos={photos}
+                    startsAt={event.starts_at}
+                    timezone={business.timezone}
+                    metadata={formatEventDateTime(event.starts_at)}
+                    reminder={eventReminders[event.id] === true}
+                    onPress={() => {
+                      setActionMessage(null);
+                      setSelectedEventId(event.id);
+                    }}
                   />
-                ) : null;
-              })()}
-              <ThemedText style={styles.eventDate}>
-                {formatEventDateTime(event.starts_at)}
-              </ThemedText>
-              {event.description && (
-                <ThemedText style={styles.eventDescription} themeColor="textSecondary">
-                  {event.description}
-                </ThemedText>
-              )}
-              <View style={styles.eventActions}>
+                </View>
+              ))}
+            </BusinessPreviewCarousel>
+          </BusinessPreviewSection>
+          {events
+            .filter((event) => event.id === selectedEventId)
+            .map((event) => (
+              <MerchantSheet
+                visible
+                title="Event details"
+                blocked={actionPending !== null}
+                onClose={() => setSelectedEventId(null)}
+                key={event.id}
+              >
+                <EventDetailHeading
+                  title={event.title}
+                  businessName={business.name}
+                  color={business.primary_color}
+                  onDirections={
+                    event.location_mode !== 'online' && (event.address_text || address)
+                      ? () => {
+                          const url = buildDirectionsUrl(directionsPlatform, {
+                            address: event.address_text || address,
+                            label: event.title,
+                          });
+                          if (url) void openExternal(url, 'We could not open directions.');
+                        }
+                      : undefined
+                  }
+                  when={formatEventDateTime(event.starts_at)}
+                  where={
+                    event.location_mode === 'online'
+                      ? 'Online event'
+                      : event.address_text || address || 'At the business location'
+                  }
+                  image={(() => {
+                    const a = Array.isArray(event.media_assets)
+                      ? event.media_assets[0]
+                      : event.media_assets;
+                    return a?.status === 'ready' ? storagePublicUrl(a.storage_path) : undefined;
+                  })()}
+                />
+                {event.description && (
+                  <View style={{ gap: 8 }}>
+                    <ThemedText type="card">About this event</ThemedText>
+                    <ThemedText style={styles.eventDescription} themeColor="textSecondary">
+                      {event.description}
+                    </ThemedText>
+                  </View>
+                )}
+                {actionMessage && (
+                  <ThemedText accessibilityLiveRegion="polite" themeColor="textSecondary">
+                    {actionMessage}
+                  </ThemedText>
+                )}
                 {!preview && (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: eventReminders[event.id] === true }}
-                    disabled={actionPending === `event:${event.id}`}
-                    onPress={() => void toggleEventReminder(event.id)}
-                    style={[
-                      styles.inlineAction,
-                      eventReminders[event.id] && styles.inlineActionSelected,
-                    ]}
-                  >
-                    <SymbolView
-                      name={{
-                        ios: eventReminders[event.id] ? 'bell.fill' : 'bell',
-                        android: eventReminders[event.id]
-                          ? 'notifications_active'
-                          : 'notifications_none',
-                        web: eventReminders[event.id]
-                          ? 'notifications_active'
-                          : 'notifications_none',
-                      }}
-                      tintColor={eventReminders[event.id] ? Brand.onPrimary : colors.text}
-                      style={styles.eventActionIcon}
-                    />
-                    <ThemedText
-                      style={eventReminders[event.id] ? styles.inlineActionTextSelected : undefined}
-                      type="smallBold"
+                  <EventRsvpControls
+                    summary={eventRsvps[event.id] ?? null}
+                    partySize={eventPartySizes[event.id] ?? 1}
+                    loading={actionPending === `rsvp:${event.id}`}
+                    disabled={actionPending !== null}
+                    onPartySizeChange={(size) =>
+                      setEventPartySizes((current) => ({ ...current, [event.id]: size }))
+                    }
+                    onSave={() =>
+                      void saveEventRsvp(event.id, true, eventPartySizes[event.id] ?? 1)
+                    }
+                    onCancel={() =>
+                      void saveEventRsvp(event.id, false, eventPartySizes[event.id] ?? 1)
+                    }
+                  />
+                )}
+                <View style={styles.eventActions}>
+                  {!preview && (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: eventReminders[event.id] === true }}
+                      disabled={actionPending !== null}
+                      onPress={() => void toggleEventReminder(event.id)}
+                      style={[
+                        styles.inlineAction,
+                        eventReminders[event.id] && styles.inlineActionSelected,
+                      ]}
                     >
-                      {actionPending === `event:${event.id}`
-                        ? 'Updating…'
-                        : eventReminders[event.id]
-                          ? 'Reminder on'
-                          : 'Remind me'}
+                      <SymbolView
+                        name={{
+                          ios: eventReminders[event.id] ? 'bell.fill' : 'bell',
+                          android: eventReminders[event.id]
+                            ? 'notifications_active'
+                            : 'notifications_none',
+                          web: eventReminders[event.id]
+                            ? 'notifications_active'
+                            : 'notifications_none',
+                        }}
+                        tintColor={eventReminders[event.id] ? Brand.onPrimary : colors.text}
+                        style={styles.eventActionIcon}
+                      />
+                      <ThemedText
+                        style={
+                          eventReminders[event.id] ? styles.inlineActionTextSelected : undefined
+                        }
+                        type="smallBold"
+                      >
+                        {actionPending === `event:${event.id}`
+                          ? 'Updating…'
+                          : eventReminders[event.id]
+                            ? 'Reminder on'
+                            : 'Remind me'}
+                      </ThemedText>
+                    </Pressable>
+                  )}
+                </View>
+                {safetyAvailable && (
+                  <Pressable
+                    onPress={() => {
+                      setSelectedEventId(null);
+                      requestReport({
+                        type: 'event',
+                        businessId: business.id,
+                        eventId: event.id,
+                        label: event.title,
+                      });
+                    }}
+                    style={styles.quietAction}
+                  >
+                    <ThemedText themeColor="textSecondary" type="small">
+                      Report event
                     </ThemedText>
                   </Pressable>
                 )}
-                {event.address_text ? (
-                  <Pressable
-                    accessibilityRole="link"
-                    onPress={() => {
-                      const url = buildDirectionsUrl(directionsPlatform, {
-                        address: event.address_text,
-                        label: event.title,
-                      });
-                      if (url) void openExternal(url, 'We could not open directions.');
-                    }}
-                    style={styles.inlineAction}
-                  >
-                    <SymbolView
-                      name={{ ios: 'map.fill', android: 'directions', web: 'directions' }}
-                      tintColor={colors.text}
-                      style={styles.eventActionIcon}
-                    />
-                    <ThemedText type="smallBold">Directions</ThemedText>
-                  </Pressable>
-                ) : null}
-              </View>
-              {safetyAvailable && (
-                <Pressable
-                  onPress={() =>
-                    requestReport({
-                      type: 'event',
-                      businessId: business.id,
-                      eventId: event.id,
-                      label: event.title,
-                    })
-                  }
-                  style={styles.quietAction}
-                >
-                  <ThemedText themeColor="textSecondary" type="small">
-                    Report event
-                  </ThemedText>
-                </Pressable>
-              )}
-            </View>
-          ))}
+              </MerchantSheet>
+            ))}
         </View>
       )}
 
       {loyalty && (
-        <View
-          style={[
-            styles.rewardCard,
-            { backgroundColor: colors.backgroundElement, borderColor: colors.divider },
-          ]}
+        <BusinessPreviewSection
+          title="Rewards"
+          action="View program"
+          onSeeAll={() => setDetailsPanel('rewards')}
         >
-          <View style={{ overflow: 'hidden', borderRadius: 16 }}>
-            <BusinessBrandHeader
-              name={business.name}
-              title={loyalty.name}
-              color={business.primary_color}
-              logoUri={logo?.url}
-            />
+          <View
+            style={{
+              borderWidth: 1,
+              borderColor: colors.divider,
+              borderRadius: 20,
+              overflow: 'hidden',
+              backgroundColor: colors.backgroundElement,
+            }}
+          >
+            <View style={{ padding: 18, gap: 14, backgroundColor: colors.backgroundSelected }}>
+              <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+                <View
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 14,
+                    backgroundColor: colors.backgroundElement,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <SymbolView
+                    name={{ ios: 'gift', android: 'redeem', web: 'redeem' }}
+                    tintColor={colors.accent}
+                    style={{ width: 26, height: 26 }}
+                  />
+                </View>
+                <View style={{ flex: 1, gap: 4 }}>
+                  <ThemedText type="caption" themeColor="accent">
+                    {loyaltyMembership ? 'YOUR REWARDS PROGRAM' : 'A LITTLE THANK YOU'}
+                  </ThemedText>
+                  <ThemedText type="card">{loyalty.name}</ThemedText>
+                </View>
+              </View>
+              <ThemedText type="small" themeColor="textSecondary">
+                {loyalty.reward_description}
+              </ThemedText>
+            </View>
+            <View style={{ flexDirection: 'row', padding: 18, gap: 16 }}>
+              <View style={{ flex: 1, gap: 5 }}>
+                <ThemedText type="caption" themeColor="textSecondary">
+                  EARN
+                </ThemedText>
+                <ThemedText type="smallBold">
+                  {loyalty.program_type === 'points'
+                    ? `${loyalty.points_per_dollar ?? 1} points per $1`
+                    : 'A stamp each visit'}
+                </ThemedText>
+              </View>
+              <View style={{ width: 1, backgroundColor: colors.divider }} />
+              <View style={{ flex: 1, gap: 5 }}>
+                <ThemedText type="caption" themeColor="textSecondary">
+                  UNLOCK A REWARD
+                </ThemedText>
+                <ThemedText type="smallBold">
+                  {loyalty.program_type === 'points'
+                    ? `${loyalty.points_required ?? 0} points`
+                    : `${loyalty.stamps_required} stamps`}
+                </ThemedText>
+              </View>
+            </View>
           </View>
-          <ThemedText themeColor="textSecondary">{loyalty.reward_description}</ThemedText>
-          <ThemedText type="smallBold">
-            {loyalty.program_type === 'points'
-              ? `${loyalty.points_per_dollar ?? 1} point${loyalty.points_per_dollar === 1 ? '' : 's'} per $1 · Redeem at ${loyalty.points_required ?? 0} points`
-              : `Reward every ${loyalty.stamps_required} visits`}
-          </ThemedText>
-          {!preview && (
-            <AppButton
-              variant={loyaltyMembership ? 'secondary' : 'primary'}
-              loading={actionPending === 'loyalty'}
-              label={
-                actionPending === 'loyalty'
-                  ? 'Updating…'
-                  : loyaltyMembership
-                    ? 'In your rewards · Leave'
-                    : 'Add to my rewards'
+        </BusinessPreviewSection>
+      )}
+      {loyalty && (
+        <MerchantSheet
+          visible={detailsPanel === 'rewards'}
+          title="Rewards program"
+          onClose={() => setDetailsPanel(null)}
+        >
+          <View
+            style={[
+              styles.rewardCard,
+              { backgroundColor: colors.backgroundElement, borderColor: colors.divider },
+            ]}
+          >
+            <RewardProgramCard
+              enrollment
+              name={loyalty.name}
+              description={loyalty.reward_description}
+              type={loyalty.program_type ?? 'visits'}
+              target={
+                loyalty.program_type === 'points'
+                  ? (loyalty.points_required ?? 0)
+                  : loyalty.stamps_required
               }
-              onPress={() => void toggleLoyaltyMembership()}
             />
-          )}
-        </View>
+            {!preview && (
+              <AppButton
+                variant={loyaltyMembership ? 'secondary' : 'primary'}
+                loading={actionPending === 'loyalty'}
+                label={
+                  actionPending === 'loyalty'
+                    ? 'Updating…'
+                    : loyaltyMembership
+                      ? 'In your rewards · Leave'
+                      : 'Add to my rewards'
+                }
+                onPress={() => void toggleLoyaltyMembership()}
+              />
+            )}
+          </View>
+        </MerchantSheet>
       )}
 
       {gallery.length > 0 && (
-        <View style={styles.sectionGroup}>
-          <ThemedText type="subtitle">Photos</ThemedText>
-          <ThemedText themeColor="textSecondary" type="small">
-            Tap a photo to view it full screen and swipe through the gallery.
-          </ThemedText>
-          <View style={styles.gallery}>
-            {gallery.map((photo, index) => (
-              <Pressable
-                key={photo.id}
-                accessibilityHint="Opens this photo full screen"
-                accessibilityLabel={photo.altText ?? photo.caption ?? 'Business photo'}
-                accessibilityRole="button"
-                onPress={() => {
-                  setViewerIndex(index);
-                  viewerScrollX.setValue(index * pageWidth);
-                  onViewerChange?.(true);
-                  setViewerVisible(true);
-                }}
-                style={styles.galleryItem}
-              >
-                <Image
-                  cachePolicy="memory-disk"
-                  contentFit="contain"
-                  source={{ uri: photo.url }}
-                  style={[styles.galleryImage, { aspectRatio: photo.aspectRatio }]}
-                  transition={180}
-                />
-                {!!photo.caption && (
-                  <ThemedText numberOfLines={2} themeColor="textSecondary" type="small">
-                    {photo.caption}
-                  </ThemedText>
-                )}
-              </Pressable>
-            ))}
-          </View>
-        </View>
+        <BusinessPhotoPreview
+          photos={gallery}
+          onOpen={(index) => {
+            setViewerGrid(false);
+            setViewerIndex(index);
+            viewerScrollX.setValue(index * pageWidth);
+            onViewerChange?.(true);
+            setViewerVisible(true);
+          }}
+          onSeeAll={() => {
+            setViewerGrid(true);
+            onViewerChange?.(true);
+            setViewerVisible(true);
+          }}
+        />
       )}
+
+      <BusinessReviewSection
+        key={`${business.id}:preview`}
+        businessId={business.id}
+        businessName={business.name}
+        preview={preview}
+        summary={reviewSummary.id === business.id ? reviewSummary.summary : null}
+        summaryError={reviewSummary.id === business.id && reviewSummary.error}
+        layout="carousel"
+        onSeeAll={() => setDetailsPanel('reviews')}
+      />
+      <MerchantSheet
+        visible={detailsPanel === 'reviews'}
+        title="Customer reviews"
+        onClose={() => setDetailsPanel(null)}
+      >
+        {detailsPanel === 'reviews' && (
+          <BusinessReviewSection
+            hideHeading
+            key={business.id}
+            businessId={business.id}
+            businessName={business.name}
+            resumeReportId={resumeAction === 'report_review' ? resumeTargetId : undefined}
+            preview={preview}
+            summary={reviewSummary.id === business.id ? reviewSummary.summary : null}
+            summaryError={reviewSummary.id === business.id && reviewSummary.error}
+          />
+        )}
+      </MerchantSheet>
 
       {safetyAvailable && (
         <View style={styles.safetyArea}>
@@ -1356,7 +1848,7 @@ export function PublicBusinessPageContent({
             style={styles.safetyButton}
           >
             <SymbolView
-              name={{ ios: 'ellipsis.circle', android: 'more_horiz', web: 'more_horiz' }}
+              name={{ ios: 'flag', android: 'flag', web: 'flag' }}
               tintColor={colors.textSecondary}
               style={styles.safetyIcon}
             />
@@ -1387,57 +1879,8 @@ export function PublicBusinessPageContent({
         onClose={() => setReportTarget(null)}
         onSuccess={setActionMessage}
         reporterId={session?.user.id ?? null}
-        target={reportTarget}
+        target={detailsPanel === 'menu' ? null : reportTarget}
       />
-
-      <Modal
-        animationType="fade"
-        onRequestClose={() => setMenuOptionsItem(null)}
-        transparent
-        visible={Boolean(menuOptionsItem)}
-      >
-        <View style={styles.safetyModalRoot}>
-          <Pressable
-            accessibilityLabel="Close item options"
-            onPress={() => setMenuOptionsItem(null)}
-            style={styles.safetyBackdrop}
-          />
-          <View style={[styles.itemOptionsSheet, { backgroundColor: colors.backgroundElement }]}>
-            <ThemedText type="subtitle">{menuOptionsItem?.name ?? 'Item options'}</ThemedText>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => {
-                const item = menuOptionsItem;
-                setMenuOptionsItem(null);
-                if (!item) return;
-                requestReport({
-                  type: 'offering_item',
-                  businessId: business.id,
-                  offeringItemId: item.id,
-                  label: item.name,
-                });
-              }}
-              style={styles.itemOptionsAction}
-            >
-              <SymbolView
-                name={{ ios: 'exclamationmark.bubble', android: 'report', web: 'report' }}
-                tintColor={colors.textSecondary}
-                style={styles.itemOptionsIcon}
-              />
-              <ThemedText type="smallBold">Report item</ThemedText>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setMenuOptionsItem(null)}
-              style={styles.itemOptionsAction}
-            >
-              <ThemedText themeColor="textSecondary" type="smallBold">
-                Cancel
-              </ThemedText>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
 
       <Modal
         animationType="fade"
@@ -1490,7 +1933,15 @@ export function PublicBusinessPageContent({
         statusBarTranslucent
         visible={viewerVisible}
       >
-        <View style={styles.viewer}>
+        <View
+          style={[
+            styles.viewer,
+            {
+              paddingTop: Math.max(12, viewerInsets.top),
+              paddingBottom: Math.max(12, viewerInsets.bottom),
+            },
+          ]}
+        >
           <View style={styles.viewerHeader}>
             <ThemedText style={styles.viewerTitle} type="smallBold">
               Business photos
@@ -1509,92 +1960,144 @@ export function PublicBusinessPageContent({
               </ThemedText>
             </Pressable>
           </View>
-          <AnimatedFlatList
-            data={gallery}
-            extraData={{ viewerIndex, loadedAspectRatios }}
-            ref={viewerListRef}
-            onLayout={(event) => {
-              const nextWidth = Math.round(event.nativeEvent.layout.width);
-              if (nextWidth > 0 && nextWidth !== viewerWidth) setViewerWidth(nextWidth);
-            }}
-            getItemLayout={(_, index) => ({
-              length: pageWidth,
-              offset: pageWidth * index,
-              index,
-            })}
-            initialScrollIndex={viewerIndex}
-            keyExtractor={(photo) => photo.id}
-            horizontal
-            bounces={false}
-            decelerationRate="fast"
-            disableIntervalMomentum
-            onMomentumScrollEnd={(event) => {
-              const nextIndex = Math.round(event.nativeEvent.contentOffset.x / pageWidth);
-              setViewerIndex(Math.max(0, Math.min(nextIndex, gallery.length - 1)));
-            }}
-            onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: viewerScrollX } } }], {
-              useNativeDriver: true,
-            })}
-            scrollEventThrottle={16}
-            pagingEnabled
-            snapToAlignment="start"
-            snapToOffsets={gallery.map((_, index) => index * pageWidth)}
-            snapToInterval={pageWidth}
-            renderItem={({ item, index }) => (
-              <View style={[styles.viewerSlide, { width: pageWidth, height: windowHeight - 96 }]}>
-                <Image
-                  accessibilityLabel={item.altText ?? item.caption ?? 'Business photo'}
-                  cachePolicy="memory-disk"
-                  contentPosition="center"
-                  contentFit="contain"
-                  onLoad={(event) => {
-                    const source = event.source;
-                    if (!source?.width || !source?.height) return;
-                    const aspectRatio = source.width / source.height;
-                    setLoadedAspectRatios((current) =>
-                      current[item.url] === aspectRatio
-                        ? current
-                        : { ...current, [item.url]: aspectRatio },
-                    );
+          {viewerGrid ? (
+            <FlatList
+              key="photo-grid"
+              data={gallery}
+              numColumns={3}
+              style={{ flex: 1 }}
+              contentContainerStyle={{ padding: 12, gap: 8 }}
+              columnWrapperStyle={{ gap: 8 }}
+              keyExtractor={(photo) => photo.id}
+              renderItem={({ item, index }) => (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open photo ${index + 1} of ${gallery.length}`}
+                  onPress={() => {
+                    setViewerIndex(index);
+                    viewerScrollX.setValue(index * pageWidth);
+                    setViewerGrid(false);
                   }}
-                  source={{ uri: item.url }}
-                  style={[
-                    styles.viewerImage,
-                    {
-                      height: imageDisplayHeight(
-                        loadedAspectRatios[item.url] ?? item.aspectRatio,
-                        pageWidth,
-                        Math.max(280, windowHeight - 250),
-                      ),
-                    },
-                  ]}
-                />
-                <View style={styles.viewerCaption}>
-                  <ThemedText style={styles.viewerCounter} type="smallBold">
-                    {index + 1} / {gallery.length}
-                  </ThemedText>
-                  <ThemedText style={styles.viewerCaptionText}>
-                    {item.caption || item.altText || 'Business photo'}
-                  </ThemedText>
-                </View>
-              </View>
-            )}
-            showsHorizontalScrollIndicator={false}
-          />
-          <View
-            accessibilityLabel={`Photo ${viewerIndex + 1} of ${gallery.length}`}
-            accessibilityRole="adjustable"
-            style={styles.viewerDots}
-          >
-            {gallery.map((photo, index) => (
-              <BusinessPagerDot
-                key={`${photo.id}-dot`}
-                index={index}
-                pageWidth={pageWidth}
-                scrollX={viewerScrollX}
+                  style={{ width: '31.5%', aspectRatio: 1, borderRadius: 10, overflow: 'hidden' }}
+                >
+                  <Image
+                    source={{ uri: item.url }}
+                    contentFit="cover"
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                </Pressable>
+              )}
+            />
+          ) : (
+            <>
+              <AppButton
+                label="All photos"
+                variant="secondary"
+                onPress={() => setViewerGrid(true)}
+                style={{ alignSelf: 'flex-start', marginHorizontal: 16 }}
               />
-            ))}
-          </View>
+              <AnimatedFlatList
+                data={gallery}
+                extraData={{ viewerIndex, loadedAspectRatios }}
+                ref={viewerListRef}
+                onLayout={(event) => {
+                  const nextWidth = Math.round(event.nativeEvent.layout.width);
+                  if (nextWidth > 0 && nextWidth !== viewerWidth) setViewerWidth(nextWidth);
+                }}
+                getItemLayout={(_, index) => ({
+                  length: pageWidth,
+                  offset: pageWidth * index,
+                  index,
+                })}
+                initialScrollIndex={viewerIndex}
+                keyExtractor={(photo) => photo.id}
+                horizontal
+                bounces={false}
+                decelerationRate="fast"
+                disableIntervalMomentum
+                onMomentumScrollEnd={(event) => {
+                  const nextIndex = Math.round(event.nativeEvent.contentOffset.x / pageWidth);
+                  setViewerIndex(Math.max(0, Math.min(nextIndex, gallery.length - 1)));
+                }}
+                onScroll={Animated.event(
+                  [{ nativeEvent: { contentOffset: { x: viewerScrollX } } }],
+                  {
+                    useNativeDriver: true,
+                  },
+                )}
+                scrollEventThrottle={16}
+                pagingEnabled
+                snapToAlignment="start"
+                snapToOffsets={gallery.map((_, index) => index * pageWidth)}
+                snapToInterval={pageWidth}
+                renderItem={({ item, index }) => (
+                  <View
+                    style={[
+                      styles.viewerSlide,
+                      {
+                        width: pageWidth,
+                        height: Math.max(
+                          220,
+                          windowHeight - viewerInsets.top - viewerInsets.bottom - 140,
+                        ),
+                      },
+                    ]}
+                  >
+                    <Image
+                      accessibilityLabel={item.altText ?? item.caption ?? 'Business photo'}
+                      cachePolicy="memory-disk"
+                      contentPosition="center"
+                      contentFit="contain"
+                      onLoad={(event) => {
+                        const source = event.source;
+                        if (!source?.width || !source?.height) return;
+                        const aspectRatio = source.width / source.height;
+                        setLoadedAspectRatios((current) =>
+                          current[item.url] === aspectRatio
+                            ? current
+                            : { ...current, [item.url]: aspectRatio },
+                        );
+                      }}
+                      source={{ uri: item.url }}
+                      style={[
+                        styles.viewerImage,
+                        {
+                          height: imageDisplayHeight(
+                            loadedAspectRatios[item.url] ?? item.aspectRatio,
+                            pageWidth,
+                            Math.max(280, windowHeight - 250),
+                          ),
+                        },
+                      ]}
+                    />
+                    <View style={styles.viewerCaption}>
+                      <ThemedText style={styles.viewerCounter} type="smallBold">
+                        {index + 1} / {gallery.length}
+                      </ThemedText>
+                      <ThemedText style={styles.viewerCaptionText}>
+                        {item.caption || item.altText || 'Business photo'}
+                      </ThemedText>
+                    </View>
+                  </View>
+                )}
+                showsHorizontalScrollIndicator={false}
+              />
+              <View
+                accessibilityLabel={`Photo ${viewerIndex + 1} of ${gallery.length}`}
+                accessibilityRole="adjustable"
+                style={styles.viewerDots}
+              >
+                {gallery.map((photo, index) => (
+                  <BusinessPagerDot
+                    key={`${photo.id}-dot`}
+                    index={index}
+                    pageWidth={pageWidth}
+                    scrollX={viewerScrollX}
+                  />
+                ))}
+              </View>
+            </>
+          )}
         </View>
       </Modal>
     </View>
@@ -1799,12 +2302,7 @@ const styles = StyleSheet.create({
   hourDay: { width: 92, fontSize: 14, lineHeight: 21 },
   hourValue: { flex: 1, fontSize: 14, lineHeight: 21, textAlign: 'right' },
   closedHours: { flex: 1, fontSize: 14, lineHeight: 21, textAlign: 'right' },
-  menuSection: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Brand.border,
-    paddingTop: Spacing.three,
-    gap: Spacing.three,
-  },
+  menuSection: { gap: Spacing.three },
   menuHeading: { gap: 4 },
   menuCategorySelector: { gap: Spacing.one, paddingRight: Spacing.three },
   menuCategoryChip: {
@@ -1895,9 +2393,9 @@ const styles = StyleSheet.create({
   inlineActionTextSelected: { color: Brand.onPrimary },
   eventActionIcon: { width: 18, height: 18 },
   rewardCard: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: Radius.medium,
-    padding: Spacing.three,
+    borderWidth: 0,
+    borderRadius: 22,
+    padding: 0,
     gap: Spacing.two,
   },
   rewardEyebrow: { color: Brand.primaryBright, letterSpacing: 0.7 },
@@ -1974,12 +2472,8 @@ const styles = StyleSheet.create({
   galleryImage: { width: '100%', backgroundColor: 'rgba(120,140,128,0.08)' },
   viewer: { flex: 1, backgroundColor: '#050806', justifyContent: 'center' },
   viewerHeader: {
-    position: 'absolute',
-    zIndex: 2,
-    top: 42,
-    left: 20,
-    right: 20,
-    minHeight: 46,
+    paddingHorizontal: 20,
+    minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

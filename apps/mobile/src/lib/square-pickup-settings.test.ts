@@ -64,6 +64,7 @@ describe('pickup setup and activation', () => {
   it('treats Stripe payment readiness and SDS sync independently of Square locations', () => {
     const stripeOwner = {
       connection: { state: 'connected', locationId: null },
+      account: { chargesEnabled: true, payoutsEnabled: true },
       locations: [],
       settings: {
         ...settings,
@@ -88,6 +89,12 @@ describe('pickup setup and activation', () => {
         'stripe',
       ).reason,
     ).toContain('SDS menu');
+    expect(
+      pickupReadiness(
+        { ...stripeOwner, account: { chargesEnabled: true, payoutsEnabled: false } },
+        'stripe',
+      ).reason,
+    ).toContain('payout verification');
   });
   it('allows valid timing/windows to save with activation off and an empty catalog', () => {
     const draft = {

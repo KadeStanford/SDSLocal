@@ -8,6 +8,7 @@ function payload(overrides: Record<string, unknown> = {}) {
   return {
     event: {
       id: 'event-1',
+      event_timestamp_ms: Date.UTC(2026, 8, 20),
       type: 'INITIAL_PURCHASE',
       app_user_id: userId,
       entitlement_ids: ['business_listing'],
@@ -57,6 +58,102 @@ describe('parseRevenueCatWebhook', () => {
     expect(() => parseRevenueCatWebhook(payload({ entitlement_ids: ['other'] }))).toThrow(
       'business listing entitlement',
     );
+  });
+
+  it('requires an event timestamp so retried events can be ordered safely', () => {
+    for (const timestamp of [undefined, null, 'invalid', 0, -1, 1e20]) {
+      expect(() => parseRevenueCatWebhook(payload({ event_timestamp_ms: timestamp }))).toThrow(
+        'event timestamp',
+      );
+    }
+  });
+
+  it('preserves paid access during the store billing grace period only', () => {
+    vi.setSystemTime(new Date('2026-09-20T12:00:00.000Z'));
+    try {
+      const graceEnd = Date.UTC(2026, 8, 23);
+      expect(
+        parseRevenueCatWebhook(
+          payload({
+            type: 'BILLING_ISSUE',
+            expiration_at_ms: Date.UTC(2026, 8, 20),
+            grace_period_expiration_at_ms: graceEnd,
+          }),
+        ),
+      ).toMatchObject({
+        status: 'grace_period',
+        currentPeriodEnd: new Date(graceEnd).toISOString(),
+      });
+      expect(
+        parseRevenueCatWebhook(
+          payload({
+            type: 'BILLING_ISSUE',
+            grace_period_expiration_at_ms: null,
+          }),
+        ).status,
+      ).toBe('billing_retry');
+      expect(
+        parseRevenueCatWebhook(
+          payload({
+            type: 'BILLING_ISSUE',
+            grace_period_expiration_at_ms: Date.UTC(2026, 8, 19),
+          }),
+        ).status,
+      ).toBe('billing_retry');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps a scheduled Google pause active until the paid period expires', () => {
+    vi.setSystemTime(new Date('2026-09-20T12:00:00.000Z'));
+    try {
+      expect(
+        parseRevenueCatWebhook(
+          payload({
+            type: 'SUBSCRIPTION_PAUSED',
+            store: 'PLAY_STORE',
+            product_id: 'listing_growth_v1:monthly',
+          }),
+        ),
+      ).toMatchObject({ status: 'active', willRenew: false });
+      expect(
+        parseRevenueCatWebhook(
+          payload({
+            type: 'EXPIRATION',
+            store: 'PLAY_STORE',
+            product_id: 'listing_growth_v1:monthly',
+            expiration_at_ms: Date.UTC(2026, 8, 20),
+          }),
+        ),
+      ).toMatchObject({ status: 'expired', willRenew: false });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not activate an already elapsed pause or cancellation', () => {
+    vi.setSystemTime(new Date('2026-09-20T12:00:00.000Z'));
+    try {
+      expect(
+        parseRevenueCatWebhook(
+          payload({
+            type: 'SUBSCRIPTION_PAUSED',
+            expiration_at_ms: Date.UTC(2026, 8, 20),
+          }),
+        ).status,
+      ).toBe('paused');
+      expect(
+        parseRevenueCatWebhook(
+          payload({
+            type: 'CANCELLATION',
+            expiration_at_ms: Date.UTC(2026, 8, 20),
+          }),
+        ).status,
+      ).toBe('expired');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('rejects a non-UUID app user id so purchases cannot target arbitrary accounts', () => {

@@ -1,3 +1,6 @@
+import { paymentNeedsCustomer } from '@/lib/pending-payment';
+import { rewardSelection, rewardEstimate, withoutReward } from '@/lib/pickup-rewards';
+import { useAuth } from '@/providers/auth-provider';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { useFocusEffect } from 'expo-router';
@@ -18,6 +21,7 @@ import {
   type PickupSlot,
   type Product,
   type Quote,
+  type RewardOffer,
   pollDelay,
 } from '@/lib/square-commerce-core';
 import {
@@ -43,7 +47,37 @@ import {
 } from '@/lib/pickup-menu-controls';
 import { haptics } from '@/lib/haptics';
 import { useReducedMotion } from './use-reduced-motion';
-export function usePickupOrder(params: { businessId?: string; orderId?: string }) {
+import { useStripePickupPayment } from './use-stripe-pickup-payment';
+import { waitForOrderConfirmation } from '@/lib/order-confirmation';
+export function usePickupOrder(params: {
+  businessId?: string;
+  orderId?: string;
+  reorderFromOrderId?: string;
+}) {
+  const { session } = useAuth();
+  const customerId = session?.user.id ?? null;
+  const [rewardOffer, setRewardOffer] = useState<RewardOffer | null>(null);
+  const [rewardError, setRewardError] = useState(false);
+  const [rewardSaved, setRewardSaved] = useState(false);
+  const loadRewards = useCallback(
+    async (id: string) => {
+      if (!customerId) {
+        setRewardOffer(null);
+        return;
+      }
+      try {
+        const result = await commerce<{ offer: RewardOffer | null }>('reward_options', {
+          businessId: id,
+        });
+        setRewardOffer(result.offer);
+        setRewardError(false);
+      } catch {
+        setRewardOffer(null);
+        setRewardError(true);
+      }
+    },
+    [customerId],
+  );
   const [businessId, setBusinessId] = useState(params.businessId ?? '');
   const [menu, setMenu] = useState<Availability | null>(null);
   const [identity, setIdentity] = useState<{
@@ -56,6 +90,7 @@ export function usePickupOrder(params: { businessId?: string; orderId?: string }
   const [cart, setCart] = useState<CartLine[]>([]);
   const cartRef = useRef<CartLine[]>([]);
   const reducedMotion = useReducedMotion();
+  const stripePayment = useStripePickupPayment();
   const [slot, setSlot] = useState<PickupSlot | null>(null);
   const [place, setPlace] = useState<string | null>(null);
   const [step, setStep] = useState<OrderStep>('menu');
@@ -67,13 +102,24 @@ export function usePickupOrder(params: { businessId?: string; orderId?: string }
   const [error, setError] = useState('');
   const [storageWarning, setStorageWarning] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [confirmingPayment, setConfirmingPayment] = useState(false);
+  const [confirmationSlow, setConfirmationSlow] = useState(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const busyRef = useRef(false);
   const [access, setAccess] = useState<OrderAccess | null>(null);
   const [resumeOrder, setResumeOrder] = useState<OrderAccess | null>(null);
+  const [reorderNotice, setReorderNotice] = useState<string | null>(null);
   const [editing, setEditing] = useState<{
     product: Product;
     products?: Product[];
     index: number | null;
+    reward?: RewardOffer;
   } | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const initialKey = useRef('');
@@ -110,55 +156,124 @@ export function usePickupOrder(params: { businessId?: string; orderId?: string }
           statusToken: current.statusToken,
         });
     if (result.order) {
+      const nextOrder = result.order;
       const next = { ...current, orderId: result.order.id };
-      await saveOrderAccess(next);
+      if (paymentNeedsCustomer(nextOrder) || nextOrder.status !== 'checkout_pending')
+        delete next.paymentSubmittedAt;
+      if (!mounted.current) return result.order;
+      await saveOrderAccess(next).catch(() => setStorageWarning(true));
       setAccess((old) =>
-        old?.orderId === next.orderId && old?.statusToken === next.statusToken ? old : next,
+        old?.orderId === next.orderId &&
+        old?.statusToken === next.statusToken &&
+        old?.paymentSubmittedAt === next.paymentSubmittedAt
+          ? old
+          : next,
       );
       setOrder(result.order);
+      setConfirmingPayment(
+        (old) =>
+          nextOrder.status === 'checkout_pending' &&
+          !paymentNeedsCustomer(nextOrder) &&
+          (old || !!next.paymentSubmittedAt || nextOrder.providerStatus === 'PAYMENT_PROCESSING'),
+      );
+      if (paymentNeedsCustomer(nextOrder) || nextOrder.status !== 'checkout_pending')
+        setConfirmationSlow(false);
       setLastUpdated(Date.now());
       setError('');
       setBusinessId(current.businessId);
     }
     return result.order;
   }, []);
-  const loadMenu = useCallback(async (id: string) => {
-    let result: Availability;
-    try {
-      result = await commerce<Availability>('availability', { businessId: id, catalog: true });
-    } catch (error) {
-      setMenu((old) => ({ ...old, available: false, status: 'unavailable' }));
-      setQuote(null);
-      throw error;
-    }
-    // Keep the last menu/cart visible during temporary closures or provider failures.
-    setMenu((old) => ({
-      ...old,
-      ...result,
-      products: result.products
-        ? refreshedProducts(old?.products ?? [], result.products)
-        : (old?.products ?? []),
-    }));
-    const version = JSON.stringify([result.available, result.products, result.slots]);
-    if (catalogVersion.current !== version) setQuote(null);
-    catalogVersion.current = version;
-    if (result.available) {
-      setPlace((old) => selectedPickupPlace(result.slots ?? [], old));
-      setSlot((old) =>
-        old
-          ? ((result.slots ?? []).find((s) => s.at === old.at && s.stopId === old.stopId) ?? null)
-          : null,
-      );
-    }
-    return result;
-  }, []);
+  const waitingOnPayment =
+    order?.status === 'checkout_pending' &&
+    !paymentNeedsCustomer(order) &&
+    (confirmingPayment || order.providerStatus === 'PAYMENT_PROCESSING');
+  useEffect(() => {
+    if (!waitingOnPayment) return;
+    const timer = setTimeout(() => setConfirmationSlow(true), 8000);
+    return () => clearTimeout(timer);
+  }, [order?.id, waitingOnPayment]);
+  const loadMenu = useCallback(
+    async (id: string) => {
+      let result: Availability;
+      try {
+        result = await commerce<Availability>('availability', { businessId: id, catalog: true });
+      } catch (error) {
+        setMenu((old) => ({ ...old, available: false, status: 'unavailable' }));
+        setQuote(null);
+        throw error;
+      }
+      // Keep the last menu/cart visible during temporary closures or provider failures.
+      setMenu((old) => ({
+        ...old,
+        ...result,
+        products: result.products
+          ? refreshedProducts(old?.products ?? [], result.products)
+          : (old?.products ?? []),
+      }));
+      const version = JSON.stringify([result.available, result.products, result.slots]);
+      if (catalogVersion.current !== version) setQuote(null);
+      catalogVersion.current = version;
+      if (result.available) {
+        setPlace((old) => selectedPickupPlace(result.slots ?? [], old));
+        setSlot((old) =>
+          old
+            ? ((result.slots ?? []).find((s) => s.at === old.at && s.stopId === old.stopId) ?? null)
+            : null,
+        );
+      }
+      await loadRewards(id);
+      return result;
+    },
+    [loadRewards],
+  );
   useFocusEffect(
     useCallback(() => {
       if (!pickupDiscoveryEnabled(process.env.EXPO_PUBLIC_APP_ENV)) return;
       void run(async () => {
-        const key = `${params.businessId ?? ''}:${params.orderId ?? ''}`;
+        const key = `${params.businessId ?? ''}:${params.orderId ?? ''}:${params.reorderFromOrderId ?? ''}`;
         if (initialKey.current === key) {
+          const current = await readOrderAccess(params.orderId, params.businessId);
+          if (current?.orderId) {
+            await refreshStatus(current);
+            return;
+          }
+          if (params.orderId) {
+            const result = await commerce<{ order: PickupOrder }>('status', {
+              orderId: params.orderId,
+            });
+            setOrder(result.order);
+            setLastUpdated(Date.now());
+            return;
+          }
           if (params.businessId) await loadMenu(params.businessId);
+          return;
+        }
+        if (params.reorderFromOrderId) {
+          const previousAccess = await readOrderAccess(params.reorderFromOrderId);
+          const previousOrder = await commerce<{
+            businessId: string;
+            cart: CartLine[];
+            unavailableItems: string[];
+          }>('customer_order_reorder', {
+            orderId: params.reorderFromOrderId,
+            statusToken: previousAccess?.statusToken,
+          });
+          if (params.businessId && params.businessId !== previousOrder.businessId)
+            throw new Error('This order belongs to a different business.');
+          setBusinessId(previousOrder.businessId);
+          setOrder(null);
+          setReorderNotice(
+            previousOrder.unavailableItems.length
+              ? `Some items are no longer in the menu (${previousOrder.unavailableItems.join(', ')}). Review the current menu before continuing.`
+              : 'Prices and pickup times are current. Review your cart before checkout.',
+          );
+          await loadMenu(previousOrder.businessId);
+          cartRef.current = previousOrder.cart;
+          setCart(previousOrder.cart);
+          setStep(previousOrder.cart.length ? 'cart' : 'menu');
+          setAccess(await newOrderAccess(previousOrder.businessId));
+          initialKey.current = key;
           return;
         }
         const saved = await readOrderAccess(params.orderId, params.businessId);
@@ -200,7 +315,14 @@ export function usePickupOrder(params: { businessId?: string; orderId?: string }
           setAccess(await newOrderAccess(params.businessId));
         initialKey.current = key;
       });
-    }, [params.businessId, params.orderId, loadMenu, refreshStatus, run]),
+    }, [
+      params.businessId,
+      params.orderId,
+      params.reorderFromOrderId,
+      loadMenu,
+      refreshStatus,
+      run,
+    ]),
   );
   useEffect(() => {
     if (!businessId || !pickupDiscoveryEnabled(process.env.EXPO_PUBLIC_APP_ENV)) return;
@@ -300,9 +422,12 @@ export function usePickupOrder(params: { businessId?: string; orderId?: string }
       }
       attempt++;
       if (alive)
-        timer = setTimeout(() => {
-          void poll();
-        }, pollDelay(attempt));
+        timer = setTimeout(
+          () => {
+            void poll();
+          },
+          orderStatus === 'checkout_pending' ? 2000 : pollDelay(attempt),
+        );
     };
     timer = setTimeout(() => {
       void poll();
@@ -362,9 +487,12 @@ export function usePickupOrder(params: { businessId?: string; orderId?: string }
       current = await newOrderAccess(businessId);
       setAccess(current);
     }
+    const chosenReward = rewardSelection(cart, rewardOffer, customerId);
+    if (chosenReward.issue) throw new Error(chosenReward.issue);
     setQuote(null);
     const result = await commerce<Quote>('quote', {
       businessId,
+      rewardSelection: chosenReward.selection,
       cart: cart.map(({ variationId, quantity, modifierIds }) => ({
         variationId,
         quantity,
@@ -395,13 +523,25 @@ export function usePickupOrder(params: { businessId?: string; orderId?: string }
     };
     await saveOrderAccess(pending);
     setAccess(pending);
-    let result: { order: PickupOrder };
+    let result: {
+      order: PickupOrder;
+      paymentIntentClientSecret?: string;
+      stripeAccountId?: string;
+      merchantDisplayName?: string;
+    };
     try {
-      result = await commerce<{ order: PickupOrder }>('checkout', {
+      result = await commerce<{
+        order: PickupOrder;
+        paymentIntentClientSecret?: string;
+        stripeAccountId?: string;
+        merchantDisplayName?: string;
+      }>('checkout', {
         businessId,
         quoteId: quote.quoteId,
         idempotencyKey: pending.idempotencyKey,
         statusToken: pending.statusToken,
+        checkoutMode:
+          quote.provider === 'stripe' && stripePayment.available ? 'payment_sheet' : 'hosted',
         recipient: { name: name.trim(), phone: normalized },
       });
     } catch (error) {
@@ -420,6 +560,11 @@ export function usePickupOrder(params: { businessId?: string; orderId?: string }
           'INVALID_MODIFIERS',
           'REQUIRED_MODIFIER',
           'CONNECTION_CHANGED',
+          'REWARD_CHANGED',
+          'REWARD_NOT_READY',
+          'REWARD_UNAVAILABLE',
+          'REWARD_ITEM_UNAVAILABLE',
+          'REWARD_SIGN_IN',
         ].includes(code)
       ) {
         if (await refreshStatus(pending)) return;
@@ -440,8 +585,50 @@ export function usePickupOrder(params: { businessId?: string; orderId?: string }
     setOrder(result.order);
     setLastUpdated(Date.now());
     setError('');
-    if (result.order.checkoutUrl) await openCheckout(result.order.checkoutUrl);
-    await refreshStatus(saved);
+    if (result.paymentIntentClientSecret) {
+      if (!result.stripeAccountId)
+        throw new Error('Secure payment details could not be verified. Please retry.');
+      const paymentResult = await stripePayment.pay({
+        clientSecret: result.paymentIntentClientSecret,
+        stripeAccountId: result.stripeAccountId,
+        merchantDisplayName: result.merchantDisplayName ?? 'SDS Local',
+      });
+      if (paymentResult === 'cancelled') {
+        await refreshStatus(saved);
+      } else await confirmSubmittedPayment(saved);
+      return;
+    }
+    if (result.order.checkoutUrl) {
+      await openCheckout(result.order.checkoutUrl);
+      await confirmReturnedCheckout(() => refreshStatus(saved));
+    } else await refreshStatus(saved);
+  }
+  async function confirmReturnedCheckout(read: () => Promise<PickupOrder | null>) {
+    setConfirmingPayment(true);
+    setConfirmationSlow(false);
+    const latest = await waitForOrderConfirmation(read, { active: () => mounted.current });
+    if (!mounted.current) return;
+    // A browser dismissal does not prove payment submission. Let a cancelled
+    // customer reopen the same checkout after the bounded status check.
+    setConfirmingPayment(false);
+    setConfirmationSlow(
+      !latest || (latest.status === 'checkout_pending' && !paymentNeedsCustomer(latest)),
+    );
+  }
+  async function confirmSubmittedPayment(current: OrderAccess) {
+    const submitted = { ...current, paymentSubmittedAt: new Date().toISOString() };
+    setConfirmingPayment(true);
+    setConfirmationSlow(false);
+    setError('');
+    setAccess(submitted);
+    await saveOrderAccess(submitted).catch(() => setStorageWarning(true));
+    const latest = await waitForOrderConfirmation(() => refreshStatus(submitted), {
+      active: () => mounted.current,
+    });
+    if (mounted.current)
+      setConfirmationSlow(
+        !latest || (latest.status === 'checkout_pending' && !paymentNeedsCustomer(latest)),
+      );
   }
   async function recover() {
     if (!access) return;
@@ -458,18 +645,25 @@ export function usePickupOrder(params: { businessId?: string; orderId?: string }
         'No confirmed order yet. Retry the same checkout, or check again after the quote expires. Do not start another payment.',
       );
   }
-  async function refreshOrder() {
-    if (access) await refreshStatus(access);
-    else if (order) {
+  async function readFreshOrder(): Promise<PickupOrder | null> {
+    if (access) return refreshStatus(access);
+    if (order) {
       const result = await commerce<{ order: PickupOrder }>('status', { orderId: order.id });
       setOrder(result.order);
       setLastUpdated(Date.now());
       setError('');
+      return result.order;
     }
+    return null;
+  }
+  async function refreshOrder() {
+    await readFreshOrder();
   }
   async function startAnother() {
     if (!businessId || !order || !terminalPickupStates.includes(order.status)) return;
     setOrder(null);
+    setConfirmingPayment(false);
+    setConfirmationSlow(false);
     setQuote(null);
     setSlot(null);
     setAccess(await newOrderAccess(businessId));
@@ -481,7 +675,52 @@ export function usePickupOrder(params: { businessId?: string; orderId?: string }
   }
   const products = menu?.products ?? [];
   const review = cartReview(cart, products);
+  const chosenReward = rewardSelection(cart, rewardOffer, customerId);
+  const claimIndex = cart.findIndex((l) => l.rewardClaim);
   return {
+    rewardOffer,
+    rewardError,
+    rewardSaved,
+    rewardIssue: chosenReward.issue,
+    rewardDiscount: rewardEstimate(cart, products, rewardOffer, customerId),
+    rewardName:
+      claimIndex < 0
+        ? undefined
+        : cart[claimIndex]?.rewardClaim?.type === 'percent_discount'
+          ? rewardOffer?.label
+          : (products.find((p) => p.id === cart[claimIndex]?.variationId)?.name ?? 'Reward item'),
+    loadRewards: () => loadRewards(businessId),
+    showReward: () => setRewardSaved(false),
+    saveReward: () => {
+      if (!busyRef.current && !access?.quoteId && updateCart(withoutReward(cartRef.current)))
+        setRewardSaved(true);
+    },
+    chooseReward: (product: Product) => {
+      if (!busyRef.current && !access?.quoteId && menu?.available && rewardOffer && customerId)
+        setEditing({ product, index: null, reward: rewardOffer });
+    },
+    applyOrderReward: () => {
+      if (
+        busyRef.current ||
+        access?.quoteId ||
+        !rewardOffer ||
+        !customerId ||
+        !cartRef.current.length
+      )
+        return;
+      const next = withoutReward(cartRef.current);
+      next[0] = {
+        ...next[0]!,
+        rewardClaim: {
+          programId: rewardOffer.programId,
+          revision: rewardOffer.revision,
+          provider: rewardOffer.provider,
+          type: rewardOffer.type,
+          customerId,
+        },
+      };
+      if (updateCart(next)) setRewardSaved(false);
+    },
     businessId,
     menu,
     identity,
@@ -497,8 +736,11 @@ export function usePickupOrder(params: { businessId?: string; orderId?: string }
     error,
     storageWarning,
     busy,
+    confirmingPayment: order?.status === 'checkout_pending' && confirmingPayment,
+    confirmationSlow,
     access,
     resumeOrder,
+    reorderNotice,
     editing,
     products,
     review,
@@ -560,9 +802,32 @@ export function usePickupOrder(params: { businessId?: string; orderId?: string }
           throw new Error('Ordering changed. Close this item and refresh pickup options.');
         const currentProduct = products.find((p) => p.id === product.id);
         if (!currentProduct) throw new Error('This item is no longer available.');
-        if (!updateCart(setCartLine(cartRef.current, currentProduct, ids, quantity, editing.index)))
-          return 'Your change could not be saved. Please retry.';
+        let next = setCartLine(cartRef.current, currentProduct, ids, quantity, editing.index);
+        if (editing.reward) {
+          if (
+            !customerId ||
+            editing.reward.revision !== rewardOffer?.revision ||
+            editing.reward.programId !== rewardOffer.programId
+          )
+            throw new Error('Your reward changed. Close this item and choose it again.');
+          if (editing.reward.type === 'bogo' && quantity < 2)
+            throw new Error('Add two of the same item to use this reward.');
+          next = withoutReward(next);
+          const index = editing.index ?? next.length - 1;
+          next[index] = {
+            ...next[index]!,
+            rewardClaim: {
+              programId: editing.reward.programId,
+              revision: editing.reward.revision,
+              provider: editing.reward.provider,
+              type: editing.reward.type,
+              customerId,
+            },
+          };
+        }
+        if (!updateCart(next)) return 'Your change could not be saved. Please retry.';
         setEditing(null);
+        if (editing.reward) setRewardSaved(false);
         return null;
       } catch (e) {
         return e instanceof Error ? e.message : 'Unable to add item.';
@@ -577,7 +842,45 @@ export function usePickupOrder(params: { businessId?: string; orderId?: string }
     reopen: async () => {
       if (order?.checkoutUrl) {
         await openCheckout(order.checkoutUrl);
-        await refreshOrder();
+        await confirmReturnedCheckout(readFreshOrder);
+      } else if (order?.provider === 'stripe' && order.status === 'checkout_pending') {
+        const payment = await commerce<{
+          order: PickupOrder;
+          paymentIntentClientSecret?: string;
+          stripeAccountId?: string;
+          merchantDisplayName?: string;
+        }>('resume_payment', {
+          orderId: order.id,
+          statusToken: access?.orderId === order.id ? access.statusToken : undefined,
+        });
+        setOrder(payment.order);
+        setLastUpdated(Date.now());
+        if (payment.paymentIntentClientSecret) {
+          if (!payment.stripeAccountId)
+            throw new Error('Secure payment details could not be verified. Please retry.');
+          const paymentResult = await stripePayment.pay({
+            clientSecret: payment.paymentIntentClientSecret,
+            stripeAccountId: payment.stripeAccountId,
+            merchantDisplayName: payment.merchantDisplayName ?? 'SDS Local',
+          });
+          if (paymentResult === 'cancelled') {
+            await readFreshOrder();
+          } else if (access) await confirmSubmittedPayment(access);
+          else {
+            setConfirmingPayment(true);
+            const latest = await waitForOrderConfirmation(readFreshOrder, {
+              active: () => mounted.current,
+            });
+            setConfirmationSlow(
+              !latest || (latest.status === 'checkout_pending' && !paymentNeedsCustomer(latest)),
+            );
+          }
+        } else if (payment.order.checkoutUrl) {
+          await openCheckout(payment.order.checkoutUrl);
+          await confirmReturnedCheckout(readFreshOrder);
+        } else {
+          await refreshOrder();
+        }
       }
     },
   };

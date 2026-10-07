@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { IdentityPhoto } from '@/lib/business-identity';
@@ -13,6 +13,7 @@ export function EventCard({
   timezone,
   metadata,
   reminder = false,
+  carousel = false,
   onPress,
 }: {
   readonly title: string;
@@ -22,9 +23,11 @@ export function EventCard({
   readonly timezone?: string;
   readonly metadata: string;
   readonly reminder?: boolean;
+  readonly carousel?: boolean;
   readonly onPress: () => void;
 }) {
   const colors = useTheme();
+  const { fontScale } = useWindowDimensions();
   const date = new Date(startsAt);
   return (
     <Pressable
@@ -33,6 +36,7 @@ export function EventCard({
       onPress={onPress}
       style={({ pressed }) => [
         styles.row,
+        carousel && { height: 170 * Math.max(1, fontScale), alignItems: 'flex-start' },
         { backgroundColor: colors.backgroundElement },
         pressed && styles.pressed,
       ]}
@@ -46,9 +50,23 @@ export function EventCard({
         </ThemedText>
       </View>
       <View style={styles.copy}>
-        <ThemedText type="card">{title}</ThemedText>
-        <BusinessIdentityRow name={businessName} photos={photos} />
-        <ThemedText type="small" themeColor="textSecondary">
+        <ThemedText
+          type="card"
+          numberOfLines={carousel ? 2 : undefined}
+          style={carousel ? { minHeight: 48 * Math.max(1, fontScale) } : undefined}
+        >
+          {title}
+        </ThemedText>
+        <BusinessIdentityRow
+          name={businessName}
+          photos={photos}
+          numberOfLines={carousel ? 1 : undefined}
+        />
+        <ThemedText
+          type="small"
+          themeColor="textSecondary"
+          numberOfLines={carousel ? 2 : undefined}
+        >
           {metadata}
         </ThemedText>
         {reminder && (

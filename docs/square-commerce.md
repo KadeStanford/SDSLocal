@@ -170,8 +170,12 @@ Catalog pagination completes before an atomic mirror replacement. Manual sync
 and `catalog.version.updated` update this separate mirror. Quote and checkout
 re-read current Square objects; clients cannot send authoritative prices/taxes.
 Square CalculateOrder supplies tax and total. A changed quote requires review
-again. Order snapshots use catalog versions; the created payment link's actual
-total is verified before returning its URL.
+again. Square order snapshots use catalog versions; the created payment link's
+actual total is verified before returning its URL. For Stripe, the server creates
+a connected-account PaymentIntent from the reviewed order total. Native iOS and
+Android builds with a publishable key confirm it in Stripe PaymentSheet; the app
+does not persist the client secret. Web and older builds keep hosted Checkout.
+Customers can pay as guests; they do not need a Stripe login or customer account.
 
 Pickup times are generated from UTC instants and formatted in the configured
 timezone, including DST transitions. Pickup requires the greater of prep and
@@ -183,21 +187,27 @@ orders, including orders assigned to mobile stops.
 The database serializes reservations per business and counts pending checkouts.
 The same idempotency key/capability/request returns the same logical order.
 Conflicting requests fail. Leases serialize provider creation/refund/transition
-operations. Checkout links are Square API single-use links, not reusable
-Dashboard payment links. A browser return never marks an order paid.
+operations. Square uses single-use API checkout links, not reusable Dashboard
+payment links. Native Stripe retries retrieve or recreate the same idempotent
+PaymentIntent, and an authorized `resume_payment` request returns its secret only
+while the payment is still actionable. A browser return never marks an order paid.
 
-An unpaid checkout expires after ten minutes, but capacity remains reserved
-until maintenance confirms Square cancelled the unpaid link/order. A provider
-timeout keeps the slot conservatively reserved. A late/incorrect payment goes
-to review instead of silently fulfilling an oversold or mispriced order.
+An unpaid Square checkout expires after ten minutes, but capacity remains
+reserved until maintenance confirms Square cancelled the unpaid link/order. A
+Stripe PaymentIntent remains retryable after a declined or cancelled sheet until
+the order expires; reconciliation cancels an unpaid intent only after retrieving
+its current state. A provider timeout keeps the slot conservatively reserved. A
+late/incorrect payment goes to review instead of silently fulfilling an
+oversold or mispriced order.
 
 ## Order and refund states
 
 `checkout_pending → placed` requires current Square payment `COMPLETED`, matching
-Square order, location, currency and amount. A failed payment attempt can still
-be retried at the same single-use checkout until its expiration. Older events
-cannot undo payment, fulfillment or refunds. Signed events are triggers to fetch
-current provider truth rather than instructions to copy a potentially old status.
+Square order, location, currency and amount, or a succeeded Stripe PaymentIntent
+with the matching order, currency and amount. A failed payment attempt can still
+be retried at the same provider checkout until expiration. Older events cannot
+undo payment, fulfillment or refunds. Signed events are triggers to fetch current
+provider truth rather than instructions to copy a potentially old status.
 
 Owner workflow: `placed → accepted → preparing → ready → completed`, with
 optimistic versions and a formal transition map. These are **SDS operational
@@ -1019,6 +1029,19 @@ Plain items add one directly; inline 48-point minus/plus controls update the sam
 Availability refreshes on focus, foreground, pull-to-refresh, and once a minute while browsing. Removed catalog items remain visibly unavailable for repair/removal; a failed availability request disables further checkout while preserving the cart. The customer menu reuses the public pickup-state resolver and business-local hours, including closed businesses with future pickup slots. Route identity changes remount the flow to prevent cross-business state leakage.
 
 Pickup selection shows a location, truthful earliest slot, timezone once, date tabs, eight time choices, and Show later times. A later selected slot remains visible on return. Repeated clock times across a daylight-saving fallback include their timezone to distinguish the actual instants. Review groups Pickup, Contact, and Order summary, formats US phone numbers, provides Edit links to each relevant step, and uses an explicit secure-payment footer. Server-authoritative quoting, hosted checkout, idempotency, and payment reconciliation are unchanged.
+
+### Native Stripe PaymentSheet (September 26, 2026)
+
+Native iOS and Android checkout now request an idempotent Stripe PaymentIntent
+for the connected business account, then present Stripe PaymentSheet in the app.
+The customer can enter card details without creating a Stripe account. Guest
+recovery stores only the existing order capability; payment secrets remain
+in-memory and are fetched again through `resume_payment`. Web and builds without
+the Stripe publishable key continue using hosted Checkout. Declines and sheet
+cancellations keep the order retryable; the payment webhook and status reads
+reconcile the PaymentIntent before the order can enter fulfillment. Payment
+amounts remain server-authoritative, and the existing shared payment-id column
+is used, so this pass does not require a schema migration.
 
 Verification includes pure cart/modifier/scheduling tests, rendered control callback checks, and complete 320×568 and 375×812 React Native Web layouts in light/dark mode with 1.4× text and a simulated 34-point bottom inset. Native image rendering, actual page-sheet gestures, hardware keyboard behavior, VoiceOver/TalkBack, and physical-phone safe areas are not proven by these fixtures. No Square API/SQL mutations, hosted emails, new orders, or actions on protected order `1459be91-d194-400f-9ddb-c15b9f776d09` were performed for this UI phase.
 

@@ -1,9 +1,11 @@
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { verifyPreviewSource } from './verify-preview-source.mjs';
 
 const repoRoot = resolve(import.meta.dirname, '..');
 const mobileRoot = resolve(repoRoot, 'apps/mobile');
+const source = verifyPreviewSource(mobileRoot);
 const expoCli = resolve(mobileRoot, 'node_modules/expo/bin/cli');
 const result = spawnSync(process.execPath, [expoCli, 'config', '--type', 'public', '--json'], {
   cwd: mobileRoot,
@@ -49,5 +51,6 @@ console.log(
     iosBackgroundLocation: true,
     androidBackgroundLocation: true,
     updates: true,
+    source,
   }),
 );

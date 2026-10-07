@@ -1,6 +1,36 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 const siteUrl = process.env.EXPO_PUBLIC_SITE_URL;
+const testerBuild = process.env.EXPO_PUBLIC_TESTER_BUILD === 'true';
+if (testerBuild) {
+  if (
+    process.env.EXPO_PUBLIC_APP_ENV !== 'staging' ||
+    process.env.EXPO_PUBLIC_STAGING_SUPABASE_URL !== 'https://lgddhdexvwclfrnzjtly.supabase.co' ||
+    !process.env.EXPO_PUBLIC_STAGING_SUPABASE_ANON_KEY
+  ) {
+    throw new Error(
+      'Tester builds require the approved staging backend and its public client key.',
+    );
+  }
+  for (const name of [
+    'EXPO_PUBLIC_PRIVACY_URL',
+    'EXPO_PUBLIC_TERMS_URL',
+    'EXPO_PUBLIC_SUPPORT_URL',
+  ]) {
+    const url = new URL(process.env[name] ?? 'https://missing.invalid');
+    if (
+      url.protocol !== 'https:' ||
+      url.username ||
+      url.password ||
+      !url.hostname.includes('.') ||
+      /(?:localhost|\.local$|\.invalid$|\.test$|^example\.(?:com|org|net)$|^(?:\d{1,3}\.){3}\d{1,3}$|:)/.test(
+        url.hostname,
+      )
+    ) {
+      throw new Error(`Tester builds require a public HTTPS ${name}.`);
+    }
+  }
+}
 const shareBaseUrl = process.env.EXPO_PUBLIC_SHARE_BASE_URL;
 const loopbackHosts = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1']);
 function reachableHost(value: string | undefined) {
@@ -23,23 +53,29 @@ const stripeEnableGooglePay = process.env.EXPO_PUBLIC_STRIPE_ENABLE_GOOGLE_PAY =
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: 'SDS Local',
+  name: 'Parish Pass',
   slug: 'sds-local',
   description: 'Discover, follow, and earn rewards with local businesses.',
   version: '0.1.0',
   orientation: 'portrait',
-  icon: './assets/images/icon.png',
+  icon: './assets/branding/parish-pass/native-icon-light.png',
+  backgroundColor: '#102D25',
   scheme: 'sdslocal',
   userInterfaceStyle: 'automatic',
-  runtimeVersion: { policy: 'appVersion' },
+  runtimeVersion: { policy: testerBuild ? 'fingerprint' : 'appVersion' },
   updates: {
+    ...(process.env.EXPO_PUBLIC_IAP_DIAGNOSTICS === 'true' ? { enabled: false } : {}),
     url: `https://u.expo.dev/${easProjectId}`,
     checkAutomatically: 'ON_LOAD',
     fallbackToCacheTimeout: 0,
   },
   ios: {
     bundleIdentifier: 'com.stanforddevelopmentsolutions.sdslocal',
-    icon: './assets/expo.icon',
+    icon: {
+      light: './assets/branding/parish-pass/native-icon-light.png',
+      dark: './assets/branding/parish-pass/native-icon-dark.png',
+      tinted: './assets/branding/parish-pass/native-icon-tinted.png',
+    },
     deploymentTarget: '18.0',
     supportsTablet: true,
     // Required for the native Sign in with Apple capability. This is applied
@@ -54,10 +90,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     package: 'com.stanforddevelopmentsolutions.sdslocal',
     predictiveBackGestureEnabled: true,
     adaptiveIcon: {
-      backgroundColor: '#F8F7F2',
-      foregroundImage: './assets/images/android-icon-foreground.png',
-      backgroundImage: './assets/images/android-icon-background.png',
-      monochromeImage: './assets/images/android-icon-monochrome.png',
+      backgroundColor: '#102D25',
+      foregroundImage: './assets/branding/parish-pass/native-adaptive-foreground.png',
+      monochromeImage: './assets/branding/parish-pass/native-adaptive-monochrome.png',
     },
     intentFilters: publicHost
       ? [
@@ -76,7 +111,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   web: {
     output: 'static',
-    favicon: './assets/images/favicon.png',
+    favicon: './assets/branding/parish-pass/native-favicon.png',
   },
   plugins: [
     'expo-router',
@@ -149,9 +184,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-splash-screen',
       {
-        backgroundColor: '#176B4D',
-        image: './assets/images/splash-icon.png',
-        imageWidth: 76,
+        backgroundColor: '#102D25',
+        image: './assets/branding/parish-pass/native-splash.png',
+        imageWidth: 106,
+        resizeMode: 'contain',
+        dark: {
+          backgroundColor: '#102D25',
+          image: './assets/branding/parish-pass/native-splash.png',
+        },
       },
     ],
     ...(googleIosUrlScheme
@@ -175,6 +215,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     reactCompiler: true,
   },
   extra: {
+    testerBuild,
     appEnvironment: process.env.EXPO_PUBLIC_APP_ENV ?? 'development',
     // Do not put a loopback URL into the mobile manifest. Web development may
     // still use localhost, but a phone must only receive a reachable host.

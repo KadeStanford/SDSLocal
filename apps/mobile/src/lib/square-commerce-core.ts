@@ -7,7 +7,25 @@ export interface PickupSlot {
   windowStart?: string;
   windowEnd?: string;
 }
+export type CheckoutRewardType = 'free_item' | 'bogo' | 'item_discount' | 'percent_discount';
+export interface RewardOffer {
+  programId: string;
+  revision: number;
+  provider: 'square' | 'stripe';
+  type: CheckoutRewardType;
+  label: string;
+  percent: number | null;
+  items: Product[];
+}
+export interface RewardClaim {
+  programId: string;
+  revision: number;
+  provider: 'square' | 'stripe';
+  customerId: string;
+  type: CheckoutRewardType;
+}
 export interface CartLine {
+  rewardClaim?: RewardClaim;
   variationId: string;
   quantity: number;
   modifierIds: string[];
@@ -63,15 +81,23 @@ export interface OwnerConnection {
   } | null;
   settings: OrderingSettings | null;
   locations: { id: string; name: string }[];
+  account?: {
+    chargesEnabled?: boolean;
+    payoutsEnabled?: boolean;
+  } | null;
 }
 export interface OrderSnapshot {
+  refundedQuantity?: number;
   name: string;
   variation_name?: string;
+  variationId?: string | null;
+  modifierIds?: string[];
   quantity: string;
   total_money?: { amount: number; currency: string };
   modifiers?: { name: string }[];
 }
 export interface PickupOrder {
+  reward?: { label: string; discountMinor: number; itemName?: string | null } | null;
   provider?: 'square' | 'stripe';
   id: string;
   number: string;
@@ -93,6 +119,10 @@ export interface PickupOrder {
   tax: number;
   tip: number;
   total: number;
+  refundedMinor?: number;
+  remainingMinor?: number;
+  disputeState?: string | null;
+  providerStatus?: string | null;
   currency: string;
   createdAt: string;
   expiresAt: string;
@@ -101,6 +131,37 @@ export interface PickupOrder {
   dashboardUrl?: string;
   squareOrderId?: string;
   items: OrderSnapshot[];
+  refundItems?:
+    | {
+        itemId: string;
+        name: string;
+        quantity: number;
+        available: number;
+        used: number;
+        unit: number;
+        extra: number;
+      }[]
+    | null;
+  supportRequest?: OrderSupportRequest | null;
+  review?: PickupOrderReview | null;
+}
+export type OrderSupportType = 'cancel' | 'change' | 'issue';
+export interface OrderSupportRequest {
+  id: string;
+  type: OrderSupportType;
+  message: string;
+  response: string | null;
+  status: 'open' | 'resolved' | 'declined';
+  createdAt: string;
+  resolvedAt: string | null;
+}
+export interface PickupOrderReview {
+  id: string;
+  rating: number;
+  text: string;
+  merchantResponse: string | null;
+  moderationStatus: 'published' | 'hidden' | 'removed';
+  createdAt: string;
 }
 export interface PickupBusiness {
   id: string;
@@ -117,7 +178,14 @@ export interface PickupQueue {
   permissions: { canRefund: boolean; canManage: boolean };
   settings: { enabled: boolean; is_open: boolean; timezone: string } | null;
   connected: boolean;
-  counts: { active: number; placed: number; preparing: number; ready: number; attention: number };
+  counts: {
+    active: number;
+    placed: number;
+    preparing: number;
+    ready: number;
+    attention: number;
+    requests?: number;
+  };
   updatedAt: string;
 }
 export interface Quote {
@@ -138,7 +206,7 @@ export interface Quote {
   } | null;
 }
 export const orderStatusLabel: Record<string, string> = {
-  checkout_pending: 'Confirming payment',
+  checkout_pending: 'Payment not confirmed',
   checkout_expired: 'Checkout expired',
   checkout_failed: 'Checkout unavailable',
   payment_review: 'Payment needs review',
@@ -150,6 +218,7 @@ export const orderStatusLabel: Record<string, string> = {
   refund_pending: 'Refund pending',
   refund_failed: 'Refund needs attention',
   refunded: 'Refunded',
+  dispute_lost: 'Payment returned through dispute',
 };
 export const nextPickupAction: Record<string, { next: string; label: string }> = {
   placed: { next: 'accepted', label: 'Accept order' },

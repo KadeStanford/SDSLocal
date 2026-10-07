@@ -303,6 +303,29 @@ export function isSafeNotificationUrl(value: unknown): value is string {
         )
       );
     }
+    if (parsed.pathname === '/service-requests') {
+      return (
+        !parsed.hash &&
+        [...parsed.searchParams.keys()].every((key) => key === 'businessId' || key === 'requestId') &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+          parsed.searchParams.get('businessId') ?? '',
+        ) &&
+        (!parsed.searchParams.has('requestId') ||
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+            parsed.searchParams.get('requestId') ?? '',
+          ))
+      );
+    }
+    if (parsed.pathname === '/my-service-requests') {
+      return (
+        !parsed.hash &&
+        [...parsed.searchParams.keys()].every((key) => key === 'requestId') &&
+        (!parsed.searchParams.has('requestId') ||
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+            parsed.searchParams.get('requestId') ?? '',
+          ))
+      );
+    }
     return (
       /^\/b\/[a-z0-9]+(?:-[a-z0-9]+)*$/.test(parsed.pathname) &&
       [...parsed.searchParams.keys()].every((key) => key === 'section' || key === 'stop') &&

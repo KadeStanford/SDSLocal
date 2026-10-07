@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { SquareService } from './square-service.ts';
 import { StripeService } from './stripe-service.ts';
+import { commerceProvider } from './commerce-routing.ts';
 import { CommerceError, hash, record, squareConfig, stripeConfig } from './square-security.ts';
 
 export function database() {
@@ -49,12 +50,26 @@ export function response(request: Request, status: number, body: unknown) {
   });
 }
 export function errorResponse(request: Request, error: unknown) {
+  const providerCode =
+    error instanceof CommerceError && error.code === 'PROVIDER_ERROR'
+      ? (error as CommerceError & { providerCode?: unknown }).providerCode
+      : undefined;
+  const providerRequestId =
+    error instanceof CommerceError && error.code === 'PROVIDER_ERROR'
+      ? (error as CommerceError & { providerRequestId?: unknown }).providerRequestId
+      : undefined;
   return response(request, error instanceof CommerceError ? error.status : 503, {
     error:
       error instanceof CommerceError
         ? error.message
         : 'Ordering is temporarily unavailable. Please retry.',
     code: error instanceof CommerceError ? error.code : 'UNAVAILABLE',
+    ...(typeof providerCode === 'string' && /^[A-Za-z0-9_.-]{1,80}$/.test(providerCode)
+      ? { providerCode }
+      : {}),
+    ...(typeof providerRequestId === 'string' && /^req_[A-Za-z0-9]+$/.test(providerRequestId)
+      ? { providerRequestId }
+      : {}),
   });
 }
 export async function readBody(request: Request, max = 32768) {
@@ -80,37 +95,6 @@ export async function readBody(request: Request, max = 32768) {
   }
   return new TextDecoder().decode(bytes);
 }
-async function shouldUseStripe(db: ReturnType<typeof database>, body: Record<string, any>) {
-  if (body.provider === 'stripe') return true;
-  if (body.provider === 'square') return false;
-  if (body.action === 'connect' && body.provider !== 'square') return false;
-  if (body.businessId) {
-    const settings = await db
-      .from('ordering_provider_selections')
-      .select('provider')
-      .eq('business_id', body.businessId)
-      .maybeSingle();
-    if (settings.data?.provider === 'stripe') return true;
-  }
-  if (body.orderId) {
-    const order = await db
-      .from('square_orders')
-      .select('provider')
-      .eq('id', body.orderId)
-      .maybeSingle();
-    if (order.data?.provider === 'stripe') return true;
-  }
-
-  if (body.idempotencyKey) {
-    const order = await db
-      .from('square_orders')
-      .select('provider')
-      .eq('idempotency_key', body.idempotencyKey)
-      .maybeSingle();
-    if (order.data?.provider === 'stripe') return true;
-  }
-  return false;
-}
 export async function commerceHandler(request: Request) {
   if (!originAllowed(request.headers.get('Origin')))
     return response(request, 403, { error: 'Request origin is not allowed.' });
@@ -118,10 +102,14 @@ export async function commerceHandler(request: Request) {
   if (request.method !== 'POST') return response(request, 405, { error: 'Method not allowed.' });
   try {
     const body = record(JSON.parse(await readBody(request)));
-    const square = runtime();
-    const service: any = (await shouldUseStripe(square.db, body))
-      ? stripeRuntime(square.db)
-      : square;
+    const db = database();
+    const service: any =
+      (await commerceProvider(db, body)) === 'stripe'
+        ? stripeRuntime(db)
+        : new SquareService(
+            db,
+            squareConfig((key) => Deno.env.get(key)),
+          );
     const token = request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '');
     const user = token ? (await service.db.auth.getUser(token)).data.user : null;
     const bucket = await hash(
@@ -130,7 +118,14 @@ export async function commerceHandler(request: Request) {
     const allowed = await service.checked(
       service.db.rpc('square_rate_limit', {
         p_bucket: bucket,
-        p_limit: body.action === 'quote' || body.action === 'checkout' ? 12 : 60,
+        p_limit:
+          body.action === 'quote' ||
+          body.action === 'checkout' ||
+          body.action === 'resume_payment' ||
+          (body.action === 'pickup_scan' && !String(body.code ?? '').startsWith('sds-pickup:')) ||
+          body.action === 'appointment_book'
+            ? 12
+            : 60,
       }),
     );
     if (!allowed)

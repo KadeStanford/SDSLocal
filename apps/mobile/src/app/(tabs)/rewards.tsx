@@ -1,14 +1,25 @@
+import { personalEventScope } from '@/lib/customer-commitments';
+import { EventsViewSwitch } from '@/components/events-view-switch';
+import { RewardsWalletList } from '@/components/reward-wallet';
+import { EventDirectory } from '@/components/event-directory';
+import { RewardsHeader, FollowingBusinessCard } from '@/components/customer-rewards-ui';
+import { DiscoverySearchBar } from '@/components/discovery-search-bar';
+import { BackPill } from '@/components/back-pill';
+import { CustomerAction } from '@/components/customer-ui';
+import { CustomerBrand } from '@/components/customer-brand';
+import { RewardDetails, type RewardWalletCard as WalletCard } from '@/components/reward-wallet';
+import { FollowingFiltersSheet } from '@/components/following-filters-sheet';
+import { CustomerCalendar } from '@/components/customer-calendar';
+import { usePullRefresh } from '@/hooks/use-pull-refresh';
 import { EventDetailHeading } from '@/components/event-detail-heading';
-import { BusinessBrandHeader } from '@/components/business-brand-header';
-import { brandColor } from '@/lib/color-contrast';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useTheme } from '@/hooks/use-theme';
-import { ListLoading } from '@/components/data-state';
+import { ListLoading, StateNotice } from '@/components/data-state';
+import { MerchantButton } from '@/components/merchant-ui';
 import { AppButton } from '@/components/app-button';
 import { buildDirectionsUrl } from '@/lib/external-actions';
 import { useScreenBottomPadding } from '@/hooks/use-screen-bottom-padding';
-import { BusinessLogo } from '@/components/business-logo';
 import { EventCard } from '@/components/event-card';
+import { EventRsvpControls, type EventRsvpSummary } from '@/components/event-rsvp-controls';
 import type { IdentityPhoto } from '@/lib/business-identity';
 import { router, useFocusEffect, useLocalSearchParams, usePathname } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -23,12 +34,11 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
-  TextInput,
   View,
   useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
-import QRCode from 'react-native-qrcode-svg';
+import { RewardsCodeSheet } from '@/components/rewards-code-sheet';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -44,6 +54,7 @@ import {
   DISCOVERY_EVENT_QUERY_LIMIT,
   discoveryEventHorizonEnd,
   isPublishedUpcomingEvent,
+  upcomingEventsPath,
 } from '@/lib/discovery-core';
 import {
   filterBlockedBusinesses,
@@ -54,27 +65,9 @@ import { haptics } from '@/lib/haptics';
 import { supabase } from '@/lib/supabase';
 import { storagePublicUrl } from '@/lib/storage-url';
 import { userMessageFromError } from '@/lib/user-error';
+import { savePendingAuthIntent } from '@/lib/auth-intents';
 import { useAuth } from '@/providers/auth-provider';
 import { useNearbyAlerts } from '@/providers/nearby-alerts-provider';
-
-interface WalletCard {
-  business_photos?: readonly IdentityPhoto[] | null;
-  membership_id: string;
-  business_id: string;
-  business_name: string;
-  primary_color: string;
-  program_name: string;
-  reward_description: string;
-  program_type?: 'visits' | 'points';
-  points_per_dollar?: number | null;
-  points_required?: number | null;
-  earned_points?: number;
-  available_points?: number;
-  progress_points?: number;
-  rewards_ready: number;
-  progress_stamps?: number;
-  stamps_required?: number;
-}
 
 interface ReminderPreference {
   readonly reminder_enabled: boolean;
@@ -125,12 +118,15 @@ interface FollowedEvent {
   readonly timezone: string;
   readonly age_note: string | null;
   readonly capacity_text: string | null;
+  readonly rsvp_limit: number | null;
   readonly external_url: string | null;
   readonly business: {
     readonly business_photos?: readonly IdentityPhoto[] | null;
     readonly id: string;
     readonly name: string;
     readonly primary_color: string;
+    readonly city?: string | null;
+    readonly category_summary?: string | null;
   };
   readonly media_assets:
     | {
@@ -154,21 +150,30 @@ interface FollowedEvent {
 async function loadPublicUpcomingEvents(blockedIds: ReadonlySet<string>) {
   const now = new Date();
   const horizon = discoveryEventHorizonEnd(now);
-  const result = await supabase
-    .from('events')
-    .select(
-      'id, business_id, title, description, starts_at, ends_at, address_text, location_mode, timezone, age_note, capacity_text, external_url, is_published, publish_at, archived_at, media_assets(storage_path, status, alt_text, width, height), event_photos(id, caption, display_order, media_assets(storage_path, status, alt_text, width, height)), businesses!inner(id, name, primary_color, status, business_photos(role, media_assets(storage_path, status)))',
-    )
-    .is('archived_at', null)
-    .gte('starts_at', now.toISOString())
-    .lte('starts_at', horizon.toISOString())
-    .eq('businesses.status', 'active')
-    .order('starts_at', { ascending: true })
-    .limit(DISCOVERY_EVENT_QUERY_LIMIT);
+  const readPage = (offset: number) =>
+    supabase
+      .from('events')
+      .select(
+        'id, business_id, title, description, starts_at, ends_at, address_text, location_mode, timezone, age_note, capacity_text, rsvp_limit, external_url, is_published, publish_at, archived_at, media_assets(storage_path, status, alt_text, width, height), event_photos(id, caption, display_order, media_assets(storage_path, status, alt_text, width, height)), businesses!inner(id, name, primary_color, status, city, category_summary, business_photos(role, media_assets(storage_path, status)))',
+      )
+      .is('archived_at', null)
+      .gte('starts_at', now.toISOString())
+      .lte('starts_at', horizon.toISOString())
+      .eq('businesses.status', 'active')
+      .order('starts_at', { ascending: true })
+      .order('id', { ascending: true })
+      .range(offset, offset + DISCOVERY_EVENT_QUERY_LIMIT - 1);
+  let result = await readPage(0);
   if (result.error) return { data: [] as FollowedEvent[], error: result.error };
+  const rows = [...(result.data ?? [])];
+  while (result.data?.length === DISCOVERY_EVENT_QUERY_LIMIT) {
+    result = await readPage(rows.length);
+    if (result.error) return { data: [] as FollowedEvent[], error: result.error };
+    rows.push(...(result.data ?? []));
+  }
 
   const seenIds = new Set<string>();
-  const data = (result.data ?? [])
+  const data = rows
     .flatMap((row) => {
       const business = Array.isArray(row.businesses) ? row.businesses[0] : row.businesses;
       if (
@@ -192,6 +197,7 @@ async function loadPublicUpcomingEvents(blockedIds: ReadonlySet<string>) {
           timezone: row.timezone ?? 'America/Chicago',
           age_note: row.age_note,
           capacity_text: row.capacity_text,
+          rsvp_limit: row.rsvp_limit ?? null,
           external_url: row.external_url,
           media_assets: row.media_assets ?? null,
           event_photos: row.event_photos ?? null,
@@ -199,6 +205,8 @@ async function loadPublicUpcomingEvents(blockedIds: ReadonlySet<string>) {
             id: business.id,
             name: business.name,
             primary_color: business.primary_color,
+            city: business.city,
+            category_summary: business.category_summary,
             business_photos: business.business_photos,
           },
         } satisfies FollowedEvent,
@@ -276,24 +284,21 @@ function relationList<T>(value: readonly T[] | T | null | undefined): readonly T
   return Array.isArray(value) ? (value as readonly T[]) : [value as T];
 }
 
-function colorWithAlpha(value: string, alpha: string) {
-  const normalized = value.trim();
-  return /^#[0-9a-f]{6}$/i.test(normalized) ? `${normalized}${alpha}` : normalized;
-}
-
 export default function RewardsScreen() {
-  return <RewardsScreenContent />;
+  const { session } = useAuth();
+  return <RewardsScreenContent key={session?.user.id ?? 'guest'} />;
 }
 
 /** Dedicated entry point for the Calendar tab; it cannot fall back to wallet state. */
 export function CalendarScreen() {
-  return <RewardsScreenContent forceCalendar />;
+  const { session } = useAuth();
+  return <RewardsScreenContent key={session?.user.id ?? 'guest'} forceCalendar />;
 }
 
 function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalendar?: boolean }) {
   const bottomPadding = useScreenBottomPadding();
   const { session, loading: authLoading } = useAuth();
-  const params = useLocalSearchParams<{ scope?: string }>();
+  const params = useLocalSearchParams<{ scope?: string; view?: string; eventId?: string; businessId?: string }>();
   const nearbyAlerts = useNearbyAlerts();
   const pathname = usePathname();
   // Native tabs can briefly report a group-prefixed pathname while mounting.
@@ -307,6 +312,7 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
   const [cards, setCards] = useState<WalletCard[]>([]);
   const [reminders, setReminders] = useState<Record<string, ReminderPreference>>({});
   const [followedEvents, setFollowedEvents] = useState<FollowedEvent[]>([]);
+  useEffect(() => { if (params.view === 'following') setView('following'); }, [params.view]);
   const [followingBusinesses, setFollowingBusinesses] = useState<FollowingBusiness[]>([]);
   const [selectedFollowingBusiness, setSelectedFollowingBusiness] =
     useState<FollowingBusiness | null>(null);
@@ -317,15 +323,23 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
   // Rewards instance still has the old `events` state, keep that state from
   // leaking loyalty UI into the wrong destination.
   const activeView = calendarOnly ? 'events' : view === 'events' ? 'wallet' : view;
-  const [selected, setSelected] = useState<WalletCard | null>(null);
+  const [selectedCard, setSelected] = useState<WalletCard | null>(null);
+  const selected = selectedCard
+    ? (cards.find((card) => card.membership_id === selectedCard.membership_id) ?? null)
+    : null;
   const [selectedEvent, setSelectedEvent] = useState<FollowedEvent | null>(null);
   const [eventImageOpen, setEventImageOpen] = useState(false);
   const [mapInteractionActive, setMapInteractionActive] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
   const [selectedDayKey, setSelectedDayKey] = useState(() => dateKey(new Date()));
-  const [token, setToken] = useState('');
+  const [codeTarget, setCodeTarget] = useState<{
+    membershipId: string;
+    ownerId: string;
+    businessName: string;
+  } | null>(null);
   const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [walletReadError, setWalletReadError] = useState<string | null>(null);
   const [followPendingId, setFollowPendingId] = useState<string | null>(null);
   const [confirmUnfollowId, setConfirmUnfollowId] = useState<string | null>(null);
   const [followingQuery, setFollowingQuery] = useState('');
@@ -335,177 +349,230 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
   const [followingSort, setFollowingSort] = useState<'name' | 'recent'>('name');
   const [followingFiltersOpen, setFollowingFiltersOpen] = useState(false);
 
+  const walletRead = useRef(0);
+  const walletAlive = useRef(true);
+  useEffect(() => {
+    walletAlive.current = true;
+    return () => {
+      walletAlive.current = false;
+      walletRead.current++;
+    };
+  }, []);
   const loadWallet = useCallback(async () => {
-    if (!session) {
-      setCards([]);
-      setReminders({});
-      setFollowingBusinesses([]);
-      setSelectedFollowingBusiness(null);
-      setEventImageOpen(false);
-      if (allUpcoming) {
-        setLoading(true);
-        setMessage('');
-        const publicEvents = await loadPublicUpcomingEvents(new Set());
-        setFollowedEvents(publicEvents.data);
-        if (publicEvents.error) {
-          setMessage(
-            userMessageFromError(
-              publicEvents.error,
-              'We could not load upcoming events right now.',
-            ),
-          );
-        }
-        setLoading(false);
-      } else {
-        setFollowedEvents([]);
-      }
-      return;
-    }
-    setLoading(true);
-    setMessage('');
-    const [walletResultInitial, eventsResult, followingResult, blockedResult] = await Promise.all([
-      supabase.rpc('get_loyalty_wallet_v2'),
-      supabase
-        .from('event_saves')
-        .select('event_id, reminder_enabled, reminder_minutes_before, reminder_frequency')
-        .eq('customer_id', session.user.id),
-      supabase
-        .from('business_follows')
-        .select(
-          'business_id, businesses!inner(id, name, description, category_summary, city, region_code, created_at, primary_color, business_photos(role, media_assets(storage_path, status, alt_text)), loyalty_programs(id, is_active), events(id, starts_at, is_published, publish_at, archived_at))',
-        )
-        .eq('customer_id', session.user.id),
-      loadBlockedBusinessIds(session.user.id).then(
-        (data) => ({ data, error: null }),
-        (error: unknown) => ({ data: new Set<string>(), error }),
-      ),
-    ]);
-    const walletResult =
-      walletResultInitial.error &&
-      /function .*get_loyalty_wallet_v2.*does not exist/i.test(walletResultInitial.error.message)
-        ? await supabase.rpc('get_loyalty_wallet')
-        : walletResultInitial;
-    const firstError =
-      walletResult.error ?? eventsResult.error ?? followingResult.error ?? blockedResult.error;
-    if (firstError) {
-      setMessage(
-        userMessageFromError(firstError, 'We could not load your wallet and reminders right now.'),
-      );
-    } else {
-      const walletCards = ((walletResult.data ?? []) as WalletCard[]).filter(
-        (card) => !blockedResult.data.has(card.business_id),
-      );
-      const walletIds = [...new Set(walletCards.map((card) => card.business_id))];
-      const identityResult = walletIds.length
-        ? await supabase
-            .from('businesses')
-            .select('id, business_photos(role, media_assets(storage_path, status))')
-            .in('id', walletIds)
-        : { data: [] };
-      const walletPhotos = new Map(
-        (identityResult.data ?? []).map((business) => [business.id, business.business_photos]),
-      );
-      setCards(
-        walletCards.map((card) => ({
-          ...card,
-          business_photos: walletPhotos.get(card.business_id) ?? [],
-        })),
-      );
-      setReminders(
-        Object.fromEntries(
-          (eventsResult.data ?? []).map((row) => [
-            row.event_id,
-            {
-              reminder_enabled: Boolean(row.reminder_enabled),
-              reminder_minutes_before: row.reminder_minutes_before ?? 1440,
-              reminder_frequency: (row.reminder_frequency ?? 'once') as ReminderFrequency,
-            } satisfies ReminderPreference,
-          ]),
-        ),
-      );
-      const businesses = filterBlockedBusinesses(
-        (followingResult.data ?? []).flatMap((row) => {
-          const business = Array.isArray(row.businesses) ? row.businesses[0] : row.businesses;
-          return business ? [business as FollowingBusiness] : [];
-        }),
-        blockedResult.data,
-      );
-      setFollowingBusinesses(businesses);
-
-      if (allUpcoming) {
-        const publicEvents = await loadPublicUpcomingEvents(blockedResult.data);
-        setFollowedEvents(publicEvents.data);
-        if (publicEvents.error) {
-          setMessage(
-            userMessageFromError(
-              publicEvents.error,
-              'We could not load upcoming events right now.',
-            ),
-          );
-        }
-      } else {
-        const businessIds = businesses.map((business) => business.id);
-        if (!businessIds.length) {
-          setFollowedEvents([]);
-        } else {
-          const followedResult = await supabase
-            .from('events')
-            .select(
-              'id, title, description, starts_at, ends_at, address_text, location_mode, timezone, age_note, capacity_text, external_url, media_assets(storage_path, status, alt_text, width, height), event_photos(id, caption, display_order, media_assets(storage_path, status, alt_text, width, height)), businesses!inner(id, name, primary_color, business_photos(role, media_assets(storage_path, status)))',
-            )
-            .in('business_id', businessIds)
-            .eq('is_published', true)
-            .is('archived_at', null)
-            .gte('starts_at', new Date().toISOString())
-            .order('starts_at', { ascending: true });
-          if (followedResult.error) {
-            setMessage(
+    const version = ++walletRead.current;
+    const current = () => walletAlive.current && version === walletRead.current;
+    try {
+      if (!session) {
+        setCards([]);
+        setReminders({});
+        setFollowingBusinesses([]);
+        setSelectedFollowingBusiness(null);
+        setEventImageOpen(false);
+        if (allUpcoming) {
+          setLoading(true);
+          setWalletReadError(null);
+          const publicEvents = await loadPublicUpcomingEvents(new Set());
+          if (!current()) return;
+          setFollowedEvents(publicEvents.data);
+          if (publicEvents.error) {
+            setWalletReadError(
               userMessageFromError(
-                followedResult.error,
+                publicEvents.error,
                 'We could not load upcoming events right now.',
               ),
             );
-            setFollowedEvents([]);
-          } else {
-            setFollowedEvents(
-              filterBlockedEvents(
-                (followedResult.data ?? []).flatMap((row) => {
-                  const business = Array.isArray(row.businesses)
-                    ? row.businesses[0]
-                    : row.businesses;
-                  if (!business) return [];
-                  return [
-                    {
-                      id: row.id,
-                      title: row.title,
-                      description: row.description ?? '',
-                      starts_at: row.starts_at,
-                      ends_at: row.ends_at,
-                      address_text: row.address_text,
-                      location_mode: row.location_mode ?? 'business',
-                      timezone: row.timezone ?? 'America/Chicago',
-                      age_note: row.age_note,
-                      capacity_text: row.capacity_text,
-                      external_url: row.external_url,
-                      media_assets: row.media_assets ?? null,
-                      event_photos: row.event_photos ?? null,
-                      business,
-                    } satisfies FollowedEvent,
-                  ];
-                }),
-                blockedResult.data,
+          }
+          setLoading(false);
+        } else {
+          setFollowedEvents([]);
+        }
+        return;
+      }
+      setLoading(true);
+      setWalletReadError(null);
+      const [walletResultInitial, eventsResult, followingResult, blockedResult] = await Promise.all(
+        [
+          supabase.rpc('get_loyalty_wallet_v2'),
+          supabase
+            .from('event_saves')
+            .select('event_id, reminder_enabled, reminder_minutes_before, reminder_frequency')
+            .eq('customer_id', session.user.id),
+          supabase
+            .from('business_follows')
+            .select(
+              'business_id, businesses!inner(id, name, description, category_summary, city, region_code, created_at, primary_color, business_photos(role, media_assets(storage_path, status, alt_text)), loyalty_programs(id, is_active), events(id, starts_at, is_published, publish_at, archived_at))',
+            )
+            .eq('customer_id', session.user.id),
+          loadBlockedBusinessIds(session.user.id).then(
+            (data) => ({ data, error: null }),
+            (error: unknown) => ({ data: new Set<string>(), error }),
+          ),
+        ],
+      );
+      if (!current()) return;
+      const walletResult =
+        walletResultInitial.error &&
+        /function .*get_loyalty_wallet_v2.*does not exist/i.test(walletResultInitial.error.message)
+          ? await supabase.rpc('get_loyalty_wallet')
+          : walletResultInitial;
+      if (!current()) return;
+      const firstError =
+        walletResult.error ?? eventsResult.error ?? followingResult.error ?? blockedResult.error;
+      if (firstError) {
+        setWalletReadError(
+          userMessageFromError(
+            firstError,
+            'We could not load your wallet and reminders right now.',
+          ),
+        );
+      } else {
+        const walletCards = ((walletResult.data ?? []) as WalletCard[]).filter(
+          (card) => !blockedResult.data.has(card.business_id),
+        );
+        const walletIds = [...new Set(walletCards.map((card) => card.business_id))];
+        const identityResult = walletIds.length
+          ? await supabase
+              .from('businesses')
+              .select('id, business_photos(role, media_assets(storage_path, status))')
+              .in('id', walletIds)
+          : { data: [] };
+        if (!current()) return;
+        const walletPhotos = new Map(
+          (identityResult.data ?? []).map((business) => [business.id, business.business_photos]),
+        );
+        setCards(
+          walletCards.map((card) => ({
+            ...card,
+            business_photos: walletPhotos.get(card.business_id) ?? [],
+          })),
+        );
+        setReminders(
+          Object.fromEntries(
+            (eventsResult.data ?? []).map((row) => [
+              row.event_id,
+              {
+                reminder_enabled: Boolean(row.reminder_enabled),
+                reminder_minutes_before: row.reminder_minutes_before ?? 1440,
+                reminder_frequency: (row.reminder_frequency ?? 'once') as ReminderFrequency,
+              } satisfies ReminderPreference,
+            ]),
+          ),
+        );
+        const businesses = filterBlockedBusinesses(
+          (followingResult.data ?? []).flatMap((row) => {
+            const business = Array.isArray(row.businesses) ? row.businesses[0] : row.businesses;
+            return business ? [business as FollowingBusiness] : [];
+          }),
+          blockedResult.data,
+        );
+        setFollowingBusinesses(businesses);
+
+        if (allUpcoming) {
+          const publicEvents = await loadPublicUpcomingEvents(blockedResult.data);
+          if (!current()) return;
+          setFollowedEvents(publicEvents.data);
+          if (publicEvents.error) {
+            setWalletReadError(
+              userMessageFromError(
+                publicEvents.error,
+                'We could not load upcoming events right now.',
               ),
             );
           }
+        } else {
+          const businessIds = businesses.map((business) => business.id);
+          const savedIds = (eventsResult.data ?? []).map(row => row.event_id);
+          if (!personalEventScope(businessIds, savedIds)) {
+            setFollowedEvents([]);
+          } else {
+            const followedResult = await supabase
+              .from('events')
+              .select(
+                'id, title, description, starts_at, ends_at, address_text, location_mode, timezone, age_note, capacity_text, rsvp_limit, external_url, media_assets(storage_path, status, alt_text, width, height), event_photos(id, caption, display_order, media_assets(storage_path, status, alt_text, width, height)), businesses!inner(id, name, primary_color, business_photos(role, media_assets(storage_path, status)))',
+              )
+              .or(personalEventScope(businessIds, savedIds))
+              .eq('is_published', true)
+              .is('archived_at', null)
+              .gte('starts_at', new Date().toISOString())
+              .order('starts_at', { ascending: true });
+            if (!current()) return;
+            if (followedResult.error) {
+              setWalletReadError(
+                userMessageFromError(
+                  followedResult.error,
+                  'We could not load upcoming events right now.',
+                ),
+              );
+            } else {
+              setFollowedEvents(
+                filterBlockedEvents(
+                  (followedResult.data ?? []).flatMap((row) => {
+                    const business = Array.isArray(row.businesses)
+                      ? row.businesses[0]
+                      : row.businesses;
+                    if (!business) return [];
+                    return [
+                      {
+                        id: row.id,
+                        title: row.title,
+                        description: row.description ?? '',
+                        starts_at: row.starts_at,
+                        ends_at: row.ends_at,
+                        address_text: row.address_text,
+                        location_mode: row.location_mode ?? 'business',
+                        timezone: row.timezone ?? 'America/Chicago',
+                        age_note: row.age_note,
+                        capacity_text: row.capacity_text,
+                        rsvp_limit: row.rsvp_limit ?? null,
+                        external_url: row.external_url,
+                        media_assets: row.media_assets ?? null,
+                        event_photos: row.event_photos ?? null,
+                        business,
+                      } satisfies FollowedEvent,
+                    ];
+                  }),
+                  blockedResult.data,
+                ),
+              );
+            }
+          }
         }
       }
+    } catch (cause) {
+      if (current())
+        setWalletReadError(
+          userMessageFromError(
+            cause,
+            'We could not refresh your rewards and events. Please retry.',
+          ),
+        );
+    } finally {
+      if (current()) setLoading(false);
     }
-    setLoading(false);
   }, [allUpcoming, session]);
 
+  const openedEventRoute = useRef<string | null>(null);
+  useEffect(() => {
+    if (!params.eventId) {
+      openedEventRoute.current = null;
+      return;
+    }
+    if (loading || walletReadError || openedEventRoute.current === params.eventId) return;
+    const event = followedEvents.find((item) => item.id === params.eventId);
+    const timer = setTimeout(() => {
+      openedEventRoute.current = params.eventId ?? null;
+      if (event) setSelectedEvent(event);
+      else setMessage('This event is no longer available. Explore other upcoming events below.');
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [params.eventId, followedEvents, loading, walletReadError]);
+  const pullRefresh = usePullRefresh(loadWallet);
   useFocusEffect(
     useCallback(() => {
       void loadWallet();
+      return () => {
+        walletRead.current++;
+      };
     }, [loadWallet]),
   );
 
@@ -646,30 +713,7 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
     void haptics.success();
   }
 
-  useEffect(() => {
-    if (!selected) return;
-    let active = true;
-    const refresh = async () => {
-      const { data, error } = await supabase.functions.invoke('loyalty-token', {
-        body: { membershipId: selected.membership_id },
-      });
-      if (!active) return;
-      if (error || !data?.token) {
-        setMessage(
-          userMessageFromError(error, 'We could not create a rewards code. Please try again.'),
-        );
-      } else {
-        setToken(data.token);
-        setMessage('Show this rotating code to the staff member.');
-      }
-    };
-    void refresh();
-    const interval = setInterval(() => void refresh(), 30_000);
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
-  }, [selected]);
+  useFocusEffect(useCallback(() => () => setCodeTarget(null), []));
 
   const reminderEnabledIds = useMemo(
     () =>
@@ -690,8 +734,7 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
     });
     return grouped;
   }, [followedEvents]);
-  const calendarDays = useMemo(() => buildCalendarDays(calendarMonth), [calendarMonth]);
-  const activeSelectedDayKey = allUpcoming ? '' : selectedDayKey;
+  const activeSelectedDayKey = upcomingListOnly ? '' : selectedDayKey;
   const selectedDayEvents = activeSelectedDayKey
     ? (eventsByDay.get(activeSelectedDayKey) ?? [])
     : [];
@@ -762,6 +805,7 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
     followingSort !== 'name',
   ].filter(Boolean).length;
   const isDetail = Boolean(selected || selectedEvent || selectedFollowingBusiness);
+  const hasWalletData = cards.length + followingBusinesses.length + followedEvents.length > 0;
 
   if (authLoading)
     return (
@@ -769,7 +813,6 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
         <ActivityIndicator />
       </ThemedView>
     );
-  const selectedTextColor = colors.text;
 
   return (
     <SwipeBackView
@@ -779,9 +822,10 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
           setSelectedFollowingBusiness(null);
         } else if (selected) {
           setSelected(null);
-          setToken('');
+          setCodeTarget(null);
         } else {
           setSelectedEvent(null);
+          router.setParams({ eventId: '' });
         }
       }}
       underlay={
@@ -803,64 +847,66 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
         <SafeAreaView style={styles.container} edges={['top']}>
           <ScrollView
             contentInsetAdjustmentBehavior="automatic"
-            contentContainerStyle={[styles.content, { paddingBottom: bottomPadding }]}
+            contentContainerStyle={[
+              styles.content,
+              !calendarOnly && !upcomingListOnly && { padding: 20, gap: 20 },
+              { paddingBottom: bottomPadding },
+            ]}
             scrollEnabled={!eventImageOpen && !mapInteractionActive}
-            refreshControl={<RefreshControl refreshing={loading} onRefresh={loadWallet} />}
+            refreshControl={
+              <RefreshControl
+                refreshing={pullRefresh.refreshing}
+                onRefresh={pullRefresh.onRefresh}
+              />
+            }
           >
-            {!isDetail ? (
-              <>
-                <AppChrome />
-                <View style={calendarOnly || upcomingListOnly ? styles.calendarHero : styles.hero}>
-                  <ThemedText
-                    style={[styles.eyebrow, { color: colors.textSecondary }]}
-                    type="smallBold"
-                  >
-                    {upcomingListOnly
-                      ? 'DISCOVER'
-                      : calendarOnly
-                        ? 'CUSTOMER CALENDAR'
-                        : 'CUSTOMER WALLET'}
-                  </ThemedText>
-                  <ThemedText type="title">
-                    {upcomingListOnly ? 'Upcoming events' : calendarOnly ? 'Calendar' : 'Rewards'}
-                  </ThemedText>
-                  <ThemedText themeColor="textSecondary">
-                    {upcomingListOnly
-                      ? 'Browse every public upcoming event from Discover.'
-                      : calendarOnly
-                        ? allUpcoming
-                          ? 'Browse public events by date.'
-                          : 'Events from businesses you follow, with reminders when you need them.'
-                        : 'Keep your loyalty cards and favorite businesses close by.'}
-                  </ThemedText>
-                </View>
-              </>
-            ) : selectedFollowingBusiness || selectedEvent ? null : (
-              <View style={styles.detailIntro}>
-                <ThemedText
-                  style={[styles.eyebrow, { color: colors.textSecondary }]}
-                  type="smallBold"
-                >
-                  REWARDS WALLET
-                </ThemedText>
-                <ThemedText themeColor="textSecondary" type="small">
-                  Your rotating code refreshes automatically for secure checkout.
-                </ThemedText>
+            {selectedFollowingBusiness && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                <CustomerAction
+                  label="Back to following"
+                  icon="back"
+                  iconOnly
+                  onPress={() => setSelectedFollowingBusiness(null)}
+                />
+                <CustomerBrand />
               </View>
             )}
-            {session && !isDetail && !calendarOnly && !upcomingListOnly && (
-              <View accessibilityRole="radiogroup" style={styles.segmentedControl}>
-                <SegmentButton
-                  count={loading ? undefined : cards.length}
-                  label="Rewards"
-                  selected={activeView === 'wallet'}
-                  onPress={() => setView('wallet')}
+            {!isDetail &&
+              (calendarOnly || upcomingListOnly ? (
+                <>
+                  <AppChrome />
+                  <CustomerBrand />
+                  <View
+                    style={calendarOnly || upcomingListOnly ? styles.calendarHero : styles.hero}
+                  >
+                    <ThemedText type="title">{calendarOnly ? 'Events' : 'Rewards'}</ThemedText>
+                    <ThemedText themeColor="textSecondary">
+                      {upcomingListOnly
+                        ? 'Find your next local outing.'
+                        : calendarOnly
+                          ? allUpcoming
+                            ? 'Browse public events by date.'
+                            : 'Saved events and events from businesses you follow.'
+                          : 'Keep your loyalty cards and favorite businesses close by.'}
+                    </ThemedText>
+                  </View>
+                </>
+              ) : (
+                <RewardsHeader
+                  view={activeView === 'following' ? 'following' : 'wallet'}
+                  cards={loading ? undefined : cards.length}
+                  following={followingBusinesses.length}
+                  onView={session ? setView : undefined}
                 />
-                <SegmentButton
-                  count={followingBusinesses.length}
-                  label="Following"
-                  selected={activeView === 'following'}
-                  onPress={() => setView('following')}
+              ))}
+            {!!walletReadError && (
+              <View style={{ gap: 12 }}>
+                <StateNotice kind="error" message={walletReadError} />
+                <MerchantButton
+                  secondary
+                  label="Retry refresh"
+                  loading={loading}
+                  onPress={() => void loadWallet()}
                 />
               </View>
             )}
@@ -870,241 +916,41 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
                   Sign in from Account to use rewards.
                 </ThemedText>
               </View>
-            ) : loading ? (
+            ) : loading && !hasWalletData && !isDetail ? (
               <ListLoading label={calendarOnly ? 'Loading events' : 'Loading rewards'} />
-            ) : activeView === 'following' && !isDetail ? (
+            ) : walletReadError && !hasWalletData && !isDetail ? null : activeView ===
+                'following' && !isDetail ? (
               followingBusinesses.length ? (
                 <>
-                  <View style={styles.followingSearchRow}>
-                    <TextInput
-                      autoCapitalize="none"
-                      accessibilityLabel="Search followed businesses"
-                      clearButtonMode="while-editing"
-                      onChangeText={setFollowingQuery}
-                      placeholder="Search followed businesses"
-                      placeholderTextColor={colors.textSecondary}
-                      returnKeyType="search"
-                      style={[
-                        styles.followingSearchInput,
-                        { color: colors.text, backgroundColor: colors.backgroundElement },
-                      ]}
-                      value={followingQuery}
-                    />
-                    <Pressable
-                      accessibilityLabel="Filter followed businesses"
-                      accessibilityRole="button"
-                      onPress={() => setFollowingFiltersOpen(true)}
-                      style={({ pressed }) => [
-                        styles.followingFilterButton,
-                        activeFollowingFilterCount > 0 && styles.followingFilterButtonActive,
-                        pressed && styles.followingFilterButtonPressed,
-                      ]}
-                    >
-                      <ThemedText
-                        style={
-                          activeFollowingFilterCount > 0
-                            ? styles.followingFilterButtonTextActive
-                            : undefined
-                        }
-                        type="smallBold"
-                      >
-                        Filter{activeFollowingFilterCount ? ` · ${activeFollowingFilterCount}` : ''}
-                      </ThemedText>
-                    </Pressable>
-                  </View>
-                  <Modal
-                    animationType="slide"
-                    onRequestClose={() => setFollowingFiltersOpen(false)}
-                    transparent
+                  <DiscoverySearchBar
+                    query={followingQuery}
+                    onQuery={setFollowingQuery}
+                    onFilters={() => setFollowingFiltersOpen(true)}
+                    active={activeFollowingFilterCount}
+                    placeholder="Search your favorites"
+                    accessibilityLabel="Search followed businesses"
+                  />
+                  <FollowingFiltersSheet
                     visible={followingFiltersOpen}
-                  >
-                    <View style={styles.followingFilterModal}>
-                      <Pressable
-                        accessibilityLabel="Close following filters"
-                        accessibilityRole="button"
-                        onPress={() => setFollowingFiltersOpen(false)}
-                        style={styles.followingFilterBackdrop}
-                      />
-                      <View
-                        style={[
-                          styles.followingFilterSheet,
-                          { backgroundColor: colors.backgroundElement },
-                        ]}
-                      >
-                        <View style={styles.followingFilterHandle} />
-                        <View style={styles.followingFilterHeader}>
-                          <View style={styles.followingFilterHeaderCopy}>
-                            <ThemedText type="subtitle">Filter following</ThemedText>
-                            <ThemedText numberOfLines={2} themeColor="textSecondary" type="small">
-                              Choose what to show.
-                            </ThemedText>
-                          </View>
-                          <Pressable
-                            accessibilityRole="button"
-                            onPress={() => setFollowingFiltersOpen(false)}
-                            style={styles.followingFilterDone}
-                          >
-                            <ThemedText style={styles.followingFilterDoneText} type="smallBold">
-                              Done
-                            </ThemedText>
-                          </Pressable>
-                        </View>
-                        <ScrollView
-                          contentContainerStyle={styles.followingFilterScrollContent}
-                          showsVerticalScrollIndicator={false}
-                          style={styles.followingFilterScroll}
-                        >
-                          <View style={styles.followingFilterGroup}>
-                            <ThemedText themeColor="textSecondary" type="smallBold">
-                              Highlights
-                            </ThemedText>
-                            <View
-                              accessibilityRole="radiogroup"
-                              style={styles.followingFilterOptions}
-                            >
-                              {[
-                                { value: 'all' as const, label: 'Everything' },
-                                { value: 'rewards' as const, label: 'Rewards' },
-                                { value: 'events' as const, label: 'Upcoming events' },
-                              ].map((option) => {
-                                const selected = followingFeature === option.value;
-                                return (
-                                  <Pressable
-                                    accessibilityRole="radio"
-                                    accessibilityState={{ checked: selected }}
-                                    key={option.value}
-                                    onPress={() => setFollowingFeature(option.value)}
-                                    style={[
-                                      styles.followingFilterOption,
-                                      selected && styles.followingFilterOptionSelected,
-                                    ]}
-                                  >
-                                    <ThemedText
-                                      style={[
-                                        styles.followingFilterOptionLabel,
-                                        selected && styles.followingFilterOptionTextSelected,
-                                      ]}
-                                    >
-                                      {option.label}
-                                    </ThemedText>
-                                    {selected && (
-                                      <ThemedText style={styles.followingFilterCheck}>✓</ThemedText>
-                                    )}
-                                  </Pressable>
-                                );
-                              })}
-                            </View>
-                          </View>
-                          <ChoicePicker
-                            label="Category"
-                            options={[
-                              { value: 'all', label: 'All categories' },
-                              ...followingCategories.map((category) => ({
-                                value: category,
-                                label: category,
-                              })),
-                            ]}
-                            value={followingCategory}
-                            onChange={setFollowingCategory}
-                          />
-                          <View style={styles.followingFilterGroup}>
-                            <ThemedText themeColor="textSecondary" type="smallBold">
-                              Location
-                            </ThemedText>
-                            <View
-                              accessibilityRole="radiogroup"
-                              style={styles.followingFilterOptions}
-                            >
-                              {[
-                                { value: 'all', label: 'All cities' },
-                                ...followingCities.map((city) => ({ value: city, label: city })),
-                              ].map((option) => {
-                                const selected = followingCity === option.value;
-                                return (
-                                  <Pressable
-                                    accessibilityRole="radio"
-                                    accessibilityState={{ checked: selected }}
-                                    key={option.value}
-                                    onPress={() => setFollowingCity(option.value)}
-                                    style={[
-                                      styles.followingFilterOption,
-                                      selected && styles.followingFilterOptionSelected,
-                                    ]}
-                                  >
-                                    <ThemedText
-                                      style={[
-                                        styles.followingFilterOptionLabel,
-                                        selected && styles.followingFilterOptionTextSelected,
-                                      ]}
-                                    >
-                                      {option.label}
-                                    </ThemedText>
-                                    {selected && (
-                                      <ThemedText style={styles.followingFilterCheck}>✓</ThemedText>
-                                    )}
-                                  </Pressable>
-                                );
-                              })}
-                            </View>
-                          </View>
-                          <View style={styles.followingFilterGroup}>
-                            <ThemedText themeColor="textSecondary" type="smallBold">
-                              Sort by
-                            </ThemedText>
-                            <View
-                              accessibilityRole="radiogroup"
-                              style={styles.followingFilterOptions}
-                            >
-                              {[
-                                { value: 'name' as const, label: 'A–Z' },
-                                { value: 'recent' as const, label: 'Recently added' },
-                              ].map((option) => {
-                                const selected = followingSort === option.value;
-                                return (
-                                  <Pressable
-                                    accessibilityRole="radio"
-                                    accessibilityState={{ checked: selected }}
-                                    key={option.value}
-                                    onPress={() => setFollowingSort(option.value)}
-                                    style={[
-                                      styles.followingFilterOption,
-                                      selected && styles.followingFilterOptionSelected,
-                                    ]}
-                                  >
-                                    <ThemedText
-                                      style={[
-                                        styles.followingFilterOptionLabel,
-                                        selected && styles.followingFilterOptionTextSelected,
-                                      ]}
-                                    >
-                                      {option.label}
-                                    </ThemedText>
-                                    {selected && (
-                                      <ThemedText style={styles.followingFilterCheck}>✓</ThemedText>
-                                    )}
-                                  </Pressable>
-                                );
-                              })}
-                            </View>
-                          </View>
-                          {activeFollowingFilterCount > 0 && (
-                            <Pressable
-                              accessibilityRole="button"
-                              onPress={() => {
-                                setFollowingFeature('all');
-                                setFollowingCategory('all');
-                                setFollowingCity('all');
-                                setFollowingSort('name');
-                              }}
-                              style={styles.followingFilterClear}
-                            >
-                              <ThemedText type="smallBold">Clear all filters</ThemedText>
-                            </Pressable>
-                          )}
-                        </ScrollView>
-                      </View>
-                    </View>
-                  </Modal>
+                    onClose={() => setFollowingFiltersOpen(false)}
+                    feature={followingFeature}
+                    onFeature={setFollowingFeature}
+                    category={followingCategory}
+                    categories={followingCategories}
+                    onCategory={setFollowingCategory}
+                    city={followingCity}
+                    cities={followingCities}
+                    onCity={setFollowingCity}
+                    sort={followingSort}
+                    onSort={setFollowingSort}
+                    onReset={() => {
+                      setFollowingFeature('all');
+                      setFollowingCategory('all');
+                      setFollowingCity('all');
+                      setFollowingSort('name');
+                    }}
+                  />
+
                   {!visibleFollowingBusinesses.length && (
                     <View style={[styles.notice, { backgroundColor: colors.backgroundElement }]}>
                       <ThemedText
@@ -1122,87 +968,21 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
                     </View>
                   )}
                   <View style={styles.followingList}>
-                    {visibleFollowingBusinesses.map((business) => {
-                      const confirmingUnfollow = confirmUnfollowId === business.id;
-                      return (
-                        <View key={business.id} style={styles.followingCard}>
-                          <View
-                            style={[
-                              styles.followingAccent,
-                              { backgroundColor: business.primary_color },
-                            ]}
-                          />
-                          <Pressable
-                            accessibilityRole="button"
-                            onPress={() => {
-                              setConfirmUnfollowId(null);
-                              setSelectedFollowingBusiness(business);
-                            }}
-                            style={({ pressed }) => [
-                              styles.followingMain,
-                              pressed && styles.followingMainPressed,
-                            ]}
-                          >
-                            <BusinessLogo
-                              name={business.name}
-                              photos={relationList(business.business_photos)}
-                              size={44}
-                              decorative
-                            />
-                            <View style={styles.followingIdentity}>
-                              <ThemedText
-                                numberOfLines={1}
-                                style={styles.followingName}
-                                type="smallBold"
-                              >
-                                {business.name}
-                              </ThemedText>
-                              <ThemedText themeColor="textSecondary" type="small">
-                                {[business.city, business.region_code].filter(Boolean).join(', ') ||
-                                  'Local business'}
-                              </ThemedText>
-                            </View>
-                            <ThemedText
-                              style={[styles.followingChevron, { color: colors.textSecondary }]}
-                              type="subtitle"
-                            >
-                              ›
-                            </ThemedText>
-                          </Pressable>
-                          <Pressable
-                            accessibilityLabel={`Unfollow ${business.name}`}
-                            accessibilityHint={
-                              confirmingUnfollow
-                                ? 'Tap again to confirm unfollowing this business.'
-                                : 'Tap once to show the unfollow confirmation.'
-                            }
-                            accessibilityRole="button"
-                            disabled={followPendingId === business.id}
-                            onPress={() => handleFollowingPress(business)}
-                            style={({ pressed }) => [
-                              styles.followingBadge,
-                              confirmingUnfollow && styles.followingBadgeConfirm,
-                              pressed && styles.followingBadgePressed,
-                            ]}
-                          >
-                            <ThemedText
-                              style={[
-                                styles.followingBadgeText,
-                                { color: colors.accent },
-                                confirmingUnfollow && styles.followingBadgeConfirmText,
-                              ]}
-                              type="smallBold"
-                            >
-                              {followPendingId === business.id
-                                ? 'Removing…'
-                                : confirmingUnfollow
-                                  ? 'Confirm unfollow'
-                                  : 'Following'}
-                            </ThemedText>
-                          </Pressable>
-                        </View>
-                      );
-                    })}
+                    {visibleFollowingBusinesses.map((business) => (
+                      <FollowingBusinessCard
+                        key={business.id}
+                        business={business}
+                        photos={relationList(business.business_photos)}
+                        confirming={confirmUnfollowId === business.id}
+                        pending={followPendingId === business.id}
+                        onOpen={() => {
+                          setConfirmUnfollowId(null);
+                          setSelectedFollowingBusiness(business);
+                        }}
+                        onFollowing={() => handleFollowingPress(business)}
+                        onCancel={() => setConfirmUnfollowId(null)}
+                      />
+                    ))}
                   </View>
                 </>
               ) : (
@@ -1214,7 +994,7 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
                     You are not following any businesses yet
                   </ThemedText>
                   <ThemedText style={[styles.noticeText, { color: colors.textSecondary }]}>
-                    Follow a business from Discover and it will appear here.
+                    Follow a business from Home and it will appear here.
                   </ThemedText>
                 </View>
               )
@@ -1241,6 +1021,7 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
                 onBack={() => {
                   setEventImageOpen(false);
                   setSelectedEvent(null);
+                  router.setParams({ eventId: '' });
                 }}
                 onFullscreenChange={setEventImageOpen}
                 onToggleReminder={() => void toggleEventReminder(selectedEvent)}
@@ -1250,139 +1031,84 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
                 }
               />
             ) : selected ? (
-              <View style={[styles.detailCard, { backgroundColor: colors.backgroundElement }]}>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => {
+              <View style={{ gap: 16 }}>
+                <RewardDetails
+                  card={selected}
+                  canShowCode={!!session}
+                  onBack={() => {
                     setSelected(null);
-                    setToken('');
+                    setCodeTarget(null);
                   }}
-                  style={{ minHeight: 44, minWidth: 44, justifyContent: 'center' }}
-                >
-                  <ThemedText style={{ color: selectedTextColor }}>← All rewards</ThemedText>
-                </Pressable>
-                <View style={{ marginHorizontal: -24, overflow: 'hidden', borderRadius: 16 }}>
-                  <BusinessBrandHeader
-                    name={selected.business_name}
-                    title={selected.program_name}
-                    color={selected.primary_color}
-                    photos={selected.business_photos}
-                  />
-                </View>
-                <ThemedText style={{ color: selectedTextColor }}>
-                  {selected.reward_description}
-                </ThemedText>
-                {selected.program_type === 'points' ? (
-                  <>
-                    <View style={styles.pointsDetailRow}>
-                      <ThemedText style={{ color: selectedTextColor }} type="title">
-                        {selected.available_points ?? 0}
-                      </ThemedText>
-                      <ThemedText style={{ color: selectedTextColor }} type="smallBold">
-                        points
-                      </ThemedText>
-                    </View>
-                    <View
-                      style={[
-                        styles.progressTrack,
-                        { backgroundColor: colorWithAlpha(selectedTextColor, '35') },
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.progressFill,
-                          {
-                            backgroundColor: selectedTextColor,
-                            width: `${Math.min(100, ((selected.progress_points ?? 0) / Math.max(1, selected.points_required ?? 1)) * 100)}%`,
-                          },
-                        ]}
-                      />
-                    </View>
-                    <ThemedText style={{ color: selectedTextColor }} type="smallBold">
-                      {selected.rewards_ready
-                        ? `${selected.rewards_ready} reward${selected.rewards_ready === 1 ? '' : 's'} ready`
-                        : `${selected.progress_points ?? 0} / ${selected.points_required ?? 0} points`}
-                    </ThemedText>
-                  </>
-                ) : (
-                  <>
-                    <View style={styles.progressRow}>
-                      {Array.from({ length: selected.stamps_required ?? 0 }, (_, index) => (
-                        <View
-                          key={index}
-                          style={[
-                            styles.stamp,
-                            { borderColor: selectedTextColor },
-                            index < (selected.progress_stamps ?? 0) && {
-                              backgroundColor: selectedTextColor,
-                              opacity: 1,
-                            },
-                          ]}
-                        />
-                      ))}
-                    </View>
-                    <ThemedText style={{ color: selectedTextColor }} type="smallBold">
-                      {selected.rewards_ready
-                        ? `${selected.rewards_ready} reward ready`
-                        : `${selected.progress_stamps ?? 0} / ${selected.stamps_required ?? 0} visits`}
-                    </ThemedText>
-                  </>
+                  onShowCode={() => {
+                    if (session)
+                      setCodeTarget({
+                        membershipId: selected.membership_id,
+                        ownerId: session.user.id,
+                        businessName: selected.business_name,
+                      });
+                  }}
+                />
+                {!!message && (
+                  <ThemedText themeColor="textSecondary" type="small">
+                    {message}
+                  </ThemedText>
                 )}
-                <View style={styles.qrCard}>
-                  <ThemedText style={styles.qrTitle} type="smallBold">
-                    Show this code at checkout
-                  </ThemedText>
-                  {token ? (
-                    <QRCode value={token} size={245} />
-                  ) : (
-                    <ActivityIndicator color="#176B4D" />
-                  )}
-                  <ThemedText style={styles.qrHint} type="small">
-                    The code refreshes every 30 seconds.
-                  </ThemedText>
-                </View>
-                <ThemedText style={{ color: selectedTextColor }} type="small">
-                  {message}
-                </ThemedText>
               </View>
             ) : activeView === 'events' ? (
               <View style={styles.eventsView}>
+                <EventsViewSwitch
+                  all={upcomingListOnly}
+                  onChange={(all) => router.replace(all ? upcomingEventsPath() : '/calendar')}
+                />
                 {!upcomingListOnly && (
-                  <CalendarCard
-                    allUpcoming={allUpcoming}
-                    calendarMonth={calendarMonth}
-                    calendarDays={calendarDays}
-                    eventsByDay={eventsByDay}
-                    selectedDayKey={activeSelectedDayKey}
+                  <CustomerCalendar
+                    month={calendarMonth}
+                    counts={new Map([...eventsByDay].map(([key, events]) => [key, events.length]))}
+                    selectedDay={activeSelectedDayKey}
+                    onToday={() => {
+                      const today = new Date();
+                      setCalendarMonth(new Date(today.getFullYear(), today.getMonth(), 1));
+                      setSelectedDayKey(dateKey(today));
+                    }}
                     onSelectDay={setSelectedDayKey}
                     onChangeMonth={(offset) => {
-                      setCalendarMonth(
-                        (current) =>
-                          new Date(current.getFullYear(), current.getMonth() + offset, 1),
+                      const next = new Date(
+                        calendarMonth.getFullYear(),
+                        calendarMonth.getMonth() + offset,
+                        1,
                       );
-                      setSelectedDayKey('');
+                      setCalendarMonth(next);
+                      setSelectedDayKey(dateKey(next));
                     }}
                   />
                 )}
-                {allUpcoming ? (
-                  <View style={styles.dayEventsSection}>
-                    <View style={styles.dayEventsHeader}>
-                      <ThemedText type="subtitle">
-                        {upcomingListOnly ? 'All events' : 'Upcoming events'}
-                      </ThemedText>
-                      <ThemedText themeColor="textSecondary" type="small">
-                        {followedEvents.length} {followedEvents.length === 1 ? 'event' : 'events'}
-                      </ThemedText>
-                    </View>
-                    {followedEvents.map((event) => (
-                      <EventRow
-                        key={event.id}
-                        event={event}
-                        isReminded={reminderEnabledIds.has(event.id)}
-                        onPress={() => setSelectedEvent(event)}
-                      />
-                    ))}
-                  </View>
+                {upcomingListOnly ? (
+                  <EventDirectory
+                    key={params.businessId || 'all-public-events'}
+                    initialBusinessId={params.businessId || ''}
+                    events={followedEvents.map((event) => {
+                      const asset = Array.isArray(event.media_assets)
+                        ? event.media_assets[0]
+                        : event.media_assets;
+                      return {
+                        id: event.id,
+                        title: event.title,
+                        businessId: event.business.id,
+                        businessName: event.business.name,
+                        city: event.business.city || '',
+                        category: event.business.category_summary || 'Local events',
+                        startsAt: event.starts_at,
+                        timezone: event.timezone,
+                        address: event.address_text || '',
+                        imageUri:
+                          asset?.status === 'ready' ? storagePublicUrl(asset.storage_path) : null,
+                      };
+                    })}
+                    onOpen={(id) => {
+                      const event = followedEvents.find((e) => e.id === id);
+                      if (event) setSelectedEvent(event);
+                    }}
+                  />
                 ) : activeSelectedDayKey ? (
                   <View style={styles.dayEventsSection}>
                     <View style={styles.dayEventsHeader}>
@@ -1416,13 +1142,13 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
                           style={[styles.noticeText, { color: colors.textSecondary }]}
                           type="small"
                         >
-                          Tap a day with a dot to see events from businesses you follow.
+                          Swipe the dates to pick another day, or explore All events.
                         </ThemedText>
                       </View>
                     )}
                   </View>
                 ) : null}
-                {!loading && !followedEvents.length && (
+                {!loading && !followedEvents.length && upcomingListOnly && (
                   <View style={[styles.notice, { backgroundColor: colors.backgroundElement }]}>
                     <ThemedText
                       style={[styles.noticeText, { color: colors.textSecondary }]}
@@ -1436,7 +1162,7 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
                     >
                       {allUpcoming
                         ? 'New public events will appear here when businesses publish them.'
-                        : 'Follow more businesses in Discover to fill your calendar.'}
+                        : 'Follow more businesses or browse All events to find something nearby.'}
                     </ThemedText>
                     <Pressable
                       onPress={() => router.replace('/explore')}
@@ -1450,105 +1176,13 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
                 )}
               </View>
             ) : cards.length ? (
-              <View style={styles.cardList}>
-                {cards.map((card) => {
-                  const accentColor = brandColor(card.primary_color);
-
-                  return (
-                    <Pressable
-                      accessibilityLabel={`${card.business_name}, ${card.program_name}`}
-                      accessibilityRole="button"
-                      key={card.membership_id}
-                      onPress={() => setSelected(card)}
-                      style={[
-                        styles.walletCard,
-                        {
-                          backgroundColor: colors.backgroundElement,
-                          borderColor: colors.divider,
-                        },
-                      ]}
-                    >
-                      <BusinessBrandHeader
-                        name={card.business_name}
-                        title={card.program_name}
-                        color={card.primary_color}
-                        photos={card.business_photos}
-                        trailing
-                      />
-                      <View style={styles.walletCardBody}>
-                        <ThemedText themeColor="textSecondary" numberOfLines={2} type="small">
-                          {card.reward_description}
-                        </ThemedText>
-                        <View style={styles.walletProgressHeader}>
-                          <ThemedText style={styles.walletProgressLabel} type="smallBold">
-                            {card.rewards_ready
-                              ? `${card.rewards_ready} reward${card.rewards_ready === 1 ? '' : 's'} ready`
-                              : card.program_type === 'points'
-                                ? `${card.progress_points ?? 0} of ${card.points_required ?? 0} points`
-                                : `${card.progress_stamps ?? 0} of ${card.stamps_required ?? 0} visits`}
-                          </ThemedText>
-                          <ThemedText themeColor="textSecondary" type="small">
-                            {Math.round(
-                              Math.min(
-                                100,
-                                ((card.program_type === 'points'
-                                  ? (card.progress_points ?? 0)
-                                  : (card.progress_stamps ?? 0)) /
-                                  Math.max(
-                                    1,
-                                    card.program_type === 'points'
-                                      ? (card.points_required ?? 1)
-                                      : (card.stamps_required ?? 1),
-                                  )) *
-                                  100,
-                              ),
-                            )}
-                            %
-                          </ThemedText>
-                        </View>
-                        <View
-                          accessibilityLabel={
-                            card.program_type === 'points'
-                              ? `${card.progress_points ?? 0} of ${card.points_required ?? 0} points complete`
-                              : `${card.progress_stamps ?? 0} of ${card.stamps_required ?? 0} visits complete`
-                          }
-                          style={[
-                            styles.progressTrack,
-                            { backgroundColor: colors.backgroundSelected },
-                          ]}
-                        >
-                          <View
-                            style={[
-                              styles.progressFill,
-                              {
-                                backgroundColor: accentColor,
-                                width: `${Math.min(100, ((card.program_type === 'points' ? (card.progress_points ?? 0) : (card.progress_stamps ?? 0)) / Math.max(1, card.program_type === 'points' ? (card.points_required ?? 1) : (card.stamps_required ?? 1))) * 100)}%`,
-                              },
-                            ]}
-                          />
-                        </View>
-                        <View style={styles.walletBottomRow}>
-                          <ThemedText themeColor="textSecondary" type="small">
-                            Tap to view details
-                          </ThemedText>
-                          {card.rewards_ready > 0 && (
-                            <View
-                              style={[
-                                styles.walletReadyBadge,
-                                { backgroundColor: colors.successSurface },
-                              ]}
-                            >
-                              <ThemedText style={{ color: colors.successText }} type="smallBold">
-                                Ready to redeem
-                              </ThemedText>
-                            </View>
-                          )}
-                        </View>
-                      </View>
-                    </Pressable>
-                  );
-                })}
-              </View>
+              <RewardsWalletList
+                cards={cards}
+                onOpen={(id) => {
+                  const selectedCard = cards.find((item) => item.membership_id === id);
+                  if (selectedCard) setSelected(selectedCard);
+                }}
+              />
             ) : (
               <View style={[styles.notice, { backgroundColor: colors.backgroundElement }]}>
                 <ThemedText
@@ -1569,6 +1203,18 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
             )}
             {message && !isDetail && <ThemedText themeColor="textSecondary">{message}</ThemedText>}
           </ScrollView>
+          {codeTarget &&
+            selected &&
+            codeTarget.ownerId === session?.user.id &&
+            codeTarget.membershipId === selected.membership_id && (
+              <RewardsCodeSheet
+                key={codeTarget.ownerId + ':' + codeTarget.membershipId}
+                visible
+                membershipId={codeTarget.membershipId}
+                businessName={codeTarget.businessName}
+                onClose={() => setCodeTarget(null)}
+              />
+            )}
         </SafeAreaView>
       </ThemedView>
     </SwipeBackView>
@@ -1603,119 +1249,6 @@ function formatDayLabel(key: string) {
     month: 'long',
     day: 'numeric',
   });
-}
-
-function buildCalendarDays(month: Date) {
-  const first = new Date(month.getFullYear(), month.getMonth(), 1);
-  const start = new Date(first);
-  start.setDate(first.getDate() - first.getDay());
-  return Array.from({ length: 42 }, (_, index) => {
-    const date = new Date(start);
-    date.setDate(start.getDate() + index);
-    return { date, key: dateKey(date), inMonth: date.getMonth() === month.getMonth() };
-  });
-}
-
-function CalendarCard({
-  allUpcoming,
-  calendarMonth,
-  calendarDays,
-  eventsByDay,
-  selectedDayKey,
-  onSelectDay,
-  onChangeMonth,
-}: {
-  readonly allUpcoming: boolean;
-  readonly calendarMonth: Date;
-  readonly calendarDays: { date: Date; key: string; inMonth: boolean }[];
-  readonly eventsByDay: Map<string, FollowedEvent[]>;
-  readonly selectedDayKey: string;
-  readonly onSelectDay: (key: string) => void;
-  readonly onChangeMonth: (offset: number) => void;
-}) {
-  const colors = useTheme();
-  return (
-    <View style={styles.calendarCard}>
-      <View style={styles.calendarHeader}>
-        <Pressable
-          accessibilityLabel="Previous month"
-          accessibilityRole="button"
-          hitSlop={8}
-          onPress={() => onChangeMonth(-1)}
-          style={styles.monthArrow}
-        >
-          <ThemedText type="subtitle">‹</ThemedText>
-        </Pressable>
-        <ThemedText type="subtitle">
-          {calendarMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
-        </ThemedText>
-        <Pressable
-          accessibilityLabel="Next month"
-          accessibilityRole="button"
-          hitSlop={8}
-          onPress={() => onChangeMonth(1)}
-          style={styles.monthArrow}
-        >
-          <ThemedText type="subtitle">›</ThemedText>
-        </Pressable>
-      </View>
-      <View style={styles.weekRow}>
-        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
-          <ThemedText
-            key={`${day}-${index}`}
-            style={styles.weekLabel}
-            themeColor="textSecondary"
-            type="smallBold"
-          >
-            {day}
-          </ThemedText>
-        ))}
-      </View>
-      <View style={styles.dayGrid}>
-        {calendarDays.map(({ date, key, inMonth }) => {
-          const count = eventsByDay.get(key)?.length ?? 0;
-          const isToday = key === dateKey(new Date());
-          const isSelected = key === selectedDayKey;
-          return (
-            <Pressable
-              accessibilityLabel={`${formatDayLabel(key)}${count ? `, ${count} event${count === 1 ? '' : 's'}` : ''}`}
-              accessibilityRole="button"
-              key={key}
-              onPress={() => onSelectDay(key)}
-              style={[styles.dayCell, isSelected && styles.dayCellSelected]}
-            >
-              <ThemedText
-                style={[
-                  styles.dayNumber,
-                  !inMonth && styles.dayNumberMuted,
-                  isToday && { color: colors.accent },
-                  isSelected && styles.dayNumberSelected,
-                ]}
-                type="smallBold"
-              >
-                {date.getDate()}
-              </ThemedText>
-              {count > 0 && (
-                <View style={[styles.eventCountDot, isSelected && styles.eventCountDotSelected]}>
-                  <ThemedText
-                    style={isSelected ? styles.eventCountTextSelected : styles.eventCountText}
-                    type="smallBold"
-                  >
-                    {count > 9 ? '9+' : count}
-                  </ThemedText>
-                </View>
-              )}
-            </Pressable>
-          );
-        })}
-      </View>
-      <ThemedText themeColor="textSecondary" style={styles.calendarHint} type="small">
-        {allUpcoming
-          ? 'Dots show public upcoming events. Browse the complete chronological list below.'
-          : 'Dots show upcoming events from businesses you follow. Tap a day to see the list.'}
-      </ThemedText>
-    </View>
-  );
 }
 
 function EventRow({
@@ -1813,8 +1346,14 @@ function EventDetail({
   readonly onSetReminderFrequency: (frequency: ReminderFrequency) => void;
 }) {
   const colors = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
+  const { session } = useAuth();
   const [expandedImage, setExpandedImage] = useState<number | null>(null);
   const [directionsError, setDirectionsError] = useState<string | null>(null);
+  const [rsvpSummary, setRsvpSummary] = useState<EventRsvpSummary | null>(null);
+  const [rsvpLoadedEventId, setRsvpLoadedEventId] = useState<string | null>(null);
+  const [partySize, setPartySize] = useState(1);
+  const [rsvpLoading, setRsvpLoading] = useState(false);
+  const [rsvpMessage, setRsvpMessage] = useState<string | null>(null);
   const directionsUrl =
     event.location_mode === 'online'
       ? null
@@ -1829,6 +1368,75 @@ function EventDetail({
   const [viewerScrollX] = useState(() => new Animated.Value(0));
   const viewerListRef = useRef<FlatList<EventMediaItem>>(null);
   const pageWidth = viewerWidth || windowWidth;
+
+  useEffect(() => {
+    let active = true;
+    void supabase
+      .rpc('get_event_rsvp_group_summary', { p_event_id: event.id })
+      .then(({ data, error }) => {
+        if (!active) return;
+        setRsvpMessage(null);
+        const row = Array.isArray(data) ? data[0] : data;
+        if (error) {
+          setRsvpSummary(null);
+          setRsvpMessage(userMessageFromError(error, 'RSVP information could not load.'));
+          return;
+        }
+        const summary = (row as EventRsvpSummary | null) ?? null;
+        setRsvpSummary(summary);
+        setPartySize(summary?.my_party_size ?? 1);
+        setRsvpLoadedEventId(event.id);
+      });
+    return () => {
+      active = false;
+    };
+  }, [event.id]);
+
+  async function saveRsvp(isGoing: boolean, requestedPartySize: number) {
+    if (isGoing && !session) {
+      try {
+        savePendingAuthIntent({
+          kind: 'event_rsvp',
+          businessId: event.business.id,
+          businessName: event.business.name,
+          targetId: event.id,
+          targetName: event.title,
+        });
+        router.push('/account' as never);
+      } catch {
+        setRsvpMessage('Sign in from Account to RSVP for this event.');
+      }
+      return;
+    }
+
+    setRsvpLoading(true);
+    setRsvpMessage(null);
+    const { data, error } = await supabase.rpc('set_event_rsvp_group', {
+      p_event_id: event.id,
+      p_is_going: isGoing,
+      p_party_size: requestedPartySize,
+    });
+    setRsvpLoading(false);
+    if (error) {
+      setRsvpMessage(userMessageFromError(error, 'Your RSVP could not be updated.'));
+      return;
+    }
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) {
+      setRsvpMessage('The RSVP response was empty. Refresh the event and try again.');
+      return;
+    }
+    setRsvpSummary({
+      going_count: Number(row.going_count),
+      waitlist_count: Number(row.waitlist_count),
+      rsvp_limit: row.rsvp_limit,
+      my_status: row.rsvp_status,
+      my_party_size: row.my_party_size,
+      my_waitlist_position: row.my_waitlist_position,
+    });
+    setPartySize(Number(row.my_party_size ?? 1));
+  }
+
   const viewerHeight = Math.max(320, Math.min(Math.round(windowHeight * 0.78), windowHeight - 170));
   const closeExpandedImage = () => {
     closingImage.current = true;
@@ -1868,12 +1476,7 @@ function EventDetail({
   }, [expandedImage, pageWidth]);
   return (
     <View style={styles.eventDetailStack}>
-      <AppButton
-        label="← Back to calendar"
-        variant="tertiary"
-        onPress={onBack}
-        style={{ alignSelf: 'flex-start' }}
-      />
+      <BackPill label="Back to events" onPress={onBack} />
       <EventDetailHeading
         title={event.title}
         businessName={event.business.name}
@@ -1886,6 +1489,16 @@ function EventDetail({
             ? 'Online event'
             : event.address_text || 'At the business location'
         }
+        onDirections={
+          directionsUrl
+            ? () => {
+                setDirectionsError(null);
+                void Linking.openURL(directionsUrl).catch(() =>
+                  setDirectionsError('We couldn’t open directions. Try again.'),
+                );
+              }
+            : undefined
+        }
         onOpenPhoto={() => {
           closingImage.current = false;
           viewerScrollX.setValue(0);
@@ -1893,24 +1506,33 @@ function EventDetail({
           setExpandedImage(0);
         }}
       />
+      {!!event.description && (
+        <View style={{ gap: 8 }}>
+          <ThemedText type="card">About this event</ThemedText>
+          <ThemedText>{event.description}</ThemedText>
+        </View>
+      )}
+      <View style={{ gap: Spacing.two }}>
+        <EventRsvpControls
+          summary={rsvpLoadedEventId === event.id ? rsvpSummary : null}
+          partySize={partySize}
+          loading={rsvpLoading}
+          onPartySizeChange={setPartySize}
+          onSave={() => void saveRsvp(true, partySize)}
+          onCancel={() => void saveRsvp(false, partySize)}
+        />
+        {!!rsvpMessage && (
+          <ThemedText accessibilityRole="alert" style={{ color: colors.destructive }}>
+            {rsvpMessage}
+          </ThemedText>
+        )}
+      </View>
       {media[0]?.caption && (
         <ThemedText themeColor="textSecondary" type="small">
           {media[0].caption}
         </ThemedText>
       )}
       <View style={{ gap: 12 }}>
-        {directionsUrl && (
-          <AppButton
-            label="Directions"
-            variant="secondary"
-            onPress={() => {
-              setDirectionsError(null);
-              void Linking.openURL(directionsUrl).catch(() =>
-                setDirectionsError('We couldn’t open directions. Try again.'),
-              );
-            }}
-          />
-        )}
         {directionsError && (
           <ThemedText accessibilityRole="alert" style={{ color: colors.destructive }}>
             {directionsError}
@@ -1929,12 +1551,6 @@ function EventDetail({
         )}
       </View>
       <View style={{ gap: 20 }}>
-        {!!event.description && (
-          <View style={{ gap: 8 }}>
-            <ThemedText type="card">About this event</ThemedText>
-            <ThemedText>{event.description}</ThemedText>
-          </View>
-        )}
         {media.length > 1 && (
           <View style={styles.eventMediaSection}>
             <ThemedText type="smallBold">Event photos</ThemedText>
@@ -2132,52 +1748,41 @@ function RewardsDestinationUnderlay({
   readonly upcomingListOnly: boolean;
 }) {
   const bottomPadding = useScreenBottomPadding();
-  const colors = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.container} edges={['top']}>
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
-          contentContainerStyle={[styles.content, { paddingBottom: bottomPadding }]}
+          contentContainerStyle={[
+            styles.content,
+            !calendarOnly && !upcomingListOnly && { padding: 20, gap: 20 },
+            { paddingBottom: bottomPadding },
+          ]}
           scrollEnabled={false}
         >
-          <AppChrome />
-          <View style={styles.hero}>
-            <ThemedText style={[styles.eyebrow, { color: colors.textSecondary }]} type="smallBold">
-              {upcomingListOnly
-                ? 'DISCOVER'
-                : calendarOnly
-                  ? 'CUSTOMER CALENDAR'
-                  : 'CUSTOMER WALLET'}
-            </ThemedText>
-            <ThemedText type="title">
-              {upcomingListOnly ? 'Upcoming events' : calendarOnly ? 'Calendar' : 'Rewards'}
-            </ThemedText>
-            <ThemedText themeColor="textSecondary">
-              {upcomingListOnly
-                ? 'Browse every public upcoming event from Discover.'
-                : calendarOnly
-                  ? allUpcoming
-                    ? 'Browse public events by date.'
-                    : 'Events from businesses you follow, with reminders when you need them.'
-                  : 'Keep your loyalty cards and favorite businesses close by.'}
-            </ThemedText>
-          </View>
-          {!calendarOnly && !upcomingListOnly && (
-            <View accessibilityRole="radiogroup" style={styles.segmentedControl}>
-              <SegmentButton
-                count={cards.length}
-                label="Rewards"
-                selected={view === 'wallet'}
-                onPress={() => undefined}
-              />
-              <SegmentButton
-                count={followingBusinesses.length}
-                label="Following"
-                selected={view === 'following'}
-                onPress={() => undefined}
-              />
-            </View>
+          {calendarOnly || upcomingListOnly ? (
+            <>
+              <AppChrome />
+              <View style={styles.hero}>
+                <ThemedText type="title">{calendarOnly ? 'Events' : 'Rewards'}</ThemedText>
+                <ThemedText themeColor="textSecondary">
+                  {upcomingListOnly
+                    ? 'Find your next local outing.'
+                    : calendarOnly
+                      ? allUpcoming
+                        ? 'Browse public events by date.'
+                        : 'Saved events and events from businesses you follow.'
+                      : 'Keep your loyalty cards and favorite businesses close by.'}
+                </ThemedText>
+              </View>
+            </>
+          ) : (
+            <RewardsHeader
+              view={view === 'following' ? 'following' : 'wallet'}
+              cards={cards.length}
+              following={followingBusinesses.length}
+              onView={() => undefined}
+            />
           )}
           {calendarOnly || upcomingListOnly ? (
             <View style={styles.dayEventsSection}>
@@ -2193,116 +1798,24 @@ function RewardsDestinationUnderlay({
             </View>
           ) : view === 'following' ? (
             <View style={styles.followingList}>
-              {followingBusinesses.map((business) => {
-                return (
-                  <View key={business.id} style={styles.followingCard}>
-                    <View
-                      style={[styles.followingAccent, { backgroundColor: business.primary_color }]}
-                    />
-                    <View style={styles.followingMain}>
-                      <BusinessLogo
-                        name={business.name}
-                        photos={relationList(business.business_photos)}
-                        size={44}
-                        decorative
-                      />
-                      <View style={styles.followingIdentity}>
-                        <ThemedText numberOfLines={1} style={styles.followingName} type="smallBold">
-                          {business.name}
-                        </ThemedText>
-                        <ThemedText themeColor="textSecondary" type="small">
-                          {[business.city, business.region_code].filter(Boolean).join(', ') ||
-                            'Local business'}
-                        </ThemedText>
-                      </View>
-                      <ThemedText
-                        style={[styles.followingChevron, { color: colors.textSecondary }]}
-                        type="subtitle"
-                      >
-                        ›
-                      </ThemedText>
-                    </View>
-                    <View style={styles.followingBadge}>
-                      <ThemedText
-                        style={[styles.followingBadgeText, { color: colors.accent }]}
-                        type="smallBold"
-                      >
-                        Following
-                      </ThemedText>
-                    </View>
-                  </View>
-                );
-              })}
+              {followingBusinesses.map((business) => (
+                <FollowingBusinessCard
+                  key={business.id}
+                  business={business}
+                  photos={relationList(business.business_photos)}
+                  disabled
+                  onOpen={() => undefined}
+                  onFollowing={() => undefined}
+                  onCancel={() => undefined}
+                />
+              ))}
             </View>
           ) : (
-            <View style={styles.cardList}>
-              {cards.map((card) => {
-                return (
-                  <View
-                    key={card.membership_id}
-                    style={[
-                      styles.walletCard,
-                      {
-                        backgroundColor: colors.backgroundElement,
-                        borderColor: colors.divider,
-                      },
-                    ]}
-                  >
-                    <BusinessBrandHeader
-                      name={card.business_name}
-                      title={card.program_name}
-                      color={card.primary_color}
-                      photos={card.business_photos}
-                      trailing
-                    />
-                    <View style={styles.walletCardBody}>
-                      <ThemedText themeColor="textSecondary" numberOfLines={2} type="small">
-                        {card.reward_description}
-                      </ThemedText>
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
+            <RewardsWalletList cards={cards} disabled onOpen={() => undefined} />
           )}
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
-  );
-}
-
-function SegmentButton({
-  count,
-  label,
-  selected,
-  onPress,
-}: {
-  readonly count: number | undefined;
-  readonly label: string;
-  readonly selected: boolean;
-  readonly onPress: () => void;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="radio"
-      accessibilityState={{ checked: selected }}
-      onPress={onPress}
-      style={[styles.segmentButton, selected && styles.segmentButtonSelected]}
-    >
-      <View style={styles.segmentContent}>
-        <ThemedText style={selected ? styles.segmentTextSelected : undefined} type="smallBold">
-          {label}
-        </ThemedText>
-        <View style={[styles.segmentCount, selected && styles.segmentCountSelected]}>
-          <ThemedText
-            style={selected ? styles.segmentCountTextSelected : undefined}
-            type="smallBold"
-          >
-            {count === undefined ? '…' : count}
-          </ThemedText>
-        </View>
-      </View>
-    </Pressable>
   );
 }
 
@@ -2320,7 +1833,6 @@ const styles = StyleSheet.create({
   hero: { gap: Spacing.one, marginBottom: Spacing.two },
   calendarHero: { gap: Spacing.one, marginBottom: Spacing.two },
   detailIntro: { gap: Spacing.one, marginBottom: Spacing.two },
-  eyebrow: { color: Brand.primary, letterSpacing: 1.5 },
   notice: {
     marginTop: Spacing.three,
     borderRadius: 16,
@@ -2671,7 +2183,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     paddingVertical: Spacing.one,
   },
-  followingList: { gap: Spacing.one, marginTop: Spacing.three },
+  followingList: { gap: 16, marginTop: Spacing.three },
   followingCard: {
     minHeight: 76,
     flexDirection: 'row',

@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { businessAllowsObligationRecovery } from '../_shared/business-obligation-access.ts';
 
 import {
   loyaltySigningSecret,
@@ -64,12 +65,12 @@ Deno.serve(async (request) => {
       .maybeSingle(),
     admin
       .from('businesses')
-      .select('id')
+      .select('id,status,suspension_reason,billing_suspension_previous_status,approved_at')
       .eq('id', membership.business_id)
-      .eq('status', 'active')
       .maybeSingle(),
   ]);
-  if (!program || !business) return json(409, { error: 'This rewards program is unavailable.' });
+  if (!program || !businessAllowsObligationRecovery(business))
+    return json(409, { error: 'This rewards program is unavailable.' });
 
   const issuedAt = Math.floor(Date.now() / 1000);
   const claims: LoyaltyTokenClaims = {

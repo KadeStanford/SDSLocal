@@ -21,7 +21,7 @@ export const pickupStyles = StyleSheet.create({
   surface: { padding: 16, borderRadius: 16, gap: 16 },
   rule: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 16 },
 });
-export function OrderBadge({ status }: { status: string }) {
+export function OrderBadge({ status, label }: { status: string; label?: string }) {
   const c = useTheme();
   const alert = attentionStates.includes(status);
   const done = ['ready', 'completed', 'placed'].includes(status);
@@ -39,7 +39,7 @@ export function OrderBadge({ status }: { status: string }) {
         type="smallBold"
         style={{ color: alert ? c.warningText : done ? c.successText : c.textSecondary }}
       >
-        {orderStatusLabel[status] ?? 'Updating order'}
+        {label ?? orderStatusLabel[status] ?? 'Updating order'}
       </ThemedText>
     </View>
   );
@@ -97,6 +97,11 @@ export function ReceiptItem({ item, currency }: { item: OrderSnapshot; currency:
       </View>
       <View style={pickupStyles.grow}>
         <ThemedText type="smallBold">{item.name}</ThemedText>
+        {!!item.refundedQuantity && (
+          <ThemedText type="small" style={{ color: c.warningText }}>
+            {item.refundedQuantity} refunded
+          </ThemedText>
+        )}
         {!!item.variation_name && item.variation_name !== 'Regular' && (
           <ThemedText type="small" themeColor="textSecondary">
             {item.variation_name}
@@ -156,9 +161,37 @@ export function OrderReceipt({
       ))}
       <View style={[pickupStyles.rule, { borderTopColor: c.divider, gap: 8 }]}>
         <ReceiptTotal label="Items" value={order.subtotal} currency={order.currency} />
+        {order.reward && order.reward.discountMinor > 0 && (
+          <ReceiptTotal
+            label={order.reward.label || 'Reward discount'}
+            value={-order.reward.discountMinor}
+            currency={order.currency}
+          />
+        )}
         <ReceiptTotal label="Tax" value={order.tax} currency={order.currency} />
         {!!order.tip && <ReceiptTotal label="Tip" value={order.tip} currency={order.currency} />}
         <ReceiptTotal label="Total" value={order.total} currency={order.currency} strong />
+        {order.total === 0 && order.reward && (
+          <ThemedText type="small" themeColor="textSecondary">
+            {order.status === 'refunded'
+              ? 'Order cancelled · reward restored'
+              : 'Covered by your reward · no payment collected'}
+          </ThemedText>
+        )}
+        {(order.refundedMinor ?? 0) > 0 ? (
+          <ReceiptTotal
+            label="Refunded"
+            value={order.refundedMinor ?? 0}
+            currency={order.currency}
+          />
+        ) : null}
+        {(order.refundedMinor ?? 0) > 0 ? (
+          <ReceiptTotal
+            label="Remaining payment"
+            value={order.remainingMinor ?? order.total}
+            currency={order.currency}
+          />
+        ) : null}
       </View>
     </View>
   );

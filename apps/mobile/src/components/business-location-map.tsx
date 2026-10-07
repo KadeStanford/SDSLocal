@@ -1,4 +1,6 @@
 import { useMemo } from 'react';
+import { groupMapStops, stopMapCamera } from '@/lib/business-stop-map';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { GestureResponderEvent, Platform, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -62,7 +64,8 @@ export function BusinessLocationMap({
   onCoordinateSelect,
   onInteractionChange,
 }: BusinessLocationMapProps) {
-  const colors = Colors.dark;
+  const mode = useColorScheme() === 'dark' ? 'dark' : 'light';
+  const colors = Colors[mode];
   const usableStops = useMemo(
     () =>
       stops.filter((stop) =>
@@ -71,11 +74,11 @@ export function BusinessLocationMap({
     [stops],
   );
   const usableDraft = validCoordinate(draftCoordinate) ? draftCoordinate : undefined;
-  const center = usableDraft ?? usableStops[0] ?? { latitude: 30.5044, longitude: -90.4809 };
+  const camera = stopMapCamera(usableDraft ? [...usableStops, usableDraft] : usableStops);
   const markers = [
-    ...usableStops.map((stop) => ({
+    ...groupMapStops(usableStops).map((stop) => ({
       id: stop.id,
-      title: stop.title,
+      title: stop.visits > 1 ? `${stop.title} · ${stop.visits} scheduled visits` : stop.title,
       coordinates: { latitude: stop.latitude, longitude: stop.longitude },
       tintColor: Brand.primaryBright,
     })),
@@ -114,10 +117,7 @@ export function BusinessLocationMap({
       borderRadius: Radius.medium,
       overflow: 'hidden' as const,
     },
-    cameraPosition: {
-      coordinates: { latitude: center.latitude, longitude: center.longitude },
-      zoom: usableStops.length > 1 ? 11 : 13,
-    },
+    cameraPosition: camera,
     markers,
     ...(onCoordinateSelect
       ? {
@@ -152,7 +152,12 @@ export function BusinessLocationMap({
       <View {...mapSurfaceProps} style={[styles.mapSurface, { height }]}>
         <mapsModule.AppleMaps.View
           {...mapProps}
-          colorScheme={mapsModule.AppleMaps.MapColorScheme.DARK}
+          key={JSON.stringify(camera)}
+          colorScheme={
+            mode === 'dark'
+              ? mapsModule.AppleMaps.MapColorScheme.DARK
+              : mapsModule.AppleMaps.MapColorScheme.LIGHT
+          }
           uiSettings={{ compassEnabled: false, scaleBarEnabled: true }}
         />
       </View>
@@ -164,7 +169,12 @@ export function BusinessLocationMap({
       <View {...mapSurfaceProps} style={[styles.mapSurface, { height }]}>
         <mapsModule.GoogleMaps.View
           {...mapProps}
-          colorScheme={mapsModule.GoogleMaps.MapColorScheme.DARK}
+          key={JSON.stringify(camera)}
+          colorScheme={
+            mode === 'dark'
+              ? mapsModule.GoogleMaps.MapColorScheme.DARK
+              : mapsModule.GoogleMaps.MapColorScheme.LIGHT
+          }
           uiSettings={{ compassEnabled: false, scaleBarEnabled: true }}
         />
       </View>

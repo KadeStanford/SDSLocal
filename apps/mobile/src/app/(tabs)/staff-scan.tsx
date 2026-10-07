@@ -1,4 +1,13 @@
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { withBusinessTheme } from '@/components/business-theme';
+import { BusinessFeatureGate } from '@/components/business-feature-gate';
+import { useBusinessFeatureAccess } from '@/hooks/use-business-feature-access';
+import { businessOperationIncluded } from '@sds/business-logic';
+import {
+  BusinessScreenHeader,
+  BusinessTabs,
+  ParishBusinessBrand,
+} from '@/components/business-screen-header';
+import { useTheme } from '@/hooks/use-theme';
 import { useScreenBottomPadding } from '@/hooks/use-screen-bottom-padding';
 import NetInfo from '@react-native-community/netinfo';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
@@ -15,14 +24,15 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  TextInput,
   View,
 } from 'react-native';
+import { AppTextInput as TextInput } from '@/components/app-text-input';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChoicePicker } from '@/components/choice-picker';
+import { AppButton } from '@/components/app-button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Brand, Colors, Radius, Spacing } from '@/constants/theme';
+import { Brand, Radius, Spacing } from '@/constants/theme';
 import { haptics } from '@/lib/haptics';
 import { clearPendingScans, listPendingScans } from '@/lib/offline-scan-queue';
 import {
@@ -85,10 +95,10 @@ async function errorText(error: unknown) {
   }
 }
 
-export default function StaffScanScreen() {
+function StaffScanScreen() {
   const { businessId: requestedBusinessId } = useLocalSearchParams<{ businessId?: string }>();
   const bottomPadding = useScreenBottomPadding();
-  const colors = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
+  const colors = useTheme();
   const { session } = useAuth();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanner, dispatch] = useReducer(scannerReducer, initialScannerState);
@@ -107,14 +117,17 @@ export default function StaffScanScreen() {
   const [expiredQueuedCount, setExpiredQueuedCount] = useState(0);
   const [stats, setStats] = useState<Stats | null>(null);
   const [log, setLog] = useState<ScanLog[]>([]);
+  const [workflow, setWorkflow] = useState<'pickup' | 'rewards'>('pickup');
   const captured = useRef(false);
   const submitting = useRef(false);
   const business = businesses.find(({ id }) => id === selectedId) ?? null;
   const action = business?.programType ? actionFor(business.programType, redeeming) : null;
+  const featureAccess = useBusinessFeatureAccess(business?.id);
   const amountMinor = validPurchaseMinor(amount);
   const canScan = Boolean(
     session &&
     business?.programType &&
+    (redeeming || businessOperationIncluded(featureAccess.access, 'scan_new_reward')) &&
     online !== false &&
     (action !== 'earn_points' || amountMinor),
   );
@@ -161,7 +174,7 @@ export default function StaffScanScreen() {
         .from('businesses')
         .select('id, name, primary_color')
         .in('id', ids)
-        .eq('status', 'active'),
+        .or('status.eq.active,and(status.eq.suspended,suspension_reason.eq.billing,billing_suspension_previous_status.eq.active,approved_at.not.is.null)'),
       supabase
         .from('loyalty_programs')
         .select('business_id, program_type')
@@ -390,48 +403,82 @@ export default function StaffScanScreen() {
 
   if (scanner.stage === 'scanning' || scanner.stage === 'validating')
     return (
-      <ThemedView style={styles.cameraPage}>
-        {Platform.OS !== 'web' && (
-          <CameraView
-            style={StyleSheet.absoluteFill}
-            barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-            onBarcodeScanned={scanner.stage === 'scanning' ? scanned : undefined}
-            enableTorch={torch}
-          />
-        )}
-        <SafeAreaView style={styles.cameraShade}>
-          <View style={styles.cameraTop}>
-            <CameraButton icon="xmark" label="Close scanner" onPress={reset} />
-            <View style={styles.cameraContext}>
-              <ThemedText type="smallBold" style={styles.white}>
-                {business?.name}
+      <ThemedView style={styles.container}>
+        <SafeAreaView style={styles.container}>
+          <ScrollView
+            contentContainerStyle={{ padding: 20, gap: 20, paddingBottom: bottomPadding }}
+          >
+            <ParishBusinessBrand />
+            <View style={styles.cameraTop}>
+              <ThemedText type="title" style={{ flex: 1 }}>
+                Scan rewards
               </ThemedText>
-              <ThemedText type="small" style={styles.cameraMuted}>
+              <AppButton
+                label="Close"
+                accessibilityLabel="Close scanner"
+                variant="secondary"
+                onPress={reset}
+              />
+            </View>
+            <View style={{ gap: 6 }}>
+              <ThemedText type="card">{business?.name}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
                 {action ? actionLabel(action) : ''}
                 {action === 'earn_points' && amountMinor
                   ? ` · ${formatCurrencyMinor(amountMinor)}`
                   : ''}
               </ThemedText>
             </View>
-            <CameraButton
-              icon={torch ? 'bolt.fill' : 'bolt'}
-              label={torch ? 'Turn flash off' : 'Turn flash on'}
-              onPress={() => setTorch((x) => !x)}
-            />
-          </View>
-          <View style={styles.cameraCenter}>
-            <View style={styles.target} />
+            <View
+              style={{
+                aspectRatio: 1,
+                borderRadius: 16,
+                overflow: 'hidden',
+                backgroundColor: '#102D25',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {Platform.OS !== 'web' && (
+                <CameraView
+                  style={StyleSheet.absoluteFill}
+                  barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+                  onBarcodeScanned={scanner.stage === 'scanning' ? scanned : undefined}
+                  enableTorch={torch}
+                />
+              )}
+              <View
+                pointerEvents="none"
+                style={[
+                  styles.target,
+                  { width: '68%', borderColor: '#89C9A2', borderRadius: 16, borderWidth: 2 },
+                ]}
+              />
+            </View>
             {scanner.stage === 'validating' ? (
-              <View style={styles.processing}>
-                <ActivityIndicator color="#fff" />
-                <ThemedText type="smallBold" style={styles.white}>
-                  Checking customer…
-                </ThemedText>
+              <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+                <ActivityIndicator color={colors.accent} />
+                <ThemedText accessibilityLiveRegion="polite">Checking customer…</ThemedText>
               </View>
             ) : (
-              <ThemedText style={styles.hint}>Hold the customer’s QR inside the frame</ThemedText>
+              <ThemedText themeColor="textSecondary" style={{ textAlign: 'center' }}>
+                Center the customer’s QR in the frame.
+              </ThemedText>
             )}
-          </View>
+            <AppButton
+              label={torch ? 'Flash on' : 'Flash off'}
+              accessibilityLabel={torch ? 'Turn flash off' : 'Turn flash on'}
+              variant="secondary"
+              onPress={() => setTorch((x) => !x)}
+              icon={
+                <SymbolView
+                  name={torch ? 'bolt.fill' : 'bolt'}
+                  tintColor={colors.text}
+                  style={styles.scanIcon}
+                />
+              }
+            />
+          </ScrollView>
         </SafeAreaView>
       </ThemedView>
     );
@@ -444,32 +491,30 @@ export default function StaffScanScreen() {
           contentContainerStyle={[styles.content, { paddingBottom: bottomPadding }]}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.header}>
-            <View style={styles.headerCopy}>
-              <ThemedText type="title">Scan & verify</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                Confirm pickups or update a customer’s rewards in seconds.
-              </ThemedText>
-            </View>
-            <View
-              style={[
-                styles.connection,
-                {
-                  backgroundColor:
-                    online === false ? colors.warningSurface : colors.backgroundSelected,
-                },
-              ]}
-            >
+          <BusinessScreenHeader
+            title="Scan & verify"
+            subtitle="Choose a task, then scan the customer’s QR."
+            action={
               <View
                 style={[
-                  styles.dot,
-                  { backgroundColor: online === false ? colors.warningText : Brand.primary },
+                  styles.connection,
+                  {
+                    backgroundColor:
+                      online === false ? colors.warningSurface : colors.backgroundSelected,
+                  },
                 ]}
-              />
-              <ThemedText type="smallBold">{online === false ? 'Offline' : 'Online'}</ThemedText>
-            </View>
-          </View>
-          {loading && <ActivityIndicator color={Brand.primary} />}
+              >
+                <View
+                  style={[
+                    styles.dot,
+                    { backgroundColor: online === false ? colors.warningText : colors.successText },
+                  ]}
+                />
+                <ThemedText type="smallBold">{online === false ? 'Offline' : 'Online'}</ThemedText>
+              </View>
+            }
+          />
+          {loading && <ActivityIndicator color={colors.accent} />}
           {loadError && <Notice text={loadError} error />}
           {expiredQueuedCount > 0 && (
             <Notice
@@ -486,9 +531,10 @@ export default function StaffScanScreen() {
             <View style={[styles.card, { backgroundColor: colors.backgroundElement }]}>
               <ThemedText type="subtitle">Choose a business</ThemedText>
               <ThemedText themeColor="textSecondary">
-                Select the checkout workspace before scanning.
+                Select the business before scanning.
               </ThemedText>
               <ChoicePicker
+                businessStyle
                 label="Business"
                 value=""
                 options={businesses.map((x) => ({ value: x.id, label: x.name }))}
@@ -501,12 +547,13 @@ export default function StaffScanScreen() {
               <View
                 style={[
                   styles.business,
-                  { backgroundColor: colors.backgroundElement, borderColor: business.primaryColor },
+                  { backgroundColor: colors.backgroundElement, borderColor: colors.divider },
                 ]}
               >
                 {businesses.length > 1 ? (
                   <ChoicePicker
-                    label="Scanning for"
+                    businessStyle
+                    label="Business"
                     value={business.id}
                     options={businesses.map((x) => ({ value: x.id, label: x.name }))}
                     onChange={changeBusiness}
@@ -525,85 +572,117 @@ export default function StaffScanScreen() {
                   {online === false ? 'Secure scans paused' : 'Ready'}
                 </ThemedText>
               </View>
-              <View style={[styles.actionCard, { backgroundColor: colors.backgroundElement }]}>
-                <View style={styles.actionCopy}>
-                  <ThemedText type="smallBold">Pickup handoff</ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    Scan the order QR at the counter. Rewards are added with the same confirmation.
-                  </ThemedText>
+              <BusinessTabs
+                value={workflow}
+                onChange={setWorkflow}
+                options={[
+                  { value: 'pickup', label: 'Pickup' },
+                  { value: 'rewards', label: 'Rewards' },
+                ]}
+              />
+              <View style={{ display: workflow === 'pickup' ? 'flex' : 'none' }}>
+                <View
+                  style={[
+                    styles.actionCard,
+                    { backgroundColor: colors.backgroundElement, borderColor: colors.divider },
+                  ]}
+                >
+                  <View style={styles.actionCopy}>
+                    <View style={styles.actionHeading}>
+                      <View
+                        style={[
+                          styles.actionIconPlate,
+                          { backgroundColor: colors.backgroundElement },
+                        ]}
+                      >
+                        <SymbolView
+                          name="bag.fill"
+                          tintColor={colors.accent}
+                          style={styles.scanIcon}
+                        />
+                      </View>
+                      <ThemedText type="card">Pickup handoff</ThemedText>
+                    </View>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      Confirm collection with the customer’s pickup QR.
+                    </ThemedText>
+                  </View>
+                  <PickupScanPanel
+                    key={business.id}
+                    businessId={business.id}
+                    businessName={business.name}
+                    online={online !== false}
+                  />
                 </View>
-                <PickupScanPanel
-                  key={business.id}
-                  businessId={business.id}
-                  businessName={business.name}
-                  online={online !== false}
-                />
               </View>
-              {!business.programType ? (
-                <Notice text="This business does not have an active rewards program. Configure rewards before scanning customers." />
-              ) : scanner.stage === 'awaiting_confirmation' && scanner.preview ? (
-                <Confirmation
-                  preview={scanner.preview}
-                  busy={false}
-                  onConfirm={() => void confirm()}
-                  onCancel={reset}
-                />
-              ) : scanner.stage === 'submitting' && scanner.preview ? (
-                <Confirmation
-                  preview={scanner.preview}
-                  busy
-                  onConfirm={() => undefined}
-                  onCancel={() => undefined}
-                />
-              ) : scanner.stage === 'success' && scanner.result ? (
-                <Success
-                  preview={scanner.preview}
-                  result={scanner.result}
-                  onNext={() => {
-                    const camera = scanner.source === 'camera';
-                    reset();
-                    if (camera && Platform.OS !== 'web') dispatch({ type: 'START_SCAN' });
-                  }}
-                  onDone={reset}
-                />
-              ) : scanner.stage === 'uncertain_result' ? (
-                <Recovery
-                  title="Confirming the result"
-                  message={scanner.message ?? ''}
-                  button="Check confirmed transaction"
-                  onPress={() => void confirm(true)}
-                  onCancel={reset}
-                  warning
-                />
-              ) : scanner.stage === 'recoverable_error' ? (
-                <Recovery
-                  title="Transaction not completed"
-                  message={scanner.message ?? ''}
-                  button="Scan again"
-                  onPress={reset}
-                  onCancel={reset}
-                />
-              ) : (
-                <Controls
-                  program={business.programType}
-                  redeeming={redeeming}
-                  amount={amount}
-                  canScan={canScan}
-                  offline={online === false}
-                  manualOpen={manualOpen}
-                  manualCode={manualCode}
-                  openSettings={permission?.granted === false && permission.canAskAgain === false}
-                  onMode={changeMode}
-                  onAmount={(value) => {
-                    const next = normalizeCurrencyDigits(value);
-                    if (next !== null) setAmount(next);
-                  }}
-                  onScan={() => void openCamera()}
-                  onManual={() => setManualOpen((x) => !x)}
-                  onManualCode={setManualCode}
-                  onManualSubmit={() => void preview(manualCode, 'manual')}
-                />
-              )}
+              <View style={{ display: workflow === 'rewards' ? 'flex' : 'none' }}>
+                {!redeeming && business && <BusinessFeatureGate businessId={business.id} operation="scan_new_reward" />}
+                {!business.programType ? (
+                  <Notice text="This business does not have an active rewards program. Configure rewards before scanning customers." />
+                ) : scanner.stage === 'awaiting_confirmation' && scanner.preview ? (
+                  <Confirmation
+                    preview={scanner.preview}
+                    busy={false}
+                    onConfirm={() => void confirm()}
+                    onCancel={reset}
+                  />
+                ) : scanner.stage === 'submitting' && scanner.preview ? (
+                  <Confirmation
+                    preview={scanner.preview}
+                    busy
+                    onConfirm={() => undefined}
+                    onCancel={() => undefined}
+                  />
+                ) : scanner.stage === 'success' && scanner.result ? (
+                  <Success
+                    preview={scanner.preview}
+                    result={scanner.result}
+                    onNext={() => {
+                      const camera = scanner.source === 'camera';
+                      reset();
+                      if (camera && Platform.OS !== 'web') dispatch({ type: 'START_SCAN' });
+                    }}
+                    onDone={reset}
+                  />
+                ) : scanner.stage === 'uncertain_result' ? (
+                  <Recovery
+                    title="Confirming the result"
+                    message={scanner.message ?? ''}
+                    button="Check confirmed transaction"
+                    onPress={() => void confirm(true)}
+                    onCancel={reset}
+                    warning
+                  />
+                ) : scanner.stage === 'recoverable_error' ? (
+                  <Recovery
+                    title="Transaction not completed"
+                    message={scanner.message ?? ''}
+                    button="Scan again"
+                    onPress={reset}
+                    onCancel={reset}
+                  />
+                ) : (
+                  <Controls
+                    program={business.programType}
+                    redeeming={redeeming}
+                    amount={amount}
+                    canScan={canScan}
+                    offline={online === false}
+                    manualOpen={manualOpen}
+                    manualCode={manualCode}
+                    openSettings={permission?.granted === false && permission.canAskAgain === false}
+                    onMode={changeMode}
+                    onAmount={(value) => {
+                      const next = normalizeCurrencyDigits(value);
+                      if (next !== null) setAmount(next);
+                    }}
+                    onScan={() => void openCamera()}
+                    onManual={() => setManualOpen((x) => !x)}
+                    onManualCode={setManualCode}
+                    onManualSubmit={() => void preview(manualCode, 'manual')}
+                  />
+                )}
+              </View>
               <Activity
                 open={activityOpen}
                 loading={activityLoading}
@@ -638,17 +717,32 @@ function Controls(p: {
   onManualCode: (x: string) => void;
   onManualSubmit: () => void;
 }) {
-  const colors = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
+  const colors = useTheme();
   return (
-    <View style={[styles.actionCard, { backgroundColor: colors.backgroundElement }]}>
+    <View
+      style={[
+        styles.actionCard,
+        { backgroundColor: colors.backgroundElement, borderColor: colors.divider },
+      ]}
+    >
       <View style={styles.section}>
         <View style={styles.actionCopy}>
-          <ThemedText type="smallBold">Rewards scan</ThemedText>
+          <View style={styles.actionHeading}>
+            <View style={styles.actionIconPlate}>
+              <SymbolView name="gift.fill" tintColor={colors.accent} style={styles.scanIcon} />
+            </View>
+            <ThemedText type="card">Rewards scan</ThemedText>
+          </View>
           <ThemedText type="small" themeColor="textSecondary">
-            Choose what to apply, then scan the customer’s rewards QR.
+            Award points or redeem a customer reward.
           </ThemedText>
         </View>
-        <View style={[styles.segment, { backgroundColor: colors.backgroundElement }]}>
+        <View
+          style={[
+            styles.segment,
+            { backgroundColor: colors.backgroundElement, borderColor: colors.divider },
+          ]}
+        >
           {[
             { label: p.program === 'points' ? 'Award points' : 'Add visit', value: false },
             { label: 'Redeem reward', value: true },
@@ -657,12 +751,15 @@ function Controls(p: {
               key={x.label}
               accessibilityRole="button"
               accessibilityState={{ selected: p.redeeming === x.value }}
-              style={[styles.segmentButton, p.redeeming === x.value && styles.selected]}
+              style={[
+                styles.segmentButton,
+                p.redeeming === x.value && { backgroundColor: colors.backgroundSelected },
+              ]}
               onPress={() => p.onMode(x.value)}
             >
               <ThemedText
                 type="smallBold"
-                style={p.redeeming === x.value ? styles.white : undefined}
+                style={{ color: p.redeeming === x.value ? colors.accent : colors.textSecondary }}
               >
                 {x.label}
               </ThemedText>
@@ -684,34 +781,37 @@ function Controls(p: {
               styles.amount,
               {
                 color: colors.text,
-                backgroundColor: colors.backgroundElement,
-                borderColor: colors.border,
+                backgroundColor: colors.background,
+                borderColor: colors.inputBorder,
               },
             ]}
           />
           <ThemedText type="small" themeColor="textSecondary">
-            Enter the sale total. Points are calculated securely before confirmation.
+            Review points before confirming.
           </ThemedText>
         </View>
       )}
       {p.offline && (
         <Notice text="Secure reward updates need an internet connection. Reconnect before scanning a fresh customer code." />
       )}
-      <Pressable
-        accessibilityRole="button"
+      <AppButton
+        label="Scan rewards QR"
         disabled={!p.canScan}
-        style={[styles.primary, !p.canScan && styles.disabled]}
         onPress={p.onScan}
-      >
-        <SymbolView name="qrcode.viewfinder" tintColor="#fff" style={styles.scanIcon} />
-        <ThemedText type="subtitle" style={styles.white}>
-          Scan rewards QR
-        </ThemedText>
-      </Pressable>
+        icon={
+          <SymbolView
+            name="qrcode.viewfinder"
+            tintColor={p.canScan ? colors.onAction : colors.textSecondary}
+            style={styles.scanIcon}
+          />
+        }
+      />
       {p.openSettings && (
-        <Pressable style={styles.textButton} onPress={() => void Linking.openSettings()}>
-          <ThemedText type="linkPrimary">Open camera settings</ThemedText>
-        </Pressable>
+        <AppButton
+          label="Open camera settings"
+          variant="tertiary"
+          onPress={() => void Linking.openSettings()}
+        />
       )}
       <View style={[styles.manual, { borderColor: colors.border }]}>
         <Pressable
@@ -720,11 +820,8 @@ function Controls(p: {
           style={styles.expand}
           onPress={p.onManual}
         >
-          <View>
+          <View style={styles.actionCopyFlexible}>
             <ThemedText type="smallBold">Use a code instead</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              Backup when the camera cannot scan
-            </ThemedText>
           </View>
           <SymbolView
             name={p.manualOpen ? 'chevron.up' : 'chevron.down'}
@@ -735,6 +832,7 @@ function Controls(p: {
         {p.manualOpen && (
           <View style={styles.section}>
             <TextInput
+              accessibilityLabel="Customer rewards code"
               value={p.manualCode}
               onChangeText={p.onManualCode}
               autoCapitalize="none"
@@ -742,18 +840,21 @@ function Controls(p: {
               multiline
               placeholder="Paste the customer’s current code"
               placeholderTextColor={colors.textSecondary}
-              style={[styles.manualInput, { color: colors.text, borderColor: colors.border }]}
+              style={[
+                styles.manualInput,
+                {
+                  color: colors.text,
+                  borderColor: colors.inputBorder,
+                  backgroundColor: colors.background,
+                },
+              ]}
             />
-            <Pressable
-              accessibilityRole="button"
+            <AppButton
+              label="Review code"
+              variant="secondary"
               disabled={!p.canScan || !p.manualCode.trim()}
-              style={[styles.secondary, (!p.canScan || !p.manualCode.trim()) && styles.disabled]}
               onPress={p.onManualSubmit}
-            >
-              <ThemedText type="smallBold" style={{ color: Brand.primary }}>
-                Review code
-              </ThemedText>
-            </Pressable>
+            />
           </View>
         )}
       </View>
@@ -772,7 +873,7 @@ function Confirmation({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
-  const colors = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
+  const colors = useTheme();
   const points = preview.programType === 'points';
   const before = points
     ? `${preview.currentAvailablePoints} points`
@@ -786,12 +887,12 @@ function Confirmation({
         styles.focus,
         {
           backgroundColor: colors.backgroundElement,
-          borderColor: preview.action === 'redemption' ? colors.warningText : Brand.primary,
+          borderColor: preview.action === 'redemption' ? colors.warningText : colors.divider,
         },
       ]}
     >
-      <ThemedText type="smallBold" style={{ color: Brand.primary }}>
-        CONFIRM CUSTOMER
+      <ThemedText type="smallBold" themeColor="textSecondary">
+        Confirm customer
       </ThemedText>
       <ThemedText type="title">{preview.customerName}</ThemedText>
       <ThemedText themeColor="textSecondary">
@@ -816,25 +917,8 @@ function Confirmation({
       <ThemedText type="small" themeColor="textSecondary">
         Balances are checked again when you confirm.
       </ThemedText>
-      <Pressable
-        disabled={busy}
-        style={[
-          styles.primary,
-          preview.action === 'redemption' && { backgroundColor: colors.warningText },
-        ]}
-        onPress={onConfirm}
-      >
-        {busy ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <ThemedText type="subtitle" style={styles.white}>
-            {confirmationLabel(preview)}
-          </ThemedText>
-        )}
-      </Pressable>
-      <Pressable disabled={busy} style={styles.textButton} onPress={onCancel}>
-        <ThemedText type="linkPrimary">Cancel</ThemedText>
-      </Pressable>
+      <AppButton label={confirmationLabel(preview)} loading={busy} onPress={onConfirm} />
+      <AppButton label="Cancel" variant="tertiary" disabled={busy} onPress={onCancel} />
     </View>
   );
 }
@@ -850,7 +934,7 @@ function Success({
   onNext: () => void;
   onDone: () => void;
 }) {
-  const colors = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
+  const colors = useTheme();
   const title =
     result.action === 'stamp'
       ? 'Visit added'
@@ -880,14 +964,8 @@ function Success({
       <ThemedText type="title">{title}</ThemedText>
       <ThemedText type="subtitle">{preview?.customerName ?? 'Customer'}</ThemedText>
       <ThemedText themeColor="textSecondary">{detail}</ThemedText>
-      <Pressable style={[styles.primary, styles.full]} onPress={onNext}>
-        <ThemedText type="subtitle" style={styles.white}>
-          Scan next customer
-        </ThemedText>
-      </Pressable>
-      <Pressable style={styles.textButton} onPress={onDone}>
-        <ThemedText type="linkPrimary">Done</ThemedText>
-      </Pressable>
+      <AppButton label="Scan next customer" style={styles.full} onPress={onNext} />
+      <AppButton label="Done" variant="tertiary" style={styles.full} onPress={onDone} />
     </View>
   );
 }
@@ -907,7 +985,7 @@ function Recovery({
   onCancel: () => void;
   warning?: boolean;
 }) {
-  const colors = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
+  const colors = useTheme();
   return (
     <View
       style={[
@@ -925,14 +1003,8 @@ function Recovery({
       />
       <ThemedText type="title">{title}</ThemedText>
       <ThemedText>{message}</ThemedText>
-      <Pressable style={styles.primary} onPress={onPress}>
-        <ThemedText type="subtitle" style={styles.white}>
-          {button}
-        </ThemedText>
-      </Pressable>
-      <Pressable style={styles.textButton} onPress={onCancel}>
-        <ThemedText type="linkPrimary">Cancel</ThemedText>
-      </Pressable>
+      <AppButton label={button} onPress={onPress} />
+      <AppButton label="Cancel" variant="tertiary" onPress={onCancel} />
     </View>
   );
 }
@@ -950,7 +1022,7 @@ function Activity({
   log: ScanLog[];
   onToggle: () => void;
 }) {
-  const colors = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
+  const colors = useTheme();
   return (
     <View style={[styles.activity, { borderColor: colors.border }]}>
       <Pressable
@@ -959,7 +1031,7 @@ function Activity({
         style={styles.expand}
         onPress={onToggle}
       >
-        <View>
+        <View style={styles.actionCopyFlexible}>
           <ThemedText type="smallBold">Today at a glance</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
             {stats
@@ -968,7 +1040,7 @@ function Activity({
           </ThemedText>
         </View>
         {loading ? (
-          <ActivityIndicator color={Brand.primary} />
+          <ActivityIndicator color={colors.accent} />
         ) : (
           <SymbolView
             name={open ? 'chevron.up' : 'chevron.down'}
@@ -978,7 +1050,7 @@ function Activity({
         )}
       </Pressable>
       {open && (
-        <View style={styles.activityBody}>
+        <View style={[styles.activityBody, { borderTopColor: colors.divider }]}>
           <View style={styles.stats}>
             {[
               ['Completed', stats?.completedScans],
@@ -986,7 +1058,7 @@ function Activity({
               ['Points', stats?.pointsIssued],
               ['Redeemed', stats?.rewardsRedeemed],
             ].map(([label, value]) => (
-              <View key={String(label)}>
+              <View key={String(label)} style={styles.stat}>
                 <ThemedText type="subtitle">{value ?? 0}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
                   {label}
@@ -1029,7 +1101,7 @@ function Activity({
   );
 }
 function Notice({ text, error = false }: { text: string; error?: boolean }) {
-  const colors = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
+  const colors = useTheme();
   return (
     <View
       style={[
@@ -1053,27 +1125,6 @@ function Row({ label, value }: { label: string; value: string }) {
     </View>
   );
 }
-function CameraButton({
-  icon,
-  label,
-  onPress,
-}: {
-  icon: React.ComponentProps<typeof SymbolView>['name'];
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      style={styles.cameraButton}
-      onPress={onPress}
-    >
-      <SymbolView name={icon} tintColor="#fff" style={styles.cameraIcon} />
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: {
@@ -1100,49 +1151,51 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill,
   },
   dot: { width: 8, height: 8, borderRadius: 4 },
-  notice: { borderRadius: Radius.medium, padding: Spacing.three },
-  card: { padding: Spacing.four, borderRadius: Radius.large, gap: Spacing.three },
+  notice: { borderRadius: 8, padding: Spacing.three },
+  card: { padding: Spacing.four, borderRadius: 8, gap: Spacing.three },
   business: {
-    borderLeftWidth: 4,
-    borderRadius: Radius.medium,
+    borderWidth: 1,
+    borderRadius: 12,
     padding: Spacing.three,
     gap: Spacing.one,
   },
-  actionCard: { borderRadius: Radius.large, padding: Spacing.three, gap: Spacing.three },
-  actionCopy: { gap: Spacing.one },
+  actionCard: {
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 18,
+    gap: Spacing.three,
+  },
+  actionHeading: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  actionIconPlate: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionCopy: { gap: 12 },
+  actionCopyFlexible: { flex: 1, gap: Spacing.one },
   section: { gap: Spacing.two },
-  segment: { flexDirection: 'row', borderRadius: Radius.pill, padding: 4 },
+  segment: { flexDirection: 'row', borderRadius: 8, padding: 4, borderWidth: 1 },
   segmentButton: {
     flex: 1,
     minHeight: 48,
-    borderRadius: Radius.small,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
+    padding: Spacing.two,
   },
-  selected: { backgroundColor: Brand.primary },
   amount: {
-    minHeight: 74,
+    minHeight: 56,
     borderWidth: 1,
-    borderRadius: Radius.large,
-    paddingHorizontal: Spacing.four,
-    fontSize: 32,
+    borderRadius: 8,
+    paddingHorizontal: Spacing.three,
+    fontSize: 24,
     fontWeight: '700',
   },
-  primary: {
-    minHeight: 58,
-    borderRadius: Radius.pill,
-    backgroundColor: Brand.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: Spacing.two,
-    paddingHorizontal: Spacing.four,
-  },
   white: { color: '#fff' },
-  disabled: { opacity: 0.45 },
   scanIcon: { width: 25, height: 25 },
-  textButton: { minHeight: 46, alignItems: 'center', justifyContent: 'center' },
-  manual: { borderWidth: 1, borderRadius: Radius.large, padding: Spacing.three },
+  manual: { borderWidth: 1, borderRadius: 8, padding: Spacing.three },
   expand: {
     minHeight: 52,
     flexDirection: 'row',
@@ -1154,27 +1207,24 @@ const styles = StyleSheet.create({
   manualInput: {
     minHeight: 92,
     borderWidth: 1,
-    borderRadius: Radius.medium,
+    borderRadius: 8,
     padding: Spacing.three,
     textAlignVertical: 'top',
   },
-  secondary: {
-    minHeight: 48,
-    borderWidth: 1,
-    borderColor: Brand.primary,
-    borderRadius: Radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  focus: { borderWidth: 1, borderRadius: Radius.hero, padding: Spacing.four, gap: Spacing.three },
+  focus: { borderWidth: 1, borderRadius: 8, padding: Spacing.three, gap: Spacing.three },
   summary: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: StyleSheet.hairlineWidth,
     paddingVertical: Spacing.two,
     gap: Spacing.two,
   },
-  row: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.three },
-  rowValue: { flex: 1, textAlign: 'right' },
+  row: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: Spacing.two,
+  },
+  rowValue: { flexGrow: 1, flexShrink: 1, textAlign: 'right' },
   resultIcon: { width: 40, height: 40 },
   successIcon: {
     width: 72,
@@ -1184,14 +1234,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   full: { width: '100%' },
-  activity: { borderWidth: 1, borderRadius: Radius.large, paddingHorizontal: Spacing.three },
+  activity: { borderWidth: 1, borderRadius: 8, paddingHorizontal: Spacing.three },
   activityBody: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Brand.border,
     paddingVertical: Spacing.three,
     gap: Spacing.three,
   },
-  stats: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.two },
+  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
+  stat: { flexGrow: 1, flexBasis: '45%', gap: Spacing.one },
   logRow: {
     flexDirection: 'row',
     gap: Spacing.two,
@@ -1204,7 +1254,7 @@ const styles = StyleSheet.create({
   cameraButton: {
     width: 48,
     height: 48,
-    borderRadius: Radius.small,
+    borderRadius: 8,
     backgroundColor: 'rgba(0,0,0,.65)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1243,3 +1293,5 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill,
   },
 });
+
+export default withBusinessTheme(StaffScanScreen);

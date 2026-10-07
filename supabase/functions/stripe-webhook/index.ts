@@ -20,50 +20,25 @@ Deno.serve(async (request) => {
     const event = JSON.parse(raw) as Record<string, any>;
     if (event.livemode !== false)
       throw new CommerceError('INVALID_ENVIRONMENT', 'Only sandbox events are accepted.', 400);
-    const object = event.data?.object as Record<string, any> | undefined;
-    const orderId = object?.metadata?.sds_order_id ?? object?.client_reference_id;
     const db = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       { auth: { persistSession: false, autoRefreshToken: false } },
     );
-    if (
-      typeof orderId === 'string' &&
-      [
-        'checkout.session.completed',
-        'checkout.session.expired',
-        'payment_intent.succeeded',
-      ].includes(event.type)
-    ) {
-      const service = new StripeService(db, config);
-      const order = await service.checked(
-        db
-          .from('square_orders')
-          .select('*')
-          .eq('id', orderId)
-          .eq('provider', 'stripe')
-          .maybeSingle(),
-      );
-      if (order) {
-        if (event.account !== order.merchant_id)
-          throw new CommerceError(
-            'ACCOUNT_MISMATCH',
-            'Event belongs to another connected account.',
-            400,
-          );
-        // Retrieve the canonical session using that business's Stripe-Account header.
-        // Never trust event order or rewrite a completed kitchen/handoff state.
-        await service.reconcile(order);
-      }
-    }
+    await new StripeService(db, config).queuedWebhookEvent(event);
     return new Response(JSON.stringify({ received: true }), {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Webhook failed.' }),
+      JSON.stringify({
+        error:
+          error instanceof CommerceError
+            ? error.message
+            : 'Webhook processing is temporarily unavailable.',
+      }),
       {
-        status: error instanceof CommerceError ? error.status : 400,
+        status: error instanceof CommerceError ? error.status : 503,
         headers: { 'Content-Type': 'application/json' },
       },
     );

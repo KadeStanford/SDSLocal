@@ -15,10 +15,13 @@ export function TabOverlayProvider({ children }: { readonly children: ReactNode 
 export function useTabOverlay() {
   return useContext(TabOverlayContext);
 }
-export function useScreenBottomPadding() {
+export function useScreenBottomPadding(includeTabOverlay = true) {
   const insets = useSafeAreaInsets();
   const { height } = useTabOverlay();
   // NativeTabs computes the real native bar obstruction (iOS scroll inset / Android safe area).
   // Do not add a guessed bar height on top of that system measurement.
-  return bottomContentPadding(insets.bottom, Platform.OS === 'web' ? height : 0);
+  return bottomContentPadding(
+    insets.bottom,
+    Platform.OS === 'web' && includeTabOverlay ? height : 0,
+  );
 }

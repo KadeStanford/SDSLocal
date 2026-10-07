@@ -1,6 +1,7 @@
 \set ON_ERROR_STOP on
 
 begin;
+\ir fixtures/business.sql
 
 do $$
 declare

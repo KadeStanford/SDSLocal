@@ -1,3 +1,5 @@
+import { CustomerOrdersHeader } from '@/components/pickup/customer-orders-header';
+import { usePullRefresh } from '@/hooks/use-pull-refresh';
 import { useCallback, useRef, useState } from 'react';
 import { FlatList, RefreshControl, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,7 +17,6 @@ import {
   type CustomerOrderView,
 } from '@/lib/customer-orders';
 import { pickupDiscoveryEnabled } from '@/lib/pickup-discovery';
-import { ThemedText } from '@/components/themed-text';
 import { AppButton } from '@/components/app-button';
 import { EmptyState, ListLoading, StateNotice } from '@/components/data-state';
 import { CustomerOrderCard } from '@/components/pickup/customer-order-card';
@@ -40,26 +41,7 @@ function CustomerOrders({ userId }: { userId: string | null }) {
       style={{ flex: 1, backgroundColor: c.background }}
       edges={['top', 'left', 'right']}
     >
-      <View style={{ padding: 16, gap: 12 }}>
-        <ThemedText type="title">Your orders</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {userId
-            ? 'Your account orders and guest orders saved on this device.'
-            : 'Guest orders saved on this device. Sign in for your account history.'}
-        </ThemedText>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          {(['current', 'history'] as const).map((value) => (
-            <AppButton
-              key={value}
-              label={value === 'current' ? 'Current' : 'History'}
-              accessibilityLabel={`${value === 'current' ? 'Current orders' : 'Order history'}${view === value ? ', selected' : ''}`}
-              variant={view === value ? 'primary' : 'secondary'}
-              onPress={() => setView(value)}
-              style={{ flex: 1 }}
-            />
-          ))}
-        </View>
-      </View>
+      <CustomerOrdersHeader signedIn={!!userId} view={view} onView={setView} />
       <CustomerOrdersList key={`${userId}:${view}`} userId={userId} view={view} bottom={bottom} />
     </SafeAreaView>
   );
@@ -90,6 +72,7 @@ function CustomerOrdersList({
   );
   const read = useCallback(() => fetchPage({ account: 0, device: 0 }), [fetchPage]);
   const state = useOrderPolling(`${userId}:${view}`, read, view === 'current');
+  const pullRefresh = usePullRefresh(() => state.refresh());
   const data = state.data;
   const result = page?.source === data ? page.result : data;
   const rows = result?.orders ?? [];
@@ -127,10 +110,8 @@ function CustomerOrdersList({
       initialNumToRender={8}
       refreshControl={
         <RefreshControl
-          refreshing={state.loading && !!data}
-          onRefresh={() => {
-            void state.refresh();
-          }}
+          refreshing={pullRefresh.refreshing}
+          onRefresh={pullRefresh.onRefresh}
           tintColor={c.accent}
         />
       }

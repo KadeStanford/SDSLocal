@@ -152,6 +152,25 @@ Deno.serve(async (request) => {
         continue;
       }
     }
+    if (
+      delivery.url.startsWith('/service-requests?') ||
+      delivery.url.startsWith('/my-service-requests?')
+    ) {
+      const { data: allowed, error } = await admin.rpc('service_request_notification_sendable', {
+        p_delivery_id: delivery.id,
+      });
+      if (error || !allowed) {
+        await updateDelivery(delivery.id, {
+          status: error ? (delivery.attempt_count >= 5 ? 'failed' : 'queued') : 'skipped',
+          nextAttemptAt: new Date(Date.now() + 60000).toISOString(),
+          lastError: error
+            ? 'Service request access check unavailable'
+            : 'Request changed or access removed',
+        });
+        skipped += 1;
+        continue;
+      }
+    }
     const { data: tokenData, error: tokenError } = await admin
       .from('push_tokens')
       .select('id, user_id, expo_push_token')

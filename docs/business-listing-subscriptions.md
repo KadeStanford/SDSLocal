@@ -3,19 +3,52 @@
 ## Product decision
 
 SDS Local keeps one universal user account. A customer becomes a business owner
-by creating a draft business; this does not create a second identity and does not
-make customer features unavailable. Draft creation and editing are free.
+through the business creation workflow; this does not create a second identity
+and does not make customer features unavailable. When billing is enabled, an
+owner sees the subscription page before the creation form and needs a verified
+subscription with an available slot to create a draft. Creating a draft consumes
+a slot atomically. Existing drafts remain editable. When the explicit server
+rollout flag is disabled, the page offers free preview setup.
 
-An owner needs a store subscription only when submitting a business for public
-review. Staff never purchase plans and cannot view or mutate trusted billing
-records.
+Staff never purchase plans for an owner and cannot mutate trusted billing records.
+See [the store setup guide](business-subscription-store-setup.md) for exact product
+configuration and the remaining release requirements.
 
-Initial catalog:
+Feature-based catalog (applied to staging; monthly products active for selected-account sandbox testing):
 
-| Plan   | Live listing slots | Periods         |
-| ------ | -----------------: | --------------- |
-| Single |                  1 | Monthly, yearly |
-| Multi  |                  3 | Monthly, yearly |
+| Plan       | Live listing slots | Target USD monthly / annual | Owner tools                                                         |
+| ---------- | -----------------: | --------------------------: | ------------------------------------------------------------------- |
+| Essentials |                  3 |                  $19 / $190 | Business pages, discovery, events, service requests, basic insights |
+| Growth     |                  3 |                  $39 / $390 | Essentials plus loyalty, follower updates, staff scanning           |
+| Pro        |                  3 |                  $69 / $690 | Growth plus pickup ordering and appointments                        |
+
+All plans support the same one-to-three-business audience. Upgrades buy tools,
+not additional businesses. Read [the monetization proposal](business-monetization.md)
+for the rationale, other revenue streams, and implementation sequence.
+
+The shared catalog lives in `packages/business-logic/src/business-subscriptions.ts`.
+Migration `20260929000200_feature_subscription_catalog.sql` prepares the new
+catalog with both plans and products inactive. It also provides the owner-only
+`get_my_business_subscription_features()` RPC. The RPC reads verified billing;
+it does **not** enforce feature access in existing workflows yet. Complete those
+gates before a broader paid rollout. The six configured monthly store products
+are active on staging for one selected sandbox tester; annual and Test Store
+products remain inactive. The mobile offering and purchase path
+check that both the database product and its plan are active.
+
+New Apple identifiers use `listing_<tier>_<period>_v1`, where tier is
+`essentials`, `growth`, or `pro` and period is `monthly` or `yearly`.
+Google identifiers use `listing_<tier>_v1:<period>` with the same values.
+The three monthly Apple products are configured in one subscription group, with
+Pro above Growth above Essentials. Annual products are proposals and have not
+been created. The three Google products have active monthly base plans at
+$19/$39/$69 USD, United States only, mapped to the same RevenueCat offering.
+See the store setup guide for internal testing and native acceptance status.
+
+Existing Single/Multi identifiers below are **legacy products**. Keep their
+receipt mappings and restoration support; remove them from the sale offering
+when the new catalog launches. Preserve their existing one/three listing limits
+and full feature access. Do not rename or repurpose their store IDs.
 
 Use these permanent Apple product identifiers and mirror them in RevenueCat:
 
@@ -44,20 +77,22 @@ Billing. Stripe remains available for a future eligible web or physical-goods
 flow, but it must not be linked or offered as an alternative checkout from this
 mobile paywall.
 
-All four Apple products belong to one subscription group. Single and Multi are
-different service levels; monthly and yearly are durations for their matching
-level. On Google Play, `listing_single_v1` and `listing_multi_v1` are the two
-subscription products and `monthly`/`yearly` are their base-plan IDs. Map those
-base plans exactly in RevenueCat before enabling the offering.
+Legacy Apple products remain in their existing subscription group. New tiers
+must use the same group when migrating existing subscribers to prevent parallel
+subscriptions. Verify replacement behavior on both stores, including moves
+between legacy and new products. Monthly/yearly are durations for each level;
+feature reductions apply at renewal rather than removing paid access early.
 
 The paywall must show the localized store price, renewal period, auto-renewal
 language, cancellation behavior, Restore Purchases, Manage Subscription, and
-working HTTPS Terms and Privacy links.
+working public HTTPS Terms, Privacy and Support links. The full yearly charge
+must appear beside the purchase action. Launch products have no trial or
+installment offer; the Android purchase uses the displayed recurring base plan.
 
 ## Authority and lifecycle
 
 RevenueCat handles StoreKit and Play Billing receipt validation and forwards
-signed lifecycle webhooks. The mobile SDK is never the authority for publishing.
+lifecycle webhooks authenticated with a dedicated bearer secret. The mobile SDK is never the authority for publishing.
 Supabase mirrors the verified entitlement and enforces listing slots in database
 functions.
 
@@ -78,13 +113,14 @@ functions.
    `com.stanforddevelopmentsolutions.sdslocal`.
 2. Connect App Store Connect and Google Play service credentials in RevenueCat.
 3. Create the `business_listing` entitlement and `business_listing` offering.
-4. Add the four store products above and attach matching packages to the
-   offering.
+4. Add the three monthly products per platform and attach matching packages to
+   the offering. Annual products require a separate pricing decision. Preserve
+   legacy receipt/entitlement mappings for restoration.
 5. Set the Preview EAS environment variables:
    `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY`,
    `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY`,
    `EXPO_PUBLIC_REVENUECAT_OFFERING_ID`, `EXPO_PUBLIC_TERMS_URL`, and
-   `EXPO_PUBLIC_PRIVACY_URL`.
+   `EXPO_PUBLIC_PRIVACY_URL`, and `EXPO_PUBLIC_SUPPORT_URL`.
 6. Set staging Supabase secrets `REVENUECAT_WEBHOOK_SECRET` and
    `BILLING_ENVIRONMENT=sandbox`.
 7. Configure the RevenueCat webhook endpoint as
@@ -92,13 +128,20 @@ functions.
    with `Authorization: Bearer <REVENUECAT_WEBHOOK_SECRET>` and select the
    `business_listing` entitlement.
 8. Apply the billing migration and deploy `revenuecat-webhook` to staging.
-9. Keep `platform_settings.business_listing_billing.enabled` false until the
-   products, webhook, legal URLs and Preview build are verified. Then enable it
-   in staging only to test the publishing gate.
-10. Build and install a new EAS Preview binary. `react-native-purchases` is native
-    code, so the currently installed binary cannot receive it through OTA.
-11. After the new binary is installed, later JavaScript/UI fixes may use Preview
-    OTA while runtime compatibility remains unchanged.
+9. Keep `platform_settings.business_listing_billing.enabled` false until feature
+   gates and native acceptance pass. For sandbox acceptance, migration
+   `20260929000700_sandbox_subscription_rollout` provides a private tester list
+   and an independent `sandboxCheckout` switch. Staging enables these only for
+   the confirmed `kade20413@gmail.com` app account and activates the six monthly
+   Apple/Google mappings. No actual tester entitlement is fabricated. Other
+   accounts retain free preview behavior. New annual and Test Store products
+   remain inactive.
+10. Install a native build containing `react-native-purchases`. Compatible iOS
+    and Android Preview builds already exist, and the Android Play app bundle
+    is prepared. OTA cannot add this SDK to an older binary or Expo Go.
+11. The subscription page and public legal links are published on the Preview
+    OTA channel for runtime `0.1.0`. Install the compatible native binary before
+    testing purchases. Later JavaScript/UI updates must retain compatibility.
 
 Never use a RevenueCat Test Store key in a production build. Staging webhooks
 must ignore production events, and production webhooks must ignore sandbox
@@ -112,14 +155,20 @@ User ID. Never purchase anonymously.
 Verify on iOS sandbox/TestFlight and the Google Play closed test track:
 
 1. A signed-out user cannot open or purchase a listing plan.
-2. A signed-in owner can create and fully edit a draft without subscribing.
+2. The page appears after signup and before every new-business form. With billing
+   enabled, missing/expired entitlements and unavailable status block creation.
+   An existing subscriber continues without purchasing again; preview creation
+   is allowed only when the server billing flag is explicitly disabled.
 3. Store prices and periods match the products configured in that storefront.
 4. Cancelling the native purchase sheet makes no charge and shows no failure
    alarm.
-5. Single monthly activates exactly one listing slot after server confirmation.
-6. A second business can remain a draft but cannot be submitted on Single.
-7. Upgrade to Multi allows three assigned listings without a second concurrent
-   subscription.
+5. Each new tier activates exactly three listing slots after server confirmation.
+6. Creating a draft atomically consumes a slot. A fourth business cannot be
+   created on a new tier, including through old RPCs. Retrying a successful
+   idempotent request returns the same business without consuming another slot.
+7. Upgrades change feature access without a second concurrent subscription.
+   Test every tier's server-side restrictions and mobile upgrade explanations.
+   Legacy Single still allows one listing; legacy Multi still allows three.
 8. Restore Purchases reconnects the same store purchase to the same signed-in SDS
    account and does not grant access from client state alone.
 9. Cancellation keeps the listing public until the paid period end.
@@ -134,14 +183,23 @@ Verify on iOS sandbox/TestFlight and the Google Play closed test track:
 
 ## Release blockers
 
-- Final pricing and storefront availability must be chosen in App Store Connect
-  and Play Console.
-- Public Terms, Privacy, Support and Google external account-deletion pages need
-  a real HTTPS domain.
-- A downgrade-over-capacity selection flow is required before selling Multi in
-  production.
-- The account-deletion impact screen must include active store subscription
-  guidance.
+- Monthly pricing is $19/$39/$69 USD. Apple is configured for the United States;
+  Google has the same configured monthly prices and United States availability.
+- Public Terms, Privacy, Support and external account-deletion pages are hosted
+  at `https://parish-pass--policies.expo.app/`. Complete store metadata and verify
+  the links on device and in the review environment.
+- Enforce Growth/Pro capabilities in database mutations, Edge Functions, and
+  public customer entry points; hiding mobile controls is insufficient.
+- Feature downgrades must preserve existing orders, bookings, refunds, earned
+  rewards, and access through the paid period. New tools and transactions can be
+  blocked after expiry; customers must retain recovery paths.
+- A downgrade-over-capacity selection flow is required for legacy capacity
+  reductions. The mobile purchase guard cannot prevent changes made directly
+  through Apple/Google subscription management.
+- Pro cannot be sold until the included commerce and appointment flows have
+  production acceptance. Current payment integrations remain staging-only.
+- Verify the existing account-deletion warning and store-management button on
+  device; deleting an app account must not imply cancellation of store billing.
 - App Review needs an owner demo account, review notes describing the listing
   subscription, and products visible and functional in the submitted build.
 - Production must use separate RevenueCat keys, webhook secret, Supabase project,

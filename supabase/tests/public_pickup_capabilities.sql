@@ -32,7 +32,7 @@ do $$
 declare result jsonb; f pickup_fixtures;
 begin
  select * into f from pickup_fixtures;
- select jsonb_agg(to_jsonb(c)) into result from public.get_pickup_capabilities(null) c;
+ select jsonb_agg(to_jsonb(c)) into result from public.get_pickup_capabilities(array[f.supported,f.excluded,f.inactive,f.unsupported]) c;
  if result <> jsonb_build_array(jsonb_build_object('business_id',f.supported,'supports_pickup_ordering',true)) then raise exception 'Unsafe public shape or unsupported leak: %',result; end if;
  if exists(select 1 from public.get_pickup_capabilities(array[f.excluded,f.inactive,f.unsupported])) then raise exception 'Hidden business leaked'; end if;
  if exists(select 1 from public.get_pickup_capabilities(array[]::uuid[])) then raise exception 'Empty filter returned data'; end if;
@@ -45,7 +45,7 @@ reset role;
 insert into public.blocked_businesses(customer_id,business_id) select caller,supported from pickup_fixtures;
 select set_config('request.jwt.claim.sub',(select caller::text from pickup_fixtures),true);
 set local role authenticated;
-do $$ begin if exists(select 1 from public.get_pickup_capabilities(null)) then raise exception 'Blocked business leaked'; end if; end $$;
+do $$ begin if exists(select 1 from public.get_pickup_capabilities(array[(select supported from pickup_fixtures)])) then raise exception 'Blocked business leaked'; end if; end $$;
 reset role;
 select set_config('request.jwt.claim.sub','',true);
 delete from public.blocked_businesses where customer_id=(select caller from pickup_fixtures);

@@ -55,7 +55,7 @@ export async function GET(
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//SDS Local//Events//EN',
+    'PRODID:-//Parish Pass//Events//EN',
     'CALSCALE:GREGORIAN',
     'BEGIN:VEVENT',
     `UID:${event.id}@sdslocal`,

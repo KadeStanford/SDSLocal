@@ -1,11 +1,101 @@
-import { useEffect, useState } from 'react';
-import { Platform, View } from 'react-native';
+import { useEffect, useState, type ReactNode } from 'react';
+import { View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import * as Clipboard from 'expo-clipboard';
 import { commerce } from '@/lib/square-commerce';
 import { useTheme } from '@/hooks/use-theme';
 import { AppButton } from '../app-button';
 import { ThemedText } from '../themed-text';
+
+export type PickupCodeValue = { code: string; manualCode?: string; expiresAt: string };
+
+export function PickupCodeContent({
+  code,
+  now,
+  busy,
+  error,
+  onRefresh,
+  qr,
+}: {
+  code: PickupCodeValue | null;
+  now: number;
+  busy: boolean;
+  error: string;
+  onRefresh: () => void;
+  qr?: ReactNode;
+}) {
+  const c = useTheme();
+  const valid = code && Date.parse(code.expiresAt) > now;
+  const shortCode = valid && code.manualCode?.match(/.{1,4}/g)?.join(' ');
+  return (
+    <View
+      style={{
+        gap: 16,
+        padding: 20,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: c.border,
+        backgroundColor: c.backgroundElement,
+      }}
+    >
+      <ThemedText type="card">Ready to collect</ThemedText>
+      <ThemedText type="small" themeColor="textSecondary">
+        Show your QR to staff when they hand over your order.
+      </ThemedText>
+      {valid && (
+        <View
+          accessible
+          accessibilityLabel="Pickup QR code. Show this to staff to confirm handoff."
+          style={{ alignSelf: 'center', padding: 16, backgroundColor: '#fff', borderRadius: 12 }}
+        >
+          {qr}
+        </View>
+      )}
+      {shortCode && (
+        <View style={{ gap: 8, padding: 16, borderRadius: 12, backgroundColor: c.background }}>
+          <ThemedText type="smallBold" style={{ textAlign: 'center' }}>
+            Can’t scan? Tell staff this code
+          </ThemedText>
+          <ThemedText
+            selectable
+            accessibilityLabel={`Pickup code: ${code.manualCode?.split('').join(' ')}`}
+            style={{
+              fontSize: 28,
+              lineHeight: 36,
+              fontWeight: '700',
+              letterSpacing: 3,
+              textAlign: 'center',
+              fontVariant: ['tabular-nums'],
+            }}
+          >
+            {shortCode}
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>
+            Staff can enter it to find and confirm your pickup.
+          </ThemedText>
+        </View>
+      )}
+      {code && (
+        <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>
+          {valid
+            ? 'Valid for 5 minutes. Share only with pickup staff.'
+            : 'Your pickup code expired. Get a new code when you’re ready.'}
+        </ThemedText>
+      )}
+      {!!error && (
+        <ThemedText accessibilityLiveRegion="polite" style={{ color: c.errorText }}>
+          {error}
+        </ThemedText>
+      )}
+      {!valid && (
+        <AppButton
+          label={code ? 'Get a new pickup code' : 'Show pickup code'}
+          loading={busy}
+          onPress={onRefresh}
+        />
+      )}
+    </View>
+  );
+}
 
 export function PickupCode({
   orderId,
@@ -14,8 +104,17 @@ export function PickupCode({
   orderId: string;
   statusToken?: string | undefined;
 }) {
-  const c = useTheme();
-  const [code, setCode] = useState<{ code: string; expiresAt: string } | null>(null);
+  return <PickupCodeSession key={orderId} orderId={orderId} statusToken={statusToken} />;
+}
+
+function PickupCodeSession({
+  orderId,
+  statusToken,
+}: {
+  orderId: string;
+  statusToken?: string | undefined;
+}) {
+  const [code, setCode] = useState<PickupCodeValue | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [now, setNow] = useState(Date.now);
@@ -23,24 +122,8 @@ export function PickupCode({
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
-  const valid = code && Date.parse(code.expiresAt) > now;
-  async function copyPickupCode(value: string) {
-    try {
-      // Expo Clipboard's web adapter calls navigator.clipboard synchronously.
-      // Some embedded browsers do not expose that API, so guard it before
-      // invoking the adapter instead of allowing the order screen to crash.
-      if (
-        Platform.OS === 'web' &&
-        (typeof navigator === 'undefined' || typeof navigator.clipboard?.writeText !== 'function')
-      ) {
-        throw new Error('Clipboard unavailable');
-      }
-      await Clipboard.setStringAsync(value);
-    } catch {
-      setError('Copy is unavailable in this browser. Use the pickup QR instead.');
-    }
-  }
   async function refresh() {
+    if (busy) return;
     setBusy(true);
     setError('');
     setCode(null);
@@ -54,47 +137,13 @@ export function PickupCode({
     }
   }
   return (
-    <View style={{ gap: 12, padding: 16, borderRadius: 16, backgroundColor: c.backgroundElement }}>
-      <ThemedText type="card">Your pickup QR</ThemedText>
-      <ThemedText type="small" themeColor="textSecondary">
-        Show this to staff when collecting your order. One scan confirms pickup and adds eligible
-        rewards to your membership.
-      </ThemedText>
-      {valid && (
-        <View
-          accessible
-          accessibilityLabel="Pickup QR code. Show this to staff to confirm handoff."
-          style={{ alignSelf: 'center', padding: 16, backgroundColor: '#fff', borderRadius: 12 }}
-        >
-          <QRCode value={code.code} size={210} color="#000" backgroundColor="#fff" />
-        </View>
-      )}
-      {code && (
-        <ThemedText type="small" themeColor="textSecondary">
-          {valid
-            ? 'Valid for five minutes. Keep this code private until pickup.'
-            : 'This code expired. Refresh it when you are ready to collect.'}
-        </ThemedText>
-      )}
-      {valid && (
-        <AppButton
-          label="Copy pickup code"
-          variant="tertiary"
-          onPress={() => void copyPickupCode(code.code)}
-        />
-      )}
-      {!!error && (
-        <ThemedText accessibilityLiveRegion="polite" style={{ color: c.errorText }}>
-          {error}
-        </ThemedText>
-      )}
-      {!valid && (
-        <AppButton
-          label={code ? 'Refresh pickup QR' : 'Show pickup QR'}
-          loading={busy}
-          onPress={() => void refresh()}
-        />
-      )}
-    </View>
+    <PickupCodeContent
+      code={code}
+      now={now}
+      busy={busy}
+      error={error}
+      onRefresh={() => void refresh()}
+      qr={code ? <QRCode value={code.code} size={210} color="#000" backgroundColor="#fff" /> : null}
+    />
   );
 }

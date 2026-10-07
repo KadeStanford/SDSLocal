@@ -1,7 +1,9 @@
+import { inputPresets } from '@/lib/input-presets';
 import { memo, useMemo, useRef, useState, type ReactNode } from 'react';
-import { FlatList, Pressable, RefreshControl, TextInput, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, View } from 'react-native';
+import { AppTextInput as TextInput } from '@/components/app-text-input';
 import { ThemedText } from '../themed-text';
-import { AppButton } from '../app-button';
+import { SymbolView } from 'expo-symbols';
 import { EmptyState } from '../data-state';
 import { HorizontalScrollRow } from '../horizontal-scroll-row';
 import { useTheme } from '@/hooks/use-theme';
@@ -15,7 +17,7 @@ import {
 } from '@/lib/pickup-menu-controls';
 import { money, type CartLine, type Product } from '@/lib/square-commerce-core';
 import { ProductPhoto } from './product-photo';
-import { QuantityStepper } from './quantity-stepper';
+import { QuantityIcon, QuantityStepper } from './quantity-stepper';
 
 export const PickupMenuRow = memo(function PickupMenuRow({
   product,
@@ -39,19 +41,19 @@ export const PickupMenuRow = memo(function PickupMenuRow({
   const hasVariants = variants.length > 1;
   const unavailable = variants.every((variant) => variant.available === false);
   const blocked = disabled || unavailable;
-  const compact = !safeProductImage(product.image);
+  const hasPhoto = !!safeProductImage(product.image);
+  const customizable = hasVariants || hasCustomization(product);
+  const lowestPrice = Math.min(...variants.map((variant) => variant.price));
   return (
     <View
       style={{
-        padding: 16,
-        gap: compact ? 12 : 14,
-        borderRadius: 16,
+        padding: 12,
+        marginBottom: 16,
+        borderRadius: 20,
         borderWidth: 1,
         borderColor: c.divider,
         backgroundColor: c.backgroundElement,
-        flexDirection: compact ? 'row' : 'column',
-        flexWrap: compact ? 'wrap' : 'nowrap',
-        alignItems: compact ? 'center' : 'stretch',
+        boxShadow: '0 6px 20px rgba(10, 34, 21, 0.08)',
       }}
     >
       <Pressable
@@ -60,67 +62,67 @@ export const PickupMenuRow = memo(function PickupMenuRow({
         accessibilityState={{ disabled: blocked }}
         disabled={blocked}
         onPress={() => (hasVariants ? onChoose(product, variants) : onChoose(product))}
-        style={({ pressed }) => ({
-          flexDirection: 'row',
-          alignItems: 'flex-start',
-          gap: 14,
-          minHeight: compact ? 48 : 88,
-          ...(compact
-            ? { flexGrow: 1, flexBasis: 140, minWidth: 0 }
-            : { width: '100%', alignSelf: 'stretch' }),
-          opacity: pressed ? 0.75 : 1,
-        })}
+        style={({ pressed }) => ({ minWidth: 0, opacity: pressed ? 0.75 : 1 })}
       >
-        <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-          <ThemedText type="card">{product.name}</ThemedText>
+        {hasPhoto && <ProductPhoto image={product.image} menu />}
+        <View style={{ paddingHorizontal: 6, paddingTop: hasPhoto ? 16 : 6, gap: 8 }}>
+          <ThemedText type="card" style={{ fontSize: 18, lineHeight: 24, letterSpacing: -0.25 }}>
+            {product.name}
+          </ThemedText>
+          {!!product.description && (
+            <ThemedText type="small" themeColor="textSecondary" numberOfLines={3}>
+              {product.description}
+            </ThemedText>
+          )}
           {hasVariants ? (
-            <ThemedText type="small" themeColor="textSecondary">
+            <ThemedText type="caption" themeColor="textSecondary">
               {variants.map((variant) => variant.variation || 'Regular').join(' · ')}
+            </ThemedText>
+          ) : customizable ? (
+            <ThemedText type="caption" themeColor="textSecondary">
+              Options available
             </ThemedText>
           ) : (
             !!product.variation &&
             product.variation !== 'Regular' && (
-              <ThemedText type="small" themeColor="textSecondary">
+              <ThemedText type="caption" themeColor="textSecondary">
                 {product.variation}
               </ThemedText>
             )
           )}
-          {!!product.description && (
-            <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
-              {product.description}
-            </ThemedText>
-          )}
-          {unavailable && (
-            <ThemedText type="smallBold" themeColor="textSecondary">
-              Currently unavailable
-            </ThemedText>
-          )}
-          {compact && (
-            <ThemedText type="smallBold">{money(product.price, product.currency)}</ThemedText>
-          )}
         </View>
-        <ProductPhoto image={product.image} />
       </Pressable>
       <View
         style={{
           flexDirection: 'row',
           flexWrap: 'wrap',
-          gap: 12,
           alignItems: 'center',
           justifyContent: 'space-between',
-          ...(compact
-            ? {}
-            : {
-                borderTopWidth: 1,
-                borderTopColor: c.divider,
-                paddingTop: 12,
-              }),
+          gap: 14,
+          paddingHorizontal: 6,
+          paddingTop: 20,
+          paddingBottom: 6,
         }}
       >
-        {!compact && (
-          <ThemedText type="smallBold">{money(product.price, product.currency)}</ThemedText>
-        )}
-        {!hasCustomization(product) && quantity > 0 ? (
+        <View style={{ gap: 2 }}>
+          {hasVariants && (
+            <ThemedText type="caption" themeColor="textSecondary">
+              From
+            </ThemedText>
+          )}
+          <ThemedText
+            type="smallBold"
+            style={{ fontSize: 18, lineHeight: 24, fontVariant: ['tabular-nums'] }}
+          >
+            {money(lowestPrice, product.currency)}
+          </ThemedText>
+          {unavailable && (
+            <ThemedText type="caption" themeColor="textSecondary">
+              Currently unavailable
+            </ThemedText>
+          )}
+        </View>
+        {!customizable && quantity > 0 ? (
           <QuantityStepper
             name={product.name}
             quantity={quantity}
@@ -128,16 +130,51 @@ export const PickupMenuRow = memo(function PickupMenuRow({
             onChange={(delta) => onQuantity(product, delta)}
           />
         ) : (
-          <AppButton
-            label={
-              hasVariants ? 'Choose size' : hasCustomization(product) ? 'Choose options' : '+ Add'
-            }
-            accessibilityLabel={`${hasVariants ? 'Choose a variation for' : hasCustomization(product) ? 'Choose options for' : 'Add one'} ${product.name}`}
-            variant="secondary"
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ disabled: blocked }}
             disabled={blocked}
-            onPress={() => (hasVariants ? onChoose(product, variants) : onAdd(product))}
-            style={{ minWidth: 80, borderRadius: 24 }}
-          />
+            accessibilityLabel={
+              (hasVariants
+                ? 'Choose a variation for'
+                : customizable
+                  ? 'Choose options for'
+                  : 'Add one') +
+              ' ' +
+              product.name
+            }
+            onPress={() => (customizable ? onChoose(product, variants) : onAdd(product))}
+            style={({ pressed }) => ({
+              minHeight: 48,
+              minWidth: 130,
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: c.divider,
+              backgroundColor: blocked ? c.background : c.backgroundSelected,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 12,
+              opacity: pressed ? 0.75 : 1,
+              boxShadow: blocked ? undefined : '0 2px 3px rgba(16, 45, 37, 0.08)',
+            })}
+          >
+            {!customizable && !unavailable && (
+              <QuantityIcon color={blocked ? c.textSecondary : c.accent} plus />
+            )}
+            <ThemedText type="smallBold" style={{ color: blocked ? c.textSecondary : c.accent }}>
+              {unavailable ? 'Unavailable' : customizable ? 'Customize' : 'Add item'}
+            </ThemedText>
+            {customizable && !unavailable && (
+              <SymbolView
+                name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+                tintColor={blocked ? c.textSecondary : c.accent}
+                style={{ width: 16, height: 16 }}
+              />
+            )}
+          </Pressable>
         )}
       </View>
     </View>
@@ -191,7 +228,11 @@ export function PickupMenu({
     <FlatList
       ref={list}
       style={{ flex: 1, minHeight: 0 }}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: Math.max(24, bottom) }}
+      contentContainerStyle={{
+        paddingHorizontal: 20,
+        paddingTop: 0,
+        paddingBottom: Math.max(24, bottom),
+      }}
       data={rows}
       keyExtractor={(row) => row.key}
       extraData={{ cart, disabled }}
@@ -220,8 +261,10 @@ export function PickupMenu({
           {header}
           {(products.length > 8 || !!search) && (
             <TextInput
+              variant="inline"
               accessibilityLabel="Search pickup menu"
               placeholder="Search the menu"
+              {...inputPresets.search}
               value={search}
               onChangeText={(value) => {
                 setSearch(value);
@@ -242,7 +285,7 @@ export function PickupMenu({
             />
           )}
           {categories.length > 1 && (
-            <HorizontalScrollRow contentContainerStyle={{ gap: 8 }}>
+            <HorizontalScrollRow contentContainerStyle={{ gap: 22 }}>
               {[null, ...categories.map((g) => g.name)].map((name) => (
                 <Pressable
                   key={name ?? 'all'}
@@ -255,16 +298,17 @@ export function PickupMenu({
                   }}
                   style={{
                     minHeight: 48,
-                    paddingHorizontal: 16,
+                    paddingHorizontal: 0,
                     paddingVertical: 12,
-                    borderRadius: 24,
+                    borderBottomWidth: 3,
+                    borderBottomColor: selected === name ? c.accent : 'transparent',
                     justifyContent: 'center',
-                    backgroundColor: selected === name ? c.actionPrimary : c.backgroundElement,
+                    backgroundColor: c.background,
                   }}
                 >
                   <ThemedText
                     type="smallBold"
-                    style={{ color: selected === name ? c.onAction : c.text }}
+                    style={{ color: selected === name ? c.accent : c.textSecondary }}
                   >
                     {name ?? 'All items'}
                   </ThemedText>
@@ -286,7 +330,7 @@ export function PickupMenu({
             </ThemedText>
           ) : null
         ) : (
-          <View style={{ paddingBottom: 12 }}>
+          <View>
             <PickupMenuRow
               product={item.product}
               products={item.products}

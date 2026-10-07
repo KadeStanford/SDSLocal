@@ -1,3 +1,4 @@
+import { BusinessAccessRecovery } from './business-access-recovery';
 import { publicShareBaseUrl } from '@/lib/share-links';
 import { router, usePathname } from 'expo-router';
 import { useEffect, useSyncExternalStore } from 'react';
@@ -29,9 +30,10 @@ const subscribeHydration = () => () => undefined;
 
 export default function AppTabs() {
   const { session } = useAuth();
-  const { mode, hasBusinessAccess } = useAppMode();
+  const { mode, hasBusinessAccess, accessError, refreshBusinessAccess } = useAppMode();
   const businessMode = Boolean(session && mode === 'business' && hasBusinessAccess);
   const pickup = usePickupWorkspace();
+  const requestCount = pickup.businesses.reduce((n, b) => n + (b.counts?.requests ?? 0), 0);
   const pathname = usePathname();
   const showOrders = businessMode && pickup.businesses.length > 0;
   useEffect(() => {
@@ -48,6 +50,7 @@ export default function AppTabs() {
           : '/explore',
       );
   }, [pathname, pickup.loading, pickup.error, showOrders, businessMode]);
+  if (accessError) return <BusinessAccessRecovery onRetry={refreshBusinessAccess} />;
   return (
     <Tabs>
       <TabSlot style={{ height: '100%' }} />
@@ -55,12 +58,12 @@ export default function AppTabs() {
         <CustomTabList>
           {!businessMode && (
             <TabTrigger name="explore" href="/explore" asChild>
-              <TabButton>Discover</TabButton>
+              <TabButton>Home</TabButton>
             </TabTrigger>
           )}
           {!businessMode && (
             <TabTrigger name="calendar" href="/calendar" asChild>
-              <TabButton>Calendar</TabButton>
+              <TabButton>Events</TabButton>
             </TabTrigger>
           )}
           {!businessMode && (
@@ -86,7 +89,11 @@ export default function AppTabs() {
           )}
           {(showOrders || pathname === '/pickup-orders') && (
             <TabTrigger name="pickup-orders" href="/pickup-orders" asChild>
-              <TabButton>Orders</TabButton>
+              <TabButton
+                accessibilityLabel={`Orders, ${requestCount} customer requests awaiting reply`}
+              >
+                Orders{requestCount > 0 ? ` · ${requestCount}` : ''}
+              </TabButton>
             </TabTrigger>
           )}
           <TabTrigger name="account" href="/account" asChild>
@@ -136,7 +143,7 @@ export function CustomTabList(props: TabListProps) {
       <ThemedView type="backgroundElement" style={styles.innerContainer}>
         {wide && (
           <ThemedText type="smallBold" style={styles.brandText}>
-            SDS Local
+            Parish Pass
           </ThemedText>
         )}
 

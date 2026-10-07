@@ -111,6 +111,9 @@ verify_jwt = true
 [functions.media-cleanup]
 verify_jwt = true
 
+[functions.business-media-upload-intent]
+verify_jwt = true
+
 [functions.delete-account]
 verify_jwt = true
 

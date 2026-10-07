@@ -1,0 +1,377 @@
+{
+  "auditDate": "2026-09-30",
+  "timezone": "America/Chicago",
+  "observationsThroughUtc": "2026-10-01T03:43:51Z",
+  "method": "Authorized signed-in browser UI, read-only navigation and accessibility/DOM observations. This is a sanitized observation record, not an API export or certification of unvisited fields.",
+  "mutations": "None. No Save, Publish, Submit, product edits, declaration answers, uploads or account changes.",
+  "redactions": [
+    "private account/contact details",
+    "review contact details",
+    "full RevenueCat notification URL",
+    "credentials"
+  ],
+  "apple": {
+    "appName": "Parish Pass",
+    "appId": "6817169302",
+    "bundleId": "com.stanforddevelopmentsolutions.sdslocal",
+    "version": {
+      "marketingVersion": "1.0",
+      "status": "Prepare for Submission",
+      "attachedBuild": "None observed",
+      "iphone65Screenshots": 0,
+      "iphone65Previews": 0,
+      "ipadScreenshots": 0,
+      "ipadDisplay": "13-inch / 12.9-inch"
+    },
+    "testFlight": {
+      "builds": "None observed",
+      "message": "Submit a build to start testing"
+    },
+    "reviewAccess": {
+      "signInRequired": true,
+      "username": "Blank",
+      "password": "Blank",
+      "contact": "Present; private details omitted",
+      "notes": "Draft instruction to provide a dedicated review account before submission"
+    },
+    "appInformation": {
+      "primaryCategory": "Lifestyle",
+      "secondaryCategory": "Business",
+      "contentRights": "Set Up Content Rights Information",
+      "ageRatings": "Set Up Age Ratings",
+      "eula": "Standard Apple EULA",
+      "euTraderSelection": "Non-trader",
+      "euComplianceSetup": "Get Started"
+    },
+    "privacy": {
+      "questionnaire": "Get Started",
+      "publish": "Disabled",
+      "policyUrl": "https://parish-pass--policies.expo.app/privacy.html",
+      "choicesUrl": "https://parish-pass--policies.expo.app/delete-account.html"
+    },
+    "serverNotifications": {
+      "productionServerUrl": "Unset",
+      "sandboxServerUrlHost": "api.revenuecat.com",
+      "sandboxPath": "Omitted"
+    },
+    "subscriptions": {
+      "group": "Business subscriptions",
+      "groupId": "22422995",
+      "groupStatus": "Prepare for Submission",
+      "firstGroupSubmissionMessage": "New subscription group must be submitted with a new app version",
+      "groupLocale": "English (United States)",
+      "groupDisplayName": "Business plans",
+      "products": [
+        {
+          "level": 1,
+          "name": "Pro Monthly",
+          "id": "listing_pro_monthly_v1",
+          "duration": "1 month",
+          "status": "Prepare for Submission",
+          "availableCountries": [
+            "United States"
+          ],
+          "availableCountryCount": 1,
+          "totalCountryCount": 175,
+          "currentMonthlyPrice": {
+            "currency": "USD",
+            "amount": 69
+          },
+          "locale": "English (U.S.)",
+          "displayDescription": "Business hosting with growth and commerce tools.",
+          "promotionalImage": "Present",
+          "reviewScreenshot": "Empty",
+          "reviewNotes": "Present; describes paid benefits, free customers, restore, business approval separate from billing",
+          "familySharing": "Not turned on",
+          "purchaseFrom": "App Store",
+          "multiseat": "Not allowed",
+          "taxCategory": "Matches parent app",
+          "introductoryOfferCountObserved": 0
+        },
+        {
+          "level": 2,
+          "name": "Growth Monthly",
+          "id": "listing_growth_monthly_v1",
+          "duration": "1 month",
+          "status": "Prepare for Submission",
+          "availableCountries": [
+            "United States"
+          ],
+          "availableCountryCount": 1,
+          "totalCountryCount": 175,
+          "currentMonthlyPrice": {
+            "currency": "USD",
+            "amount": 39
+          },
+          "locale": "English (U.S.)",
+          "displayDescription": "Business hosting, rewards, follower updates and staff.",
+          "promotionalImage": "Present",
+          "reviewScreenshot": "Empty",
+          "reviewNotes": "Present; describes paid benefits, free customers, restore, business approval separate from billing",
+          "familySharing": "Not turned on",
+          "purchaseFrom": "App Store",
+          "multiseat": "Not allowed",
+          "taxCategory": "Matches parent app",
+          "introductoryOfferCountObserved": 0
+        },
+        {
+          "level": 3,
+          "name": "Essentials Monthly",
+          "id": "listing_essentials_monthly_v1",
+          "duration": "1 month",
+          "status": "Prepare for Submission",
+          "availableCountries": [
+            "United States"
+          ],
+          "availableCountryCount": 1,
+          "totalCountryCount": 175,
+          "currentMonthlyPrice": {
+            "currency": "USD",
+            "amount": 19
+          },
+          "locale": "English (U.S.)",
+          "displayDescription": "Business hosting, profile and customer discovery.",
+          "promotionalImage": "Present",
+          "reviewScreenshot": "Empty",
+          "reviewNotes": "Present; describes paid benefits, free customers, restore, business approval separate from billing",
+          "familySharing": "Not turned on",
+          "purchaseFrom": "App Store",
+          "multiseat": "Not allowed",
+          "taxCategory": "Matches parent app",
+          "introductoryOfferCountObserved": 0
+        }
+      ],
+      "gracePeriod": "Earlier Set Up observed; later refresh reported a console error. Enabled state not certified.",
+      "streamlinedPurchasing": "On",
+      "individualProductFields": "Main fields, current available-territory prices, localization, promotional images, review screenshots and notes inspected for all three. Optional offer subpages and future pricing schedules not independently inspected."
+    },
+    "unverified": [
+      "final distribution binary",
+      "intended territories and factual trader assessment",
+      "actual reviewer login",
+      "optional subscription offer subpages, future price schedules and final screenshot fidelity",
+      "signing/certificates and final distribution entitlements"
+    ],
+    "businessStatuses": {
+      "paidAppsAgreement": "Active",
+      "freeAppsAgreement": "Active",
+      "bankAccount": "Active; details omitted",
+      "usTaxForm": "Active; details omitted",
+      "digitalServicesAct": "Active; last updated September 29, 2026"
+    }
+  },
+  "google": {
+    "appName": "Parish Pass",
+    "appId": "4976238768243191009",
+    "package": "com.stanforddevelopmentsolutions.sdslocal",
+    "accountType": "Personal",
+    "status": "Draft",
+    "production": "Inactive",
+    "dashboard": {
+      "setupCompleted": 6,
+      "setupTotal": 11,
+      "closedTestOptIns": 0,
+      "requiredContinuousTesters": 12,
+      "requiredDays": 14,
+      "applyForProduction": "Disabled"
+    },
+    "appContentNeedsAttention": [
+      "Sign-in details",
+      "Content ratings",
+      "Target audience and content",
+      "Data safety",
+      "Location permissions",
+      "Foreground service permissions",
+      "Photo and video permissions"
+    ],
+    "dataSafety": {
+      "step": 1,
+      "steps": 5,
+      "currentStep": "Overview",
+      "otherSteps": "Disabled; no completed answer set observed"
+    },
+    "release": {
+      "track": "Internal testing",
+      "label": "0.1.0 (3) subscription sandbox",
+      "available": "Internal testers",
+      "rollout": "Full",
+      "productionApproval": "Not established"
+    },
+    "bundleExplorer": {
+      "versionName": "0.1.0",
+      "versionCode": 3,
+      "targetSdk": 36,
+      "minSdk": 24,
+      "abis": [
+        "arm64-v8a",
+        "armeabi-v7a",
+        "x86",
+        "x86_64"
+      ],
+      "memoryPages": "Supports 16 KB",
+      "memoryPageCaution": "Console warns that errors may remain",
+      "servedPermissionCount": 46,
+      "localAabPermissionCount": 45,
+      "servedAdditionalPermission": "com.android.vending.CHECK_LICENSE",
+      "adIdPermission": "Not present",
+      "recordAudioPermission": "Not present",
+      "downloadSizeApproxMb": 51,
+      "supportedDevices": 18722,
+      "dexOptimization": "Low optimization; 2% obfuscated; optional improvement signal",
+      "billingClientVersionLocalManifest": "8.3.0"
+    },
+    "defaultListing": {
+      "locale": "English (United States)",
+      "status": "Draft",
+      "step": "Assets, 1 of 2; Review disabled",
+      "name": "Parish Pass",
+      "shortDescriptionCharacters": 75,
+      "fullDescriptionCharacters": 2218,
+      "descriptionClaims": [
+        "free customer discovery",
+        "local businesses/events/rewards/reviews/service requests",
+        "three paid feature tiers each covering up to three businesses",
+        "Growth loyalty/follower updates/staff scanning",
+        "Pro pickup/appointment tools with supported payment setup",
+        "optional background nearby alerts",
+        "store cancellation and separate goods/services fees"
+      ],
+      "icon": {
+        "count": 1,
+        "filename": "app-icon-google-512.png"
+      },
+      "featureGraphic": {
+        "count": 1,
+        "filename": "google-feature-graphic-1024x500.png"
+      },
+      "phoneScreenshots": 0,
+      "tablet7Screenshots": 0,
+      "tablet10Screenshots": 0,
+      "desktopScreenshots": 0,
+      "xrScreenshots": 0,
+      "video": "Blank; optional",
+      "links": [
+        "https://parish-pass--policies.expo.app/support.html",
+        "https://parish-pass--policies.expo.app/privacy.html",
+        "https://parish-pass--policies.expo.app/terms.html"
+      ],
+      "assetNote": "All screenshot panels inspected. Minimum phone screenshots are missing. Desktop/XR availability is not inferred from empty optional asset panels. Console marks tablet screenshot fields required; confirm requirements for final supported devices. Visual asset content was not certified against the final native app."
+    },
+    "unverified": [
+      "final production release binary",
+      "production-access application",
+      "actual reviewer login",
+      "account verification and current agreements/payment settings",
+      "final declaration answers",
+      "final screenshot fidelity"
+    ],
+    "subscriptions": {
+      "listObserved": "Three products, each with one active base plan, updated September 29, 2026",
+      "products": [
+        {
+          "id": "listing_essentials_v1",
+          "name": "Essentials",
+          "basePlan": "monthly",
+          "duration": "Monthly, auto-renewing",
+          "status": "Active",
+          "countries": [
+            "United States"
+          ],
+          "currentPrice": {
+            "currency": "USD",
+            "amount": 19
+          },
+          "gracePeriodDays": 7,
+          "accountHoldDays": 53,
+          "accountHoldMode": "Automatically calculated",
+          "offerChangeCharge": "At next billing date",
+          "resubscribe": "Allow",
+          "backwardsCompatible": true
+        },
+        {
+          "id": "listing_growth_v1",
+          "name": "Growth",
+          "activeBasePlanCount": 1,
+          "basePlan": "monthly",
+          "duration": "Monthly, auto-renewing",
+          "status": "Active",
+          "countries": [
+            "United States"
+          ],
+          "currentPrice": {
+            "currency": "USD",
+            "amount": 39
+          },
+          "gracePeriodDays": 7,
+          "accountHoldDays": 53,
+          "accountHoldMode": "Automatically calculated",
+          "offerChangeCharge": "At next billing date",
+          "resubscribe": "Allow",
+          "backwardsCompatible": true
+        },
+        {
+          "id": "listing_pro_v1",
+          "name": "Pro",
+          "activeBasePlanCount": 1,
+          "basePlan": "monthly",
+          "duration": "Monthly, auto-renewing",
+          "status": "Active",
+          "countries": [
+            "United States"
+          ],
+          "currentPrice": {
+            "currency": "USD",
+            "amount": 69
+          },
+          "gracePeriodDays": 7,
+          "accountHoldDays": 53,
+          "accountHoldMode": "Automatically calculated",
+          "offerChangeCharge": "At next billing date",
+          "resubscribe": "Allow",
+          "backwardsCompatible": true
+        }
+      ]
+    },
+    "monetizationSetup": {
+      "subscriptionPause": "Enabled",
+      "realTimeNotifications": "Enabled",
+      "topicName": "Present; project/topic identifiers omitted",
+      "notificationContent": "Subscriptions and voided purchases only",
+      "sendTestNotification": "Not invoked",
+      "delivery": "Unverified",
+      "alternativeBilling": "Not using",
+      "externalOffers": "Not yet approved",
+      "externalContentLinks": "Not yet approved",
+      "billingChoice": "Not enrolled",
+      "licenseKey": "Public key present; contents omitted"
+    }
+  },
+  "publicPages": {
+    "base": "https://parish-pass--policies.expo.app/",
+    "renderedWithoutSignIn": [
+      "/",
+      "/terms.html",
+      "/privacy.html",
+      "/support.html",
+      "/delete-account.html"
+    ],
+    "policyDate": "September 29, 2026",
+    "privacyProvidersNamed": [
+      "Supabase",
+      "Expo",
+      "RevenueCat",
+      "Apple",
+      "Google",
+      "Stripe",
+      "Square"
+    ],
+    "supportAndDeletion": "Working public support/deletion guidance with email-based deletion request, no app reinstall requirement, ownership and retention explanations, and separate store subscription-cancellation links. No request or email sent.",
+    "terms": "Use implies agreement; prohibited behavior outlined. Does not establish affirmative acceptance in the app.",
+    "limits": [
+      "support response not tested",
+      "deletion execution not tested",
+      "persistent analytics identifier not explicitly explained",
+      "business/event/invite hosting and app-link association not established"
+    ]
+  }
+}

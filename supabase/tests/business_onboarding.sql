@@ -14,10 +14,18 @@ declare
   mobile_result jsonb;
   readiness jsonb;
 begin
-  select id into owner_id from public.profiles order by created_at limit 1;
-  if owner_id is null then
-    raise exception 'Business onboarding test requires a seeded profile';
-  end if;
+  owner_id := gen_random_uuid();
+  insert into auth.users(id,raw_user_meta_data)
+  values(owner_id,'{"display_name":"Onboarding fixture"}');
+  update public.billing_plans set is_active=true where code='growth';
+  update public.billing_products set is_active=true
+  where provider='test_store' and product_id='listing_growth_monthly_v1';
+  perform public.apply_listing_subscription_event(
+    'onboarding-'||owner_id,'INITIAL_PURCHASE',owner_id,'test_store',
+    'listing_growth_monthly_v1','active','sandbox','onboarding-'||owner_id,
+    now(),now()+interval '1 month',true,
+    jsonb_build_object('event',jsonb_build_object('event_timestamp_ms',floor(extract(epoch from now())*1000)::bigint)));
+  update public.platform_settings set value='{"enabled":true}' where key='business_listing_billing';
 
   perform set_config('request.jwt.claim.sub', owner_id::text, true);
   perform set_config('request.jwt.claim.role', 'authenticated', true);

@@ -1,54 +1,115 @@
+import { offeringSearchQuery } from '@/lib/discovery-search';
+import {
+  discoverySuggestions,
+  offeringPrefixQuery,
+  type DiscoverySuggestion,
+} from '@/lib/discovery-autocomplete';
+import { DiscoveryAutocomplete } from '@/components/discovery-autocomplete';
+import { CustomerAction } from '@/components/customer-ui';
+import { CustomerBrand } from '@/components/customer-brand';
+import { upcomingEventPath } from '@/lib/event-directory';
+import { DiscoveryFiltersSheet } from '@/components/discovery-filters-sheet';
+import { DiscoverySearchBar } from '@/components/discovery-search-bar';
+import { usePullRefresh } from '@/hooks/use-pull-refresh';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { dataDisplayState } from '@/lib/ui-presentation';
 import { useScreenBottomPadding } from '@/hooks/use-screen-bottom-padding';
 import { AppButton } from '@/components/app-button';
 import { ListLoading, StateNotice } from '@/components/data-state';
-import { BusinessCard, hasActiveLoyalty, type BusinessCardData } from '@/components/business-card';
+import { hasActiveLoyalty, type BusinessCardData } from '@/components/business-card';
 import { EventCard } from '@/components/event-card';
+import { OfferingSearchResultCard } from '@/components/offering-search-result-card';
 import { SymbolView } from 'expo-symbols';
+import * as Location from 'expo-location';
 import { router, useFocusEffect, useLocalSearchParams, type Href } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Modal,
+  AppState,
+  Keyboard,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
-  TextInput,
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { DiscoveryHomeHeader } from '@/components/discovery-home-header';
+import { DiscoveryShortcuts } from '@/components/discovery-shortcuts';
+import { DiscoveryBusinessFeed } from '@/components/discovery-business-feed';
 import { AppChrome } from '@/components/app-chrome';
-import { HorizontalScrollRow } from '@/components/horizontal-scroll-row';
 import { PublicBusinessPageContent } from '@/components/public-business-page';
-import { ChoicePicker } from '@/components/choice-picker';
 import { SwipeBackView } from '@/components/swipe-back-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Brand, Colors, Radius, Spacing } from '@/constants/theme';
+import { storagePublicUrl } from '@/lib/storage-url';
 import { supabase } from '@/lib/supabase';
+import { loadBusinessReviewSummaries } from '@/lib/business-review-summary';
 import { userMessageFromError } from '@/lib/user-error';
 import { filterBlockedBusinesses, loadBlockedBusinessIds } from '@/lib/customer-safety';
 import {
   buildCategoryOptions,
   buildUpcomingEventItems,
   businessResultCountLabel,
-  DISCOVER_LOCAL_SECTION_TITLE,
   DISCOVERY_EVENT_QUERY_LIMIT,
   discoveryEventHorizonEnd,
+  distanceInMiles,
+  formatMenuItemPrice,
   filterDiscoveryBusinesses,
+  isBusinessOpenNow,
   upcomingEventPreviewState,
   upcomingEventsPath,
   upcomingSeeAllLabel,
+  type DiscoveryFeature,
   type DiscoveryEvent,
   type UpcomingEventItem,
 } from '@/lib/discovery-core';
 import { useAuth } from '@/providers/auth-provider';
 import { pickupCapabilities } from '@/lib/square-commerce';
 import { pickupDiscoveryEnabled } from '@/lib/pickup-discovery';
+import {
+  buildDiscoveryFeed,
+  mobileDiscoveryDistance,
+  type DiscoveryFeedPlan,
+} from '@/lib/discovery-feed';
+import { discoveryHistory } from '@/lib/discovery-history-storage';
+
+interface SearchableOffering {
+  readonly id: string;
+  readonly business_id: string;
+  readonly section_id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly price_minor: number | null;
+  readonly price_text: string | null;
+  readonly currency: string;
+  readonly media_assets:
+    | { readonly storage_path: string; readonly status: string; readonly alt_text: string | null }
+    | readonly {
+        readonly storage_path: string;
+        readonly status: string;
+        readonly alt_text: string | null;
+      }[]
+    | null;
+}
+
+interface SearchOfferingResult extends SearchableOffering {
+  readonly sectionName: string;
+}
+
+async function knownDiscoveryLocation() {
+  try {
+    const permission = await Location.getForegroundPermissionsAsync();
+    if (permission.status !== 'granted') return null;
+    const point = await Location.getLastKnownPositionAsync({ maxAge: 300_000 });
+    return point ? { latitude: point.coords.latitude, longitude: point.coords.longitude } : null;
+  } catch {
+    return null;
+  }
+}
 
 export default function DiscoverScreen() {
   const params = useLocalSearchParams<{
@@ -57,91 +118,110 @@ export default function DiscoverScreen() {
     targetId?: string;
   }>();
   const { session } = useAuth();
-  const scheme = useColorScheme();
-  const insets = useSafeAreaInsets();
-  const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const [businesses, setBusinesses] = useState<BusinessCardData[]>([]);
+  const [searchOfferings, setSearchOfferings] = useState<SearchOfferingResult[]>([]);
+  const [offeringResultQuery, setOfferingResultQuery] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [initialOfferingQuery, setInitialOfferingQuery] = useState<string | undefined>();
+  const [offeringSearchLoading, setOfferingSearchLoading] = useState(false);
+  const [offeringSearchError, setOfferingSearchError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'following'>('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [cityFilter, setCityFilter] = useState('all');
-  const [sort, setSort] = useState<'name' | 'recent'>('name');
+  const [sort, setSort] = useState<'name' | 'recent' | 'nearby'>('name');
+  const [nearbyLocation, setNearbyLocation] = useState<{
+    readonly latitude: number;
+    readonly longitude: number;
+  } | null>(null);
+  const [locationMessage, setLocationMessage] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [eventRecords, setEventRecords] = useState<DiscoveryEvent[]>([]);
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
   const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set());
-  const [featureFilter, setFeatureFilter] = useState<'all' | 'rewards' | 'events' | 'pickup'>(
-    'all',
-  );
+  const [featureFilter, setFeatureFilter] = useState<DiscoveryFeature>('all');
   const [pickupError, setPickupError] = useState<string | null>(null);
+  const [ratingsError, setRatingsError] = useState(false);
   const [businessViewerOpen, setBusinessViewerOpen] = useState(false);
   const [mapInteractionActive, setMapInteractionActive] = useState(false);
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(
     typeof params.businessId === 'string' ? params.businessId : null,
   );
   const [loading, setLoading] = useState(true);
+  const [partialError, setPartialError] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const discoverScrollRef = useRef<ScrollView>(null);
   const discoverScrollOffset = useRef(0);
   const [discoverReturnOffset, setDiscoverReturnOffset] = useState(0);
   const loadRequestId = useRef(0);
+  const homeFocused = useRef(false);
+  const [feedVisit, setFeedVisit] = useState(() => Date.now());
+  const [collection, setCollection] = useState('all');
 
   const loadBusinesses = useCallback(async () => {
     const requestId = ++loadRequestId.current;
     setLoading(true);
     setError(null);
+    setRatingsError(false);
     const now = new Date();
+    setFeedVisit(now.getTime());
+    setCollection('all');
     const horizon = discoveryEventHorizonEnd(now);
-    const [businessResult, eventResult, stopResult, followingResult, blockedResult, pickupResult] =
-      await Promise.all([
-        supabase
-          .from('businesses')
-          .select(
-            'id, name, description, category_summary, offering_search_text, city, region_code, created_at, primary_color, status, business_type, business_photos(role, media_assets(storage_path, status)), loyalty_programs(id, is_active)',
+    const [
+      businessResult,
+      eventResult,
+      stopResult,
+      followingResult,
+      blockedResult,
+      pickupResult,
+      hoursResult,
+      locationsResult,
+    ] = await Promise.all([
+      supabase
+        .from('businesses')
+        .select(
+          'id, name, description, category_summary, offering_search_text, city, region_code, created_at, primary_color, status, business_type, timezone, business_photos(role, media_assets(storage_path, status)), loyalty_programs(id, is_active)',
+        )
+        .eq('status', 'active')
+        .order('name'),
+      supabase
+        .from('events')
+        .select(
+          'id, business_id, title, address_text, starts_at, is_published, publish_at, archived_at',
+        )
+        .is('archived_at', null)
+        .gte('starts_at', now.toISOString())
+        .lte('starts_at', horizon.toISOString())
+        .order('starts_at')
+        .limit(DISCOVERY_EVENT_QUERY_LIMIT),
+      supabase
+        .from('business_location_stops')
+        .select('business_id, starts_at, ends_at, is_published, latitude, longitude')
+        .eq('is_published', true)
+        .gte('ends_at', now.toISOString())
+        .lte('starts_at', horizon.toISOString())
+        .order('starts_at')
+        .limit(100),
+      session
+        ? supabase.from('business_follows').select('business_id').eq('customer_id', session.user.id)
+        : Promise.resolve({ data: [], error: null }),
+      session
+        ? loadBlockedBusinessIds(session.user.id).then(
+            (data) => ({ data, error: null }),
+            (error: unknown) => ({ data: new Set<string>(), error }),
           )
-          .eq('status', 'active')
-          .order('name'),
-        supabase
-          .from('events')
-          .select(
-            'id, business_id, title, address_text, starts_at, is_published, publish_at, archived_at',
-          )
-          .is('archived_at', null)
-          .gte('starts_at', now.toISOString())
-          .lte('starts_at', horizon.toISOString())
-          .order('starts_at')
-          .limit(DISCOVERY_EVENT_QUERY_LIMIT),
-        supabase
-          .from('business_location_stops')
-          .select('business_id, starts_at, ends_at, is_published')
-          .eq('is_published', true)
-          .gte('ends_at', now.toISOString())
-          .lte('starts_at', horizon.toISOString())
-          .order('starts_at')
-          .limit(100),
-        session
-          ? supabase
-              .from('business_follows')
-              .select('business_id')
-              .eq('customer_id', session.user.id)
-          : Promise.resolve({ data: [], error: null }),
-        session
-          ? loadBlockedBusinessIds(session.user.id).then(
-              (data) => ({ data, error: null }),
-              (error: unknown) => ({ data: new Set<string>(), error }),
-            )
-          : Promise.resolve({ data: new Set<string>(), error: null }),
-        pickupCapabilities().then(
-          (data) => ({ data, failed: false }),
-          () => ({ data: [], failed: true }),
-        ),
-      ]);
-    const queryError =
-      businessResult.error ??
-      eventResult.error ??
-      stopResult.error ??
-      followingResult.error ??
-      blockedResult.error;
+        : Promise.resolve({ data: new Set<string>(), error: null }),
+      pickupCapabilities().then(
+        (data) => ({ data, failed: false }),
+        () => ({ data: [], failed: true }),
+      ),
+      supabase
+        .from('business_hours')
+        .select('business_id, day_of_week, opens_at, closes_at, is_closed'),
+      supabase.rpc('get_public_business_discovery_locations'),
+    ]);
+    const queryError = businessResult.error ?? blockedResult.error;
+    setPartialError(Boolean(eventResult.error || stopResult.error || followingResult.error || hoursResult.error || locationsResult.error));
     if (requestId !== loadRequestId.current) return;
     setPickupError(
       pickupResult.failed ? 'Order-ahead options could not be checked. Please retry.' : null,
@@ -159,18 +239,86 @@ export default function DiscoverScreen() {
         const current = stopsByBusiness.get(stop.business_id) ?? [];
         stopsByBusiness.set(stop.business_id, [...current, stop]);
       }
+      const hoursByBusiness = new Map<
+        string,
+        {
+          day_of_week: number;
+          opens_at: string | null;
+          closes_at: string | null;
+          is_closed: boolean;
+        }[]
+      >();
+      for (const hour of hoursResult.data ?? []) {
+        const current = hoursByBusiness.get(hour.business_id) ?? [];
+        current.push(hour);
+        hoursByBusiness.set(hour.business_id, current);
+      }
+      const locationsByBusiness = new Map<
+        string,
+        { latitude: number; longitude: number; location_kind: string; starts_at: string | null }[]
+      >();
+      for (const point of (locationsResult.data ?? []) as {
+        business_id: string;
+        latitude: number;
+        longitude: number;
+        location_kind: string;
+        starts_at: string | null;
+      }[]) {
+        const current = locationsByBusiness.get(point.business_id) ?? [];
+        current.push(point);
+        locationsByBusiness.set(point.business_id, current);
+      }
       const loaded = ((businessResult.data ?? []) as unknown as BusinessCardData[]).map(
-        (business) => ({
-          ...business,
-          events: eventsByBusiness.get(business.id) ?? [],
-          stops: stopsByBusiness.get(business.id) ?? [],
-          has_active_rewards: hasActiveLoyalty(business.loyalty_programs),
-          supportsPickupOrdering: pickupResult.data.some((row) => row.business_id === business.id),
-          pickupStatus: pickupResult.data.find((row) => row.business_id === business.id)
-            ?.pickup_status,
-        }),
+        (business) => {
+          const points = locationsByBusiness.get(business.id) ?? [];
+          const point =
+            points.find((candidate) => candidate.location_kind === 'business') ??
+            points
+              .filter((candidate) => candidate.location_kind === 'mobile_stop')
+              .sort((a, b) =>
+                String(a.starts_at ?? '').localeCompare(String(b.starts_at ?? '')),
+              )[0];
+          const hours = hoursByBusiness.get(business.id) ?? [];
+          return {
+            ...business,
+            hours,
+            events: eventsByBusiness.get(business.id) ?? [],
+            stops: stopsByBusiness.get(business.id) ?? [],
+            latitude: point?.latitude ?? null,
+            longitude: point?.longitude ?? null,
+            isOpenNow: isBusinessOpenNow(hours, now, business.timezone),
+            has_active_rewards: hasActiveLoyalty(business.loyalty_programs),
+            supportsPickupOrdering: pickupResult.data.some(
+              (row) => row.business_id === business.id,
+            ),
+            pickupStatus: pickupResult.data.find((row) => row.business_id === business.id)
+              ?.pickup_status,
+          };
+        },
       );
       setBusinesses(filterBlockedBusinesses(loaded, blockedResult.data));
+      void loadBusinessReviewSummaries(
+        loaded.map((business) => business.id),
+        async (ids) => {
+          const response = await supabase.rpc('get_public_business_review_summaries', {
+            p_business_ids: ids,
+          });
+          return { data: response.data, error: response.error };
+        },
+      )
+        .then((summaries) => {
+          if (requestId !== loadRequestId.current) return;
+          setBusinesses((current) =>
+            current.map((business) => {
+              const summary = summaries.get(business.id);
+              return summary ? { ...business, reviewSummary: summary } : business;
+            }),
+          );
+        })
+        .catch(() => {
+          // Business discovery remains usable; never invent a rating when the summary read fails.
+          if (requestId === loadRequestId.current) setRatingsError(true);
+        });
       setEventRecords((eventResult.data ?? []) as DiscoveryEvent[]);
       setBlockedIds(blockedResult.data);
       setFollowingIds(
@@ -182,11 +330,193 @@ export default function DiscoverScreen() {
     setLoading(false);
   }, [session]);
 
+  const pullRefresh = usePullRefresh(loadBusinesses);
   useFocusEffect(
     useCallback(() => {
+      homeFocused.current = true;
       void loadBusinesses();
+      let active = true;
+      // Respect the existing OS permission; do not prompt merely for opening Home.
+      void knownDiscoveryLocation().then((point) => {
+        if (active) setNearbyLocation(point);
+      });
+      return () => {
+        active = false;
+        homeFocused.current = false;
+      };
     }, [loadBusinesses]),
   );
+
+  useEffect(() => {
+    let active = true;
+    let wasBackgrounded = AppState.currentState === 'background';
+    const subscription = AppState.addEventListener('change', (next) => {
+      if (next === 'background') wasBackgrounded = true;
+      if (next === 'active' && wasBackgrounded && homeFocused.current && !selectedBusinessId) {
+        void loadBusinesses();
+        void knownDiscoveryLocation().then((point) => {
+          if (active && homeFocused.current) setNearbyLocation(point);
+        });
+      }
+      if (next === 'active') wasBackgrounded = false;
+    });
+    return () => {
+      active = false;
+      subscription.remove();
+    };
+  }, [loadBusinesses, selectedBusinessId]);
+
+  const discoveryBusinesses = useMemo(
+    () =>
+      businesses.map((business) => ({
+        ...business,
+        distanceMiles:
+          business.business_type === 'mobile' && nearbyLocation
+            ? mobileDiscoveryDistance(business, {
+                now: new Date(feedVisit),
+                visit: String(feedVisit),
+                coordinates: nearbyLocation,
+              })
+            : nearbyLocation &&
+                typeof business.latitude === 'number' &&
+                typeof business.longitude === 'number'
+              ? distanceInMiles(nearbyLocation, {
+                  latitude: business.latitude,
+                  longitude: business.longitude,
+                })
+              : null,
+      })),
+    [businesses, nearbyLocation, feedVisit],
+  );
+
+  const enableNearbySort = async () => {
+    setLocationMessage(null);
+    try {
+      const permission = await Location.requestForegroundPermissionsAsync();
+      if (permission.status !== 'granted') {
+        setLocationMessage('Allow location access to sort businesses by distance.');
+        return false;
+      }
+      const position = await Location.getCurrentPositionAsync({});
+      setNearbyLocation({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      });
+      return true;
+    } catch {
+      setLocationMessage('Your location could not be read. Try again or choose another sort.');
+      return false;
+    }
+  };
+
+  const offeringQuery = useMemo(
+    () => offeringSearchQuery(query, discoveryBusinesses),
+    [query, discoveryBusinesses],
+  );
+  useEffect(() => {
+    const searchTerm = offeringQuery;
+    let active = true;
+    const businessIds = [
+      ...new Set(
+        filterDiscoveryBusinesses(
+          discoveryBusinesses,
+          '',
+          {
+            audience: filter,
+            feature: featureFilter,
+            category: categoryFilter,
+            city: cityFilter,
+            sort,
+          },
+          followingIds,
+          blockedIds,
+          new Date(),
+        ).map((business) => business.id),
+      ),
+    ];
+    const canSearch = searchTerm.length >= 2 && businessIds.length > 0;
+    const resetTimeout = setTimeout(() => {
+      if (!active) return;
+      setSearchOfferings([]);
+      setOfferingResultQuery('');
+      setOfferingSearchError(null);
+      setOfferingSearchLoading(canSearch);
+    }, 0);
+    if (!canSearch) {
+      return () => {
+        active = false;
+        clearTimeout(resetTimeout);
+      };
+    }
+
+    const timeout = setTimeout(() => {
+      void (async () => {
+        try {
+          const sectionResult = await supabase
+            .from('offering_sections')
+            .select('id, name')
+            .eq('is_visible', true)
+            .is('archived_at', null)
+            .in('business_id', businessIds);
+          if (sectionResult.error) throw sectionResult.error;
+          if (!active) return;
+
+          const sections = (sectionResult.data ?? []) as { id: string; name: string }[];
+          if (!sections.length) {
+            setSearchOfferings([]);
+            return;
+          }
+          const sectionNames = new Map(sections.map((section) => [section.id, section.name]));
+          const result = await supabase
+            .from('offering_items')
+            .select(
+              'id, business_id, section_id, name, description, price_minor, price_text, currency, media_assets(storage_path, status, alt_text)',
+            )
+            .eq('is_visible', true)
+            .eq('is_available', true)
+            .is('archived_at', null)
+            .in('business_id', businessIds)
+            .in('section_id', [...sectionNames.keys()])
+            .textSearch('search_document', offeringPrefixQuery(searchTerm))
+            .order('is_featured', { ascending: false })
+            .order('display_order', { ascending: true })
+            .limit(30);
+          if (result.error) throw result.error;
+          if (!active) return;
+          setOfferingResultQuery(searchTerm);
+          setSearchOfferings(
+            ((result.data ?? []) as unknown as SearchableOffering[]).flatMap((item) => {
+              const sectionName = sectionNames.get(item.section_id);
+              return sectionName ? [{ ...item, sectionName }] : [];
+            }),
+          );
+        } catch {
+          if (active)
+            setOfferingSearchError(
+              'Matching offerings could not load. Business matches are still available.',
+            );
+        } finally {
+          if (active) setOfferingSearchLoading(false);
+        }
+      })();
+    }, 250);
+
+    return () => {
+      active = false;
+      clearTimeout(resetTimeout);
+      clearTimeout(timeout);
+    };
+  }, [
+    discoveryBusinesses,
+    offeringQuery,
+    filter,
+    featureFilter,
+    categoryFilter,
+    cityFilter,
+    sort,
+    followingIds,
+    blockedIds,
+  ]);
 
   useEffect(() => {
     if (typeof params.businessId !== 'string') return;
@@ -205,7 +535,7 @@ export default function DiscoverScreen() {
   const visibleBusinesses = useMemo(
     () =>
       filterDiscoveryBusinesses(
-        businesses,
+        discoveryBusinesses,
         query,
         {
           audience: filter,
@@ -219,7 +549,7 @@ export default function DiscoverScreen() {
         new Date(),
       ),
     [
-      businesses,
+      discoveryBusinesses,
       query,
       filter,
       featureFilter,
@@ -230,6 +560,59 @@ export default function DiscoverScreen() {
       blockedIds,
     ],
   );
+  const offeringEligibleBusinessIds = useMemo(
+    () =>
+      new Set(
+        filterDiscoveryBusinesses(
+          discoveryBusinesses,
+          '',
+          {
+            audience: filter,
+            feature: featureFilter,
+            category: categoryFilter,
+            city: cityFilter,
+            sort,
+          },
+          followingIds,
+          blockedIds,
+          new Date(),
+        ).map((business) => business.id),
+      ),
+    [
+      discoveryBusinesses,
+      filter,
+      featureFilter,
+      categoryFilter,
+      cityFilter,
+      sort,
+      followingIds,
+      blockedIds,
+    ],
+  );
+  const visibleSearchOfferings = useMemo(
+    () =>
+      offeringResultQuery === offeringQuery
+        ? searchOfferings.filter((offering) =>
+            offeringEligibleBusinessIds.has(offering.business_id),
+          )
+        : [],
+    [searchOfferings, offeringEligibleBusinessIds, offeringResultQuery, offeringQuery],
+  );
+  const suggestions = useMemo(
+    () =>
+      discoverySuggestions({
+        query,
+        businesses: discoveryBusinesses.filter((b) => offeringEligibleBusinessIds.has(b.id)),
+        offerings: visibleSearchOfferings,
+        events: eventRecords,
+        now: new Date(),
+      }),
+    [query, discoveryBusinesses, offeringEligibleBusinessIds, visibleSearchOfferings, eventRecords],
+  );
+  const businessesById = useMemo(
+    () => new Map(discoveryBusinesses.map((business) => [business.id, business])),
+    [discoveryBusinesses],
+  );
   const activeFilterCount = [
     filter !== 'all',
     featureFilter !== 'all',
@@ -237,18 +620,86 @@ export default function DiscoverScreen() {
     cityFilter !== 'all',
     sort !== 'name',
   ].filter(Boolean).length;
+  const feedScope = `${session?.user.id ?? 'guest'}:${cityFilter}:${nearbyLocation ? `${nearbyLocation.latitude.toFixed(1)},${nearbyLocation.longitude.toFixed(1)}` : 'city'}`;
+  const feedHistory = useMemo(
+    () => discoveryHistory.read(feedScope, feedVisit),
+    [feedScope, feedVisit],
+  );
+  const curatedPlan = useMemo(() => {
+    // Search, explicit feature filters, and sort choices retain their existing semantics.
+    if (
+      query.trim() ||
+      filter !== 'all' ||
+      featureFilter !== 'all' ||
+      categoryFilter !== 'all' ||
+      sort !== 'name'
+    )
+      return null;
+    const nearest = [...visibleBusinesses]
+      .filter((b) => b.distanceMiles != null)
+      .sort((a, b) => (a.distanceMiles ?? Infinity) - (b.distanceMiles ?? Infinity))[0];
+    const oneZone = new Set(visibleBusinesses.map((b) => b.timezone).filter(Boolean)).size === 1;
+    const areaBusiness =
+      cityFilter !== 'all'
+        ? visibleBusinesses.find((b) => b.city === cityFilter)
+        : (nearest ?? (oneZone ? visibleBusinesses[0] : undefined));
+    return buildDiscoveryFeed(visibleBusinesses, {
+      now: new Date(feedVisit),
+      visit: String(feedVisit),
+      history: feedHistory,
+      ...(areaBusiness?.timezone ? { timeZone: areaBusiness.timezone } : {}),
+      ...(typeof areaBusiness?.latitude === 'number'
+        ? { seasonLatitude: areaBusiness.latitude }
+        : {}),
+      ...(cityFilter !== 'all'
+        ? { city: cityFilter }
+        : nearbyLocation
+          ? { coordinates: nearbyLocation }
+          : {}),
+    });
+  }, [
+    visibleBusinesses,
+    query,
+    filter,
+    featureFilter,
+    categoryFilter,
+    cityFilter,
+    sort,
+    nearbyLocation,
+    feedVisit,
+    feedHistory,
+  ]);
+  useEffect(() => {
+    if (loading || error || !curatedPlan?.sections.length) return;
+    discoveryHistory.record(feedScope, {
+      at: feedVisit,
+      visit: String(feedVisit),
+      sectionIds: curatedPlan.sections.map((s) => s.id),
+      businessIds: curatedPlan.sections.flatMap((s) => s.businessIds).slice(0, 3),
+    });
+  }, [curatedPlan, error, feedScope, feedVisit, loading]);
   const filterSummary = [
     filter === 'following' ? 'Following' : 'All businesses',
-    featureFilter === 'pickup'
-      ? 'Order ahead'
-      : featureFilter === 'rewards'
-        ? 'Rewards'
-        : featureFilter === 'events'
-          ? 'Upcoming events'
-          : null,
+    featureFilter === 'accepting-pickup'
+      ? 'Accepting pickup'
+      : featureFilter === 'pickup'
+        ? 'Order ahead'
+        : featureFilter === 'rewards'
+          ? 'Rewards'
+          : featureFilter === 'events'
+            ? 'Upcoming events'
+            : featureFilter === 'open-now'
+              ? 'Open now'
+              : null,
     categoryFilter !== 'all' ? categoryFilter : null,
     cityFilter !== 'all' ? cityFilter : null,
-    sort === 'recent' ? 'Recently added' : 'A–Z',
+    sort === 'recent'
+      ? 'Recently added'
+      : sort === 'nearby'
+        ? 'Nearby'
+        : query.trim()
+          ? 'Best match'
+          : 'A–Z',
   ]
     .filter(Boolean)
     .join(' · ');
@@ -266,11 +717,30 @@ export default function DiscoverScreen() {
   const displayState = dataDisplayState(
     loading,
     visibleBusinesses.length,
-    error ?? (featureFilter === 'pickup' ? pickupError : null),
+    error ??
+      (featureFilter === 'pickup' || featureFilter === 'accepting-pickup' ? pickupError : null),
   );
+  const shouldShowEmptyState =
+    displayState === 'empty' &&
+    !offeringSearchLoading &&
+    visibleSearchOfferings.length === 0 &&
+    !suggestions.some((s) => s.kind === 'event');
   const openBusiness = (businessId: string) => {
+    setSearchFocused(false);
+    setInitialOfferingQuery(undefined);
+    Keyboard.dismiss();
     setDiscoverReturnOffset(discoverScrollOffset.current);
     setSelectedBusinessId(businessId);
+  };
+  const openSuggestion = (suggestion: DiscoverySuggestion) => {
+    setSearchFocused(false);
+    Keyboard.dismiss();
+    if (suggestion.kind === 'event') {
+      router.push(upcomingEventPath(suggestion.targetId) as Href);
+    } else {
+      openBusiness(suggestion.businessId);
+      if (suggestion.kind !== 'business') setInitialOfferingQuery(suggestion.title);
+    }
   };
   const closeBusiness = () => {
     setSelectedBusinessId(null);
@@ -283,17 +753,21 @@ export default function DiscoverScreen() {
         onSwipeBack={closeBusiness}
         underlay={
           <DiscoverDestinationUnderlay
+            area={cityFilter === 'all' ? 'Explore your area' : cityFilter}
             activeFilterCount={activeFilterCount}
             bottomContentInset={bottomContentInset}
             categories={categories}
             categoryFilter={categoryFilter}
             eventPreview={eventPreview}
+            featureFilter={featureFilter}
             filterSummary={filterSummary}
             followingIds={followingIds}
             query={query}
             scrollOffset={discoverReturnOffset}
             totalUpcomingEvents={upcomingEvents.length}
             visibleBusinesses={visibleBusinesses}
+            curatedPlan={curatedPlan}
+            collection={collection}
           />
         }
       >
@@ -304,11 +778,14 @@ export default function DiscoverScreen() {
               contentContainerStyle={[styles.content, { paddingBottom: bottomContentInset }]}
               scrollEnabled={!businessViewerOpen && !mapInteractionActive}
             >
-              <Pressable onPress={closeBusiness} style={styles.backButton}>
-                <ThemedText type="smallBold">‹ Discover</ThemedText>
-              </Pressable>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                <CustomerAction label="Back to Home" icon="back" iconOnly onPress={closeBusiness} />
+                <CustomerBrand />
+              </View>
               <PublicBusinessPageContent
+                key={selectedBusinessId}
                 businessId={selectedBusinessId}
+                initialOfferingQuery={initialOfferingQuery}
                 {...(typeof params.resumeAction === 'string'
                   ? { resumeAction: params.resumeAction }
                   : {})}
@@ -356,248 +833,111 @@ export default function DiscoverScreen() {
           onScroll={(event: NativeSyntheticEvent<NativeScrollEvent>) => {
             discoverScrollOffset.current = event.nativeEvent.contentOffset.y;
           }}
-          refreshControl={<RefreshControl refreshing={loading} onRefresh={loadBusinesses} />}
+          refreshControl={
+            <RefreshControl refreshing={pullRefresh.refreshing} onRefresh={pullRefresh.onRefresh} />
+          }
           scrollEventThrottle={16}
         >
-          <AppChrome />
-          <View style={styles.heading}>
-            <ThemedText style={styles.screenTitle}>Discover</ThemedText>
-            <ThemedText numberOfLines={2} style={styles.screenSubtitle} themeColor="textSecondary">
-              Find food, shops, services, and events.
-            </ThemedText>
-          </View>
-          <View style={[styles.searchWrap, { backgroundColor: colors.backgroundElement }]}>
-            <SymbolView
-              name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }}
-              tintColor={colors.textSecondary}
-              style={styles.searchIcon}
-            />
-            <TextInput
-              accessibilityLabel="Search businesses"
-              value={query}
-              onChangeText={setQuery}
-              placeholder="Search businesses and services"
-              placeholderTextColor={colors.textSecondary}
-              returnKeyType="search"
-              style={[styles.search, { color: colors.text }]}
-            />
-            {!!query && (
-              <Pressable
-                accessibilityLabel="Clear search"
-                onPress={() => setQuery('')}
-                style={styles.searchClear}
-              >
-                <SymbolView
-                  name={{ ios: 'xmark.circle.fill', android: 'cancel', web: 'cancel' }}
-                  tintColor={colors.textSecondary}
-                  style={styles.searchIcon}
-                />
-              </Pressable>
-            )}
-          </View>
-          <HorizontalScrollRow contentContainerStyle={styles.categoryScrollContent}>
-            <View style={styles.categorySelector} accessibilityRole="radiogroup">
-              {categories.map((category) => (
-                <CategoryChip
-                  key={category.value}
-                  label={category.label}
-                  selected={categoryFilter === category.value}
-                  onPress={() => setCategoryFilter(category.value)}
-                />
-              ))}
-            </View>
-          </HorizontalScrollRow>
-          <View style={styles.filterToolbar}>
-            <View style={styles.filterSummary}>
-              {resultCountLabel && (
-                <ThemedText style={styles.toolbarCount}>{resultCountLabel}</ThemedText>
-              )}
-              {(query || activeFilterCount > 0) && (
-                <ThemedText numberOfLines={1} themeColor="textSecondary" type="small">
-                  {filterSummary}
-                </ThemedText>
-              )}
-            </View>
-            <Pressable
-              accessibilityLabel={`Filters${activeFilterCount ? `, ${activeFilterCount} active` : ''}`}
-              accessibilityRole="button"
-              onPress={() => setFiltersOpen((open) => !open)}
-              style={[styles.filterToggle, filtersOpen && styles.filterToggleActive]}
-            >
-              <ThemedText
-                style={filtersOpen ? styles.filterTextSelected : undefined}
-                type="smallBold"
-              >
-                Filters{activeFilterCount ? ` ${activeFilterCount}` : ''}
-              </ThemedText>
-            </Pressable>
-          </View>
-          <Modal
-            animationType="slide"
-            onRequestClose={() => setFiltersOpen(false)}
-            transparent
-            visible={filtersOpen}
+          <DiscoveryHomeHeader
+            actions={<AppChrome inline />}
+            area={cityFilter === 'all' ? 'Explore your area' : cityFilter}
+            onChooseArea={() => setFiltersOpen(true)}
           >
-            <View style={styles.filterModalRoot}>
-              <Pressable
-                accessibilityLabel="Close filters"
-                accessibilityRole="button"
-                onPress={() => setFiltersOpen(false)}
-                style={styles.filterModalBackdrop}
-              />
-              <View
-                style={[
-                  styles.filterPanel,
-                  styles.filterSheet,
-                  {
-                    backgroundColor: colors.backgroundElement,
-                    borderColor: colors.divider,
-                    paddingBottom: Math.max(Spacing.four, insets.bottom + Spacing.four),
-                  },
-                ]}
-              >
-                <View style={styles.filterSheetHandle} />
-                <View style={styles.filterSheetHeader}>
-                  <View>
-                    <ThemedText type="subtitle">Filters</ThemedText>
-                    <ThemedText themeColor="textSecondary" type="small">
-                      Narrow your results without losing your place.
-                    </ThemedText>
-                  </View>
-                  <Pressable
-                    accessibilityRole="button"
-                    onPress={() => setFiltersOpen(false)}
-                    style={styles.filterDoneButton}
-                  >
-                    <ThemedText style={styles.filterTextSelected} type="smallBold">
-                      Done
-                    </ThemedText>
-                  </Pressable>
-                </View>
-                <ScrollView
-                  contentContainerStyle={styles.filterSheetContent}
-                  showsVerticalScrollIndicator={false}
-                  style={styles.filterSheetScroll}
-                >
-                  {session && (
-                    <View style={styles.filterGroup} accessibilityRole="radiogroup">
-                      <ThemedText themeColor="textSecondary" type="smallBold">
-                        Show
-                      </ThemedText>
-                      <View style={styles.filters}>
-                        {(['all', 'following'] as const).map((value) => (
-                          <FilterChip
-                            key={value}
-                            label={
-                              value === 'all'
-                                ? 'All businesses'
-                                : `Following (${followingIds.size})`
-                            }
-                            selected={filter === value}
-                            onPress={() => setFilter(value)}
-                          />
-                        ))}
-                      </View>
-                    </View>
-                  )}
-                  <View style={styles.filterGroup} accessibilityRole="radiogroup">
-                    <ThemedText themeColor="textSecondary" type="smallBold">
-                      Highlights
-                    </ThemedText>
-                    <View style={styles.filters}>
-                      <FilterChip
-                        label="Everything"
-                        selected={featureFilter === 'all'}
-                        onPress={() => setFeatureFilter('all')}
-                      />
-                      <FilterChip
-                        label="Rewards"
-                        selected={featureFilter === 'rewards'}
-                        onPress={() => setFeatureFilter('rewards')}
-                      />
-                      {pickupDiscoveryEnabled(process.env.EXPO_PUBLIC_APP_ENV) && (
-                        <FilterChip
-                          label="Order ahead"
-                          selected={featureFilter === 'pickup'}
-                          onPress={() => setFeatureFilter('pickup')}
-                        />
-                      )}
-                      <FilterChip
-                        label="Upcoming events"
-                        selected={featureFilter === 'events'}
-                        onPress={() => setFeatureFilter('events')}
-                      />
-                    </View>
-                  </View>
-                  <ChoicePicker
-                    label="Category"
-                    options={[
-                      { value: 'all', label: 'All categories' },
-                      ...categories
-                        .filter((category) => category.value !== 'all')
-                        .map((category) => ({ value: category.value, label: category.label })),
-                    ]}
-                    value={categoryFilter}
-                    onChange={(value) => setCategoryFilter(value)}
+            <DiscoverySearchBar
+              onBrandSurface
+              query={query}
+              onQuery={(value) => {
+                setQuery(value);
+                setSearchFocused(true);
+              }}
+              onFocus={() => setSearchFocused(true)}
+              onSubmit={() => {
+                setSearchFocused(false);
+                Keyboard.dismiss();
+              }}
+              suggestions={
+                searchFocused && query.trim().length >= 2 ? (
+                  <DiscoveryAutocomplete
+                    suggestions={suggestions}
+                    loading={offeringSearchLoading}
+                    onSelect={openSuggestion}
+                    onSeeResults={() => {
+                      setSearchFocused(false);
+                      Keyboard.dismiss();
+                    }}
                   />
-                  <View style={styles.filterGroup}>
-                    <ThemedText themeColor="textSecondary" type="smallBold">
-                      Location
-                    </ThemedText>
-                    <HorizontalScrollRow>
-                      <View style={styles.chipRow} accessibilityRole="radiogroup">
-                        <FilterChip
-                          label="All cities"
-                          selected={cityFilter === 'all'}
-                          onPress={() => setCityFilter('all')}
-                        />
-                        {cities.map((city) => (
-                          <FilterChip
-                            key={city}
-                            label={city}
-                            selected={cityFilter === city}
-                            onPress={() => setCityFilter(city)}
-                          />
-                        ))}
-                      </View>
-                    </HorizontalScrollRow>
-                  </View>
-                  <View style={styles.filterGroup} accessibilityRole="radiogroup">
-                    <ThemedText themeColor="textSecondary" type="smallBold">
-                      Sort by
-                    </ThemedText>
-                    <View style={styles.filters}>
-                      <FilterChip
-                        label="A–Z"
-                        selected={sort === 'name'}
-                        onPress={() => setSort('name')}
-                      />
-                      <FilterChip
-                        label="Recently added"
-                        selected={sort === 'recent'}
-                        onPress={() => setSort('recent')}
-                      />
-                    </View>
-                  </View>
-                  {activeFilterCount > 0 && (
-                    <Pressable
-                      onPress={() => {
-                        setFilter('all');
-                        setFeatureFilter('all');
-                        setCategoryFilter('all');
-                        setCityFilter('all');
-                        setSort('name');
-                      }}
-                      style={styles.clearButton}
-                    >
-                      <ThemedText type="smallBold">Clear all filters</ThemedText>
-                    </Pressable>
-                  )}
-                </ScrollView>
-              </View>
-            </View>
-          </Modal>
+                ) : null
+              }
+              onFilters={() => {
+                setSearchFocused(false);
+                Keyboard.dismiss();
+                setFiltersOpen((open) => !open);
+              }}
+              active={activeFilterCount}
+              count={query || activeFilterCount ? resultCountLabel : undefined}
+              summary={query || activeFilterCount > 0 ? filterSummary : undefined}
+            />
+          </DiscoveryHomeHeader>
+          {!curatedPlan && (
+            <DiscoveryShortcuts
+              value={featureFilter}
+              pickupEnabled={pickupDiscoveryEnabled(process.env.EXPO_PUBLIC_APP_ENV)}
+              onChange={setFeatureFilter}
+            />
+          )}
+          {filtersOpen && (
+            <DiscoveryFiltersSheet
+              searchActive={Boolean(query.trim())}
+              initial={{
+                category: categoryFilter,
+                city: cityFilter,
+                audience: filter,
+                feature: featureFilter,
+                sort,
+              }}
+              categories={categories}
+              cities={cities}
+              {...(session ? { followingCount: followingIds.size } : {})}
+              pickupEnabled={pickupDiscoveryEnabled(process.env.EXPO_PUBLIC_APP_ENV)}
+              countResults={(draft) =>
+                filterDiscoveryBusinesses(
+                  discoveryBusinesses,
+                  query,
+                  draft,
+                  followingIds,
+                  blockedIds,
+                  new Date(),
+                ).length
+              }
+              error={locationMessage}
+              onClose={() => {
+                setFiltersOpen(false);
+                setLocationMessage(null);
+              }}
+              onApply={async (draft) => {
+                if (draft.sort === 'nearby' && !(await enableNearbySort())) return false;
+                setFilter(draft.audience);
+                setFeatureFilter(draft.feature);
+                setCategoryFilter(draft.category);
+                setCityFilter(draft.city);
+                setSort(draft.sort);
+                setLocationMessage(null);
+                setFiltersOpen(false);
+                return true;
+              }}
+            />
+          )}
 
+          {ratingsError && (
+            <View style={{ gap: Spacing.two }}>
+              <StateNotice message="Ratings are temporarily unavailable." />
+              <AppButton
+                label="Retry ratings"
+                variant="tertiary"
+                onPress={() => void loadBusinesses()}
+              />
+            </View>
+          )}
           {pickupError && (
             <View style={{ gap: Spacing.two }}>
               <StateNotice message={pickupError} />
@@ -608,6 +948,7 @@ export default function DiscoverScreen() {
               />
             </View>
           )}
+          {partialError && <View style={{ gap: 8 }}><ThemedText themeColor="textSecondary">Some event, location or opening-hours details couldn’t load. Business browsing is still available.</ThemedText><AppButton label="Retry missing details" variant="secondary" onPress={() => void loadBusinesses()} /></View>}
           {error && (
             <View style={{ gap: Spacing.two }}>
               <StateNotice kind="error" message={error} />
@@ -620,14 +961,21 @@ export default function DiscoverScreen() {
           )}
           {displayState === 'loading' ? (
             <ListLoading label="Loading businesses" />
-          ) : displayState === 'error' ? null : displayState === 'empty' ? (
+          ) : displayState === 'error' ? null : shouldShowEmptyState ? (
             <View style={styles.emptyCard}>
               <ThemedText type="subtitle">Nothing found</ThemedText>
               <ThemedText themeColor="textSecondary">
                 {filter === 'following'
                   ? 'Businesses you follow will appear here.'
-                  : 'Try a different business name, category, or city.'}
+                  : featureFilter === 'accepting-pickup'
+                    ? 'No matches for these filters. Clear some filters or browse businesses that offer order-ahead.'
+                    : 'Try a different business, menu item, category, or city.'}
               </ThemedText>
+              {query.trim().length === 1 && (
+                <ThemedText type="small" themeColor="textSecondary">
+                  Type one more character to search individual offerings.
+                </ThemedText>
+              )}
               {(query ||
                 categoryFilter !== 'all' ||
                 cityFilter !== 'all' ||
@@ -647,28 +995,117 @@ export default function DiscoverScreen() {
                   <ThemedText type="smallBold">Clear filters</ThemedText>
                 </Pressable>
               )}
+              {!!offeringSearchError && (
+                <ThemedText type="small" themeColor="textSecondary">
+                  {offeringSearchError}
+                </ThemedText>
+              )}
             </View>
           ) : (
             <View style={styles.resultsLayout}>
-              {!query.trim() && activeFilterCount === 0 && upcomingEvents.length > 0 && (
-                <UpcomingEvents
-                  events={eventPreview}
-                  totalCount={upcomingEvents.length}
-                  onOpenBusiness={openBusiness}
-                  onSeeAll={() => router.push(upcomingEventsPath() as Href)}
-                />
-              )}
-              <ThemedText style={styles.localHeading}>{DISCOVER_LOCAL_SECTION_TITLE}</ThemedText>
-              <View style={styles.list}>
-                {visibleBusinesses.map((business) => (
-                  <BusinessCard
-                    key={business.id}
-                    business={business}
-                    isFollowing={followingIds.has(business.id)}
-                    onPress={() => openBusiness(business.id)}
+              <DiscoveryBusinessFeed
+                title={query.trim() ? 'Places for you' : 'Explore local'}
+                businesses={visibleBusinesses}
+                followingIds={followingIds}
+                onOpenBusiness={openBusiness}
+                plan={curatedPlan}
+                collection={collection}
+                onCollectionChange={setCollection}
+              >
+                {!query.trim() && activeFilterCount === 0 && upcomingEvents.length > 0 ? (
+                  <UpcomingEvents
+                    events={eventPreview}
+                    totalCount={upcomingEvents.length}
+                    onOpenEvent={(id) => router.push(upcomingEventPath(id) as Href)}
+                    onSeeAll={() => router.push(upcomingEventsPath() as Href)}
                   />
-                ))}
-              </View>
+                ) : null}
+              </DiscoveryBusinessFeed>
+              {suggestions.some((s) => s.kind === 'event') && (
+                <View style={styles.searchResultsSection}>
+                  <ThemedText style={styles.localHeading}>Matching events</ThemedText>
+                  {suggestions
+                    .filter((s) => s.kind === 'event')
+                    .map((s) => {
+                      const event = eventRecords.find((e) => e.id === s.targetId);
+                      const business = businessesById.get(s.businessId);
+                      return event && business ? (
+                        <EventCard
+                          key={s.id}
+                          title={s.title}
+                          businessName={business.name}
+                          photos={business.business_photos}
+                          startsAt={event.starts_at}
+                          metadata={event.address_text ?? business.city ?? ''}
+                          onPress={() => openSuggestion(s)}
+                        />
+                      ) : null;
+                    })}
+                </View>
+              )}
+              {query.trim().length === 1 && (
+                <ThemedText type="small" themeColor="textSecondary">
+                  Type one more character to search individual offerings.
+                </ThemedText>
+              )}
+              {offeringQuery.length >= 2 && (
+                <View style={styles.searchResultsSection}>
+                  <ThemedText style={styles.localHeading}>Menu items & services</ThemedText>
+                  {offeringSearchLoading ? (
+                    <ThemedText
+                      type="small"
+                      themeColor="textSecondary"
+                      accessibilityLiveRegion="polite"
+                    >
+                      Searching local offerings…
+                    </ThemedText>
+                  ) : offeringSearchError ? (
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {offeringSearchError}
+                    </ThemedText>
+                  ) : visibleSearchOfferings.length ? (
+                    <View style={styles.list}>
+                      {visibleSearchOfferings.map((offering) => {
+                        const business = businessesById.get(offering.business_id);
+                        if (!business) return null;
+                        const assets = Array.isArray(offering.media_assets)
+                          ? offering.media_assets
+                          : offering.media_assets
+                            ? [offering.media_assets]
+                            : [];
+                        const asset = assets.find((entry) => entry.status === 'ready');
+                        return (
+                          <OfferingSearchResultCard
+                            key={offering.id}
+                            businessId={business.id}
+                            name={offering.name}
+                            description={offering.description}
+                            sectionName={offering.sectionName}
+                            price={formatMenuItemPrice(offering)}
+                            businessName={business.name}
+                            location={
+                              [business.city, business.region_code].filter(Boolean).join(', ') ||
+                              undefined
+                            }
+                            imageUrl={asset ? storagePublicUrl(asset.storage_path) : null}
+                            pickupAvailability={
+                              pickupDiscoveryEnabled(process.env.EXPO_PUBLIC_APP_ENV) &&
+                              business.supportsPickupOrdering
+                                ? business.pickupStatus
+                                : undefined
+                            }
+                            onPress={() => openBusiness(business.id)}
+                          />
+                        );
+                      })}
+                    </View>
+                  ) : (
+                    <ThemedText type="small" themeColor="textSecondary">
+                      No exact item matches. Try a specific item or explore the businesses above.
+                    </ThemedText>
+                  )}
+                </View>
+              )}
             </View>
           )}
         </ScrollView>
@@ -678,32 +1115,38 @@ export default function DiscoverScreen() {
 }
 
 function DiscoverDestinationUnderlay({
+  area,
   activeFilterCount,
   bottomContentInset,
   categories,
   categoryFilter,
   eventPreview,
+  featureFilter,
   filterSummary,
   followingIds,
   query,
   scrollOffset,
   totalUpcomingEvents,
   visibleBusinesses,
+  curatedPlan,
+  collection,
 }: {
   readonly activeFilterCount: number;
   readonly bottomContentInset: number;
   readonly categories: readonly { readonly label: string; readonly value: string }[];
   readonly categoryFilter: string;
+  readonly area: string;
   readonly eventPreview: readonly UpcomingEventItem[];
+  readonly featureFilter: DiscoveryFeature;
   readonly filterSummary: string;
   readonly followingIds: ReadonlySet<string>;
   readonly query: string;
   readonly scrollOffset: number;
   readonly totalUpcomingEvents: number;
   readonly visibleBusinesses: readonly BusinessCardData[];
+  readonly curatedPlan: DiscoveryFeedPlan | null;
+  readonly collection: string;
 }) {
-  const colors = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
-
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -714,80 +1157,50 @@ function DiscoverDestinationUnderlay({
           scrollEnabled={false}
           showsVerticalScrollIndicator={false}
         >
-          <AppChrome />
-          <View style={styles.heading}>
-            <ThemedText style={styles.screenTitle}>Discover</ThemedText>
-            <ThemedText numberOfLines={2} style={styles.screenSubtitle} themeColor="textSecondary">
-              Find food, shops, services, and events.
-            </ThemedText>
-          </View>
-          <View style={[styles.searchWrap, { backgroundColor: colors.backgroundElement }]}>
-            <SymbolView
-              name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }}
-              tintColor={colors.textSecondary}
-              style={styles.searchIcon}
-            />
-            <TextInput
-              accessibilityLabel="Search businesses"
-              editable={false}
-              value={query}
-              placeholder="Search businesses and services"
-              placeholderTextColor={colors.textSecondary}
-              style={[styles.search, { color: colors.text }]}
-            />
-          </View>
-          <HorizontalScrollRow
-            contentContainerStyle={styles.categoryScrollContent}
-            scrollEnabled={false}
+          <DiscoveryHomeHeader
+            area={area}
+            onChooseArea={() => undefined}
+            actions={<AppChrome inline />}
           >
-            <View style={styles.categorySelector} accessibilityRole="radiogroup">
-              {categories.map((category) => (
-                <CategoryChip
-                  key={category.value}
-                  label={category.label}
-                  selected={categoryFilter === category.value}
-                  onPress={() => undefined}
-                />
-              ))}
-            </View>
-          </HorizontalScrollRow>
-          <View style={styles.filterToolbar}>
-            <View style={styles.filterSummary}>
-              <ThemedText style={styles.toolbarCount}>
-                {businessResultCountLabel(visibleBusinesses.length)}
-              </ThemedText>
-              {(query || activeFilterCount > 0) && (
-                <ThemedText numberOfLines={1} themeColor="textSecondary" type="small">
-                  {filterSummary}
-                </ThemedText>
-              )}
-            </View>
-            <View style={styles.filterToggle}>
-              <ThemedText type="smallBold">
-                Filters{activeFilterCount ? ` ${activeFilterCount}` : ''}
-              </ThemedText>
-            </View>
-          </View>
+            <DiscoverySearchBar
+              onBrandSurface
+              query={query}
+              onQuery={() => {}}
+              onFilters={() => {}}
+              active={activeFilterCount}
+              count={
+                query || activeFilterCount
+                  ? businessResultCountLabel(visibleBusinesses.length)
+                  : undefined
+              }
+              summary={query || activeFilterCount > 0 ? filterSummary : undefined}
+            />
+          </DiscoveryHomeHeader>
+          {!curatedPlan && (
+            <DiscoveryShortcuts
+              value={featureFilter}
+              pickupEnabled={pickupDiscoveryEnabled(process.env.EXPO_PUBLIC_APP_ENV)}
+              onChange={() => {}}
+              interactive={false}
+            />
+          )}
           <View style={styles.resultsLayout}>
-            {!query.trim() && activeFilterCount === 0 && totalUpcomingEvents > 0 && (
-              <UpcomingEvents
-                events={eventPreview}
-                totalCount={totalUpcomingEvents}
-                onOpenBusiness={() => undefined}
-                onSeeAll={() => undefined}
-              />
-            )}
-            <ThemedText style={styles.localHeading}>{DISCOVER_LOCAL_SECTION_TITLE}</ThemedText>
-            <View style={styles.list}>
-              {visibleBusinesses.map((business) => (
-                <BusinessCard
-                  key={business.id}
-                  business={business}
-                  isFollowing={followingIds.has(business.id)}
-                  onPress={() => undefined}
+            <DiscoveryBusinessFeed
+              businesses={visibleBusinesses}
+              followingIds={followingIds}
+              onOpenBusiness={() => undefined}
+              plan={curatedPlan}
+              collection={collection}
+            >
+              {!query.trim() && activeFilterCount === 0 && totalUpcomingEvents > 0 ? (
+                <UpcomingEvents
+                  events={eventPreview}
+                  totalCount={totalUpcomingEvents}
+                  onOpenEvent={() => undefined}
+                  onSeeAll={() => undefined}
                 />
-              ))}
-            </View>
+              ) : null}
+            </DiscoveryBusinessFeed>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -798,12 +1211,12 @@ function DiscoverDestinationUnderlay({
 function UpcomingEvents({
   events,
   totalCount,
-  onOpenBusiness,
+  onOpenEvent,
   onSeeAll,
 }: {
   readonly events: readonly UpcomingEventItem[];
   readonly totalCount: number;
-  readonly onOpenBusiness: (businessId: string) => void;
+  readonly onOpenEvent: (eventId: string) => void;
   readonly onSeeAll: () => void;
 }) {
   const colors = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
@@ -853,69 +1266,11 @@ function UpcomingEvents({
             ]
               .filter(Boolean)
               .join(' · ')}
-            onPress={() => onOpenBusiness(event.businessId)}
+            onPress={() => onOpenEvent(event.id)}
           />
         ))}{' '}
       </View>
     </View>
-  );
-}
-
-function CategoryChip({
-  label,
-  selected,
-  onPress,
-}: {
-  readonly label: string;
-  readonly selected: boolean;
-  readonly onPress: () => void;
-}) {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
-  return (
-    <Pressable
-      accessibilityRole="radio"
-      accessibilityState={{ checked: selected }}
-      onPress={onPress}
-      style={[
-        styles.categoryChip,
-        { backgroundColor: colors.backgroundElement },
-        selected && styles.categoryChipSelected,
-      ]}
-    >
-      <ThemedText
-        numberOfLines={1}
-        style={[styles.controlLabel, selected && styles.filterTextSelected]}
-      >
-        {label}
-      </ThemedText>
-    </Pressable>
-  );
-}
-
-function FilterChip({
-  label,
-  selected,
-  onPress,
-}: {
-  readonly label: string;
-  readonly selected: boolean;
-  readonly onPress: () => void;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="radio"
-      accessibilityState={{ checked: selected }}
-      onPress={onPress}
-      style={[styles.filterButton, selected && styles.filterButtonSelected]}
-    >
-      <ThemedText
-        numberOfLines={1}
-        style={[styles.controlLabel, selected && styles.filterTextSelected]}
-      >
-        {label}
-      </ThemedText>
-    </Pressable>
   );
 }
 
@@ -926,33 +1281,30 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 680,
     alignSelf: 'center',
-    padding: Spacing.four,
-    gap: Spacing.three,
+    padding: 20,
+    gap: 18,
   },
-  heading: { gap: 4, paddingRight: 58 },
-  screenTitle: { fontSize: 32, lineHeight: 38, fontWeight: '800', letterSpacing: -0.5 },
-  screenSubtitle: { fontSize: 16, lineHeight: 22 },
   searchWrap: {
-    minHeight: 50,
+    minHeight: 54,
+    borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: Radius.medium,
+    borderRadius: 14,
     paddingLeft: 16,
   },
   search: { minHeight: 50, flex: 1, paddingHorizontal: 12, fontSize: 16 },
   searchIcon: { width: 20, height: 20 },
   searchClear: { width: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
-  categoryScrollContent: { paddingVertical: 2, paddingRight: Spacing.four },
-  categorySelector: { flexDirection: 'row', gap: 10 },
+  categoryScrollContent: { paddingVertical: 4, paddingRight: Spacing.four },
+  categorySelector: { flexDirection: 'row', gap: 16 },
   categoryChip: {
     minHeight: 44,
     maxWidth: 176,
     flexShrink: 0,
     justifyContent: 'center',
-    borderRadius: Radius.pill,
-    paddingHorizontal: 14,
+    borderBottomWidth: 1,
+    paddingHorizontal: 2,
   },
-  categoryChipSelected: { backgroundColor: Brand.primary },
   filterToolbar: {
     minHeight: 44,
     flexDirection: 'row',
@@ -1041,6 +1393,7 @@ const styles = StyleSheet.create({
   filterTextSelected: { color: Brand.onPrimary },
   list: { gap: 10 },
   resultsLayout: { gap: Spacing.four },
+  searchResultsSection: { gap: Spacing.two },
   localHeading: { fontSize: 22, lineHeight: 28, fontWeight: '700' },
   sectionHeading: {
     flexDirection: 'row',

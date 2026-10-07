@@ -1,17 +1,26 @@
+import { FlowSection } from '@/components/flow-layout';
+import { PickupRewardPanel } from '@/components/pickup/pickup-reward-panel';
+import { PickupContactFields } from '@/components/pickup/pickup-contact-fields';
+import { usePullRefresh } from '@/hooks/use-pull-refresh';
 import { useEffect, useRef, useState } from 'react';
-import { BackHandler, ScrollView, View } from 'react-native';
+import { BackHandler, View } from 'react-native';
+import { PickupScrollView } from '@/components/pickup/pickup-scroll-view';
 import { router, useLocalSearchParams } from 'expo-router';
 import { AppButton } from '@/components/app-button';
-import { CommerceField } from '@/components/commerce-fields';
 import { ThemedText } from '@/components/themed-text';
 import { PickupMenu, type MenuBrowseState } from '@/components/pickup/pickup-menu';
 import { PickupItem } from '@/components/pickup/pickup-item';
+import { PickupActionButton } from '@/components/pickup/pickup-action-button';
 import {
   PickupCart,
   PickupScheduler,
   PickupReview,
 } from '@/components/pickup/pickup-checkout-steps';
-import { PickupFlowLayout, PickupMerchantHeader } from '@/components/pickup/pickup-flow-layout';
+import {
+  CustomerFlowNavigation,
+  PickupFlowLayout,
+  PickupMerchantHeader,
+} from '@/components/pickup/pickup-flow-layout';
 import { PickupStatus } from '@/components/pickup/pickup-status';
 import { OrderNotificationSettings } from '@/components/pickup/order-notification-settings';
 import { PickupCode } from '@/components/pickup/pickup-code';
@@ -23,6 +32,7 @@ import {
   type OrderStep,
 } from '@/lib/pickup-order-flow';
 import { pickupDiscoveryEnabled, pickupModulePresentation } from '@/lib/pickup-discovery';
+import { commerce } from '@/lib/square-commerce';
 import { pickupClockLabel } from '@/lib/pickup-checkout-presentation';
 import { cartBarSummary, groupMenuProducts } from '@/lib/pickup-menu-controls';
 import { getTodayHours } from '@/lib/discovery-core';
@@ -30,16 +40,24 @@ import { money } from '@/lib/square-commerce-core';
 import { useAuth } from '@/providers/auth-provider';
 
 export default function OrderScreen() {
-  const params = useLocalSearchParams<{ businessId?: string; orderId?: string }>();
+  const params = useLocalSearchParams<{
+    businessId?: string;
+    orderId?: string;
+    reorderFromOrderId?: string;
+  }>();
   const { session } = useAuth();
   return (
     <OrderFlow
-      key={`${session?.user.id ?? 'guest'}:${params.businessId ?? ''}:${params.orderId ?? ''}`}
+      key={`${session?.user.id ?? 'guest'}:${params.businessId ?? ''}:${params.orderId ?? ''}:${params.reorderFromOrderId ?? ''}`}
       params={params}
     />
   );
 }
-function OrderFlow({ params }: { params: { businessId?: string; orderId?: string } }) {
+function OrderFlow({
+  params,
+}: {
+  params: { businessId?: string; orderId?: string; reorderFromOrderId?: string };
+}) {
   const flow = usePickupOrder(params);
   const { menu, order, step, cart, products, busy, quote, locked, setStep } = flow;
   const [browseState, setBrowseState] = useState<MenuBrowseState>({
@@ -47,12 +65,17 @@ function OrderFlow({ params }: { params: { businessId?: string; orderId?: string
     search: '',
     offset: 0,
   });
-  const scrollOffsets = useRef<Partial<Record<OrderStep, number>>>({});
-  const scroll = useRef<ScrollView>(null);
+  const scrollOffsets = useRef<Partial<Record<OrderStep | 'status', number>>>({});
+  const scrollKey = order ? 'status' : step;
   const enabled = pickupDiscoveryEnabled(process.env.EXPO_PUBLIC_APP_ENV);
   const name = order?.businessName ?? flow.identity?.name ?? menu?.businessName ?? 'Order pickup';
   const canContinue =
-    cart.length > 0 && !flow.review.issues.length && menu?.available && !busy && !locked;
+    cart.length > 0 &&
+    !flow.review.issues.length &&
+    !flow.rewardIssue &&
+    menu?.available &&
+    !busy &&
+    !locked;
   const availability = pickupModulePresentation(process.env.EXPO_PUBLIC_APP_ENV, {
     businessId: flow.businessId,
     supported: menu?.status === 'unsupported' ? false : true,
@@ -73,7 +96,9 @@ function OrderFlow({ params }: { params: { businessId?: string; orderId?: string
   };
   const action =
     step === 'menu'
-      ? cartBarSummary(cart, products).label
+      ? flow.rewardDiscount > 0
+        ? `View cart (${flow.review.count}) · ${money(flow.review.subtotal - flow.rewardDiscount, products[0]?.currency ?? 'USD')}`
+        : cartBarSummary(cart, products).label
       : step === 'cart'
         ? 'Choose pickup time'
         : step === 'pickup'
@@ -84,7 +109,9 @@ function OrderFlow({ params }: { params: { businessId?: string; orderId?: string
             ? 'Review order'
             : flow.expired || !quote
               ? 'Refresh total'
-              : `Secure payment · ${money(quote.total, quote.currency)}`;
+              : quote.total === 0
+                ? 'Place order · Free'
+                : `Secure payment · ${money(quote.total, quote.currency)}`;
   function back() {
     if (!order && step !== 'menu' && !locked) setStep(previousOrderStep(step));
     else if (router.canGoBack()) router.back();
@@ -108,13 +135,19 @@ function OrderFlow({ params }: { params: { businessId?: string; orderId?: string
     else void flow.run(flow.checkout);
   }
   const refresh = () => {
-    void flow.run(async () => {
+    return flow.run(async () => {
       await flow.loadMenu(flow.businessId);
     });
   };
+  const pullRefresh = usePullRefresh(refresh);
   const notices = (
     <View style={{ gap: 12 }}>
       {!!flow.error && <ThemedText accessibilityLiveRegion="polite">{flow.error}</ThemedText>}
+      {!!flow.reorderNotice && (
+        <ThemedText themeColor="textSecondary" accessibilityLiveRegion="polite">
+          {flow.reorderNotice}
+        </ThemedText>
+      )}
       {flow.storageWarning && (
         <ThemedText accessibilityLiveRegion="polite">
           Your change could not be saved. Your previous cart is unchanged. Please retry.
@@ -167,6 +200,24 @@ function OrderFlow({ params }: { params: { businessId?: string; orderId?: string
       )}
     </View>
   );
+  const rewardPanel = (
+    <PickupRewardPanel
+      offer={flow.rewardOffer}
+      selectedName={flow.rewardName}
+      issue={flow.rewardIssue}
+      saved={flow.rewardSaved}
+      disabled={busy || locked || !menu?.available}
+      hasCart={cart.length > 0}
+      onChoose={flow.chooseReward}
+      onApply={flow.applyOrderReward}
+      onSave={flow.saveReward}
+      onShow={flow.showReward}
+      error={flow.rewardError}
+      onRetry={() => {
+        void flow.loadRewards();
+      }}
+    />
+  );
   const edit = (index: number) => {
     const product = products.find((p) => p.id === cart[index]?.variationId);
     const variants = product
@@ -174,41 +225,39 @@ function OrderFlow({ params }: { params: { businessId?: string; orderId?: string
           ?.products
       : undefined;
     if (product && !locked && !busy)
-      flow.setEditing({ product, index, ...(variants ? { products: variants } : {}) });
+      flow.setEditing({
+        product,
+        index,
+        ...(cart[index]?.rewardClaim &&
+        flow.rewardOffer &&
+        flow.rewardOffer.type !== 'percent_discount' &&
+        !flow.rewardIssue
+          ? {
+              reward: flow.rewardOffer,
+              ...(variants
+                ? {
+                    products: variants.filter((p) =>
+                      flow.rewardOffer!.items.some((i) => i.id === p.id),
+                    ),
+                  }
+                : {}),
+            }
+          : variants
+            ? { products: variants }
+            : {}),
+      });
   };
   return (
     <>
       <PickupFlowLayout
         navigation={
-          <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-            <AppButton
-              label="‹ Back"
-              accessibilityLabel={step === 'menu' && !order ? 'Back to business' : 'Back'}
-              variant="tertiary"
-              onPress={back}
-              style={{ paddingHorizontal: 4, minWidth: 64 }}
-            />
-            <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-              {step !== 'menu' && !order ? (
-                <>
-                  <ThemedText type="smallBold">{titles[step]}</ThemedText>
-                  <ThemedText type="caption" themeColor="textSecondary">
-                    {name} · {orderSteps.indexOf(step)} of 4
-                  </ThemedText>
-                </>
-              ) : (
-                <ThemedText type="smallBold">{order ? 'Pickup order' : 'Order pickup'}</ThemedText>
-              )}
-            </View>
-            {order && (
-              <AppButton
-                label="Orders"
-                accessibilityLabel="View all your orders"
-                variant="tertiary"
-                onPress={() => router.replace('/orders')}
-              />
-            )}
-          </View>
+          <CustomerFlowNavigation
+            title={order ? 'Pickup order' : titles[step]}
+            subtitle={!order && step !== 'menu' ? name : undefined}
+            step={!order && step !== 'menu' ? orderSteps.indexOf(step) : undefined}
+            onBack={back}
+            onOrders={order ? () => router.replace('/orders') : undefined}
+          />
         }
         footer={
           enabled && !order && (cart.length > 0 || step !== 'menu') ? (
@@ -218,20 +267,32 @@ function OrderFlow({ params }: { params: { businessId?: string; orderId?: string
                   Estimated items · tax at review
                 </ThemedText>
               )}
-              <AppButton
-                label={action}
-                loading={busy}
-                disabled={
-                  step === 'menu'
-                    ? busy
-                    : step === 'review' && locked
+              {step === 'menu' ? (
+                <PickupActionButton
+                  label="View cart"
+                  count={flow.review.count}
+                  amount={money(
+                    flow.review.subtotal - flow.rewardDiscount,
+                    products[0]?.currency ?? 'USD',
+                  )}
+                  loading={busy}
+                  disabled={busy}
+                  onPress={next}
+                />
+              ) : (
+                <AppButton
+                  label={action}
+                  loading={busy}
+                  disabled={
+                    step === 'review' && locked
                       ? !quote || flow.expired || !menu?.available
                       : !canContinue ||
                         (step === 'pickup' && !flow.slot) ||
                         (step === 'contact' && !!contactIssue(flow.name, flow.phone))
-                }
-                onPress={next}
-              />
+                  }
+                  onPress={next}
+                />
+              )}
             </View>
           ) : undefined
         }
@@ -241,8 +302,8 @@ function OrderFlow({ params }: { params: { businessId?: string; orderId?: string
             products={products}
             cart={cart}
             disabled={busy || locked || !menu?.available}
-            refreshing={busy}
-            onRefresh={refresh}
+            refreshing={pullRefresh.refreshing}
+            onRefresh={pullRefresh.onRefresh}
             browseState={browseState}
             onBrowseChange={(change) => setBrowseState((old) => ({ ...old, ...change }))}
             onChoose={(product, variants) =>
@@ -258,23 +319,21 @@ function OrderFlow({ params }: { params: { businessId?: string; orderId?: string
                   photos={flow.identity?.photos}
                 />
                 {(!order || flow.error || flow.storageWarning) && notices}
+                {rewardPanel}
               </View>
             }
           />
         ) : (
-          <ScrollView
-            key={order ? 'status' : step}
-            ref={scroll}
+          <PickupScrollView
+            key={scrollKey}
+            getSavedOffset={() => scrollOffsets.current[scrollKey] ?? 0}
             style={{ flex: 1, minHeight: 0 }}
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ padding: 16, paddingBottom: 24, gap: 16 }}
-            onScroll={(e) => {
-              scrollOffsets.current[step] = e.nativeEvent.contentOffset.y;
+            contentContainerStyle={{ padding: 20, paddingBottom: 24, gap: 16 }}
+            onOffsetChange={(offset) => {
+              scrollOffsets.current[scrollKey] = offset;
             }}
             scrollEventThrottle={100}
-            onContentSizeChange={() =>
-              scroll.current?.scrollTo({ y: scrollOffsets.current[step] ?? 0, animated: false })
-            }
           >
             {!enabled ? (
               <ThemedText>Pickup ordering is not available in this environment.</ThemedText>
@@ -285,6 +344,8 @@ function OrderFlow({ params }: { params: { businessId?: string; orderId?: string
                   <>
                     <PickupStatus
                       order={order}
+                      confirmingPayment={flow.confirmingPayment}
+                      confirmationSlow={flow.confirmationSlow}
                       pickupCode={
                         order.status === 'ready' && (
                           <PickupCode
@@ -303,6 +364,34 @@ function OrderFlow({ params }: { params: { businessId?: string; orderId?: string
                       onCheckout={() => {
                         void flow.run(flow.reopen);
                       }}
+                      onSupportRequest={(requestType, message) => {
+                        void flow.run(async () => {
+                          await commerce('customer_order_request', {
+                            orderId: order.id,
+                            statusToken:
+                              flow.access?.orderId === order.id
+                                ? flow.access.statusToken
+                                : undefined,
+                            requestType,
+                            message,
+                          });
+                          await flow.refreshOrder();
+                        });
+                      }}
+                      onReview={(rating, text) => {
+                        void flow.run(async () => {
+                          await commerce('submit_pickup_review', {
+                            orderId: order.id,
+                            statusToken:
+                              flow.access?.orderId === order.id
+                                ? flow.access.statusToken
+                                : undefined,
+                            rating,
+                            text,
+                          });
+                          await flow.refreshOrder();
+                        });
+                      }}
                       onNew={
                         flow.businessId
                           ? () => {
@@ -317,14 +406,24 @@ function OrderFlow({ params }: { params: { businessId?: string; orderId?: string
                       'checkout_failed',
                       'refunded',
                       'completed',
-                    ].includes(order.status) && <OrderNotificationSettings />}
+                    ].includes(order.status) && (
+                      <FlowSection
+                        title="Order notifications"
+                        description="Manage updates for your pickup"
+                        collapsible
+                      >
+                        <OrderNotificationSettings hideHeading />
+                      </FlowSection>
+                    )}
                   </>
                 ) : (
                   <>
                     {step === 'cart' && (
                       <>
+                        {rewardPanel}
                         <PickupCart
                           cart={cart}
+                          rewardDiscount={flow.rewardDiscount}
                           products={products}
                           disabled={busy || locked}
                           onEdit={edit}
@@ -349,28 +448,14 @@ function OrderFlow({ params }: { params: { businessId?: string; orderId?: string
                       />
                     )}
                     {step === 'contact' && (
-                      <View style={{ gap: 20 }}>
-                        <ThemedText type="card">Who’s picking up?</ThemedText>
-                        <CommerceField
-                          label="Pickup name"
-                          autoComplete="name"
-                          maxLength={100}
-                          value={flow.name}
-                          onChangeText={flow.setName}
-                          editable={!busy && !locked}
+                      <View style={{ gap: 12 }}>
+                        <PickupContactFields
+                          name={flow.name}
+                          phone={flow.phone}
+                          onName={flow.setName}
+                          onPhone={flow.setPhone}
+                          disabled={busy || locked}
                         />
-                        <CommerceField
-                          label="Phone number"
-                          autoComplete="tel"
-                          keyboardType="phone-pad"
-                          placeholder="(225) 555-0123"
-                          value={flow.phone}
-                          onChangeText={flow.setPhone}
-                          editable={!busy && !locked}
-                        />
-                        <ThemedText type="small" themeColor="textSecondary">
-                          Used only if the business needs to reach you about pickup.
-                        </ThemedText>
                         {!!flow.phone && !!contactIssue(flow.name, flow.phone) && (
                           <ThemedText accessibilityLiveRegion="polite">
                             {contactIssue(flow.name, flow.phone)}
@@ -399,7 +484,7 @@ function OrderFlow({ params }: { params: { businessId?: string; orderId?: string
                 )}
               </>
             )}
-          </ScrollView>
+          </PickupScrollView>
         )}
       </PickupFlowLayout>
       {flow.editing && (
@@ -413,6 +498,7 @@ function OrderFlow({ params }: { params: { businessId?: string; orderId?: string
           }
           {...(flow.editing.products ? { variants: flow.editing.products } : {})}
           line={flow.editing.index === null ? undefined : cart[flow.editing.index]}
+          reward={flow.editing.reward}
           disabled={busy || locked || !menu?.available}
           onClose={() => flow.setEditing(null)}
           onSave={flow.saveItem}

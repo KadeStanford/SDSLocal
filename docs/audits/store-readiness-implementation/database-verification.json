@@ -1,0 +1,1324 @@
+{
+  "verifiedAtUtc": "2026-10-01T05:11:26.6432123+00:00",
+  "scope": "Complete repository SQL regression suite and clean migration replay in an isolated local Supabase stack; not a hosted database certification.",
+  "result": "PASS local migration replay, all 35 SQL tests, and two consecutive checkout integration runs. Application lint has zero errors and 12 warnings. Bundled extension diagnostics are recorded separately.",
+  "isolation": {
+    "databasePort": 55322,
+    "realProviderTransactions": false,
+    "apiPort": 55321,
+    "hostedWrites": false,
+    "projectId": "sds-store-readiness-verify",
+    "existingDevelopmentDatabaseReset": false,
+    "emailsSent": false
+  },
+  "migrationCount": 101,
+  "sql": {
+    "verifiedAtUtc": "2026-10-01T00:08:17.9416862-05:00",
+    "scope": "Isolated local PostgreSQL; no hosted services or real provider transactions",
+    "container": "supabase_db_sds-store-readiness-verify",
+    "total": 35,
+    "passed": 35,
+    "failed": 0,
+    "migrations": [
+      {
+        "sha256": "33A5761D703E7D90109926DDB1246026D1CFE8026B7B6A7D9EDC8A2A7F9A385A",
+        "name": "20260915000100_initial_schema.sql"
+      },
+      {
+        "sha256": "36CEE1A243F6A412DCDB0FDFFD577DBBDB63C46CD6379F6D898EA1C05C3C7BB5",
+        "name": "20260915000200_identity_and_onboarding.sql"
+      },
+      {
+        "sha256": "22E88518B4DC797D1AFCDFA9D7031D144A2EF3625EB4DFE18BC4BCF55D7FE475",
+        "name": "20260915000300_business_media.sql"
+      },
+      {
+        "sha256": "B4E004651B793CEF12E234D6DE6F6081ED41B13D58C5CA5203E11EFDE440A2AD",
+        "name": "20260915000400_media_function_lint.sql"
+      },
+      {
+        "sha256": "B4E004651B793CEF12E234D6DE6F6081ED41B13D58C5CA5203E11EFDE440A2AD",
+        "name": "20260915000500_apply_media_function_lint_fix.sql"
+      },
+      {
+        "sha256": "C93867764D1F50AF3715ACAD25AFCA1FC45715A75D68190CE43B890443FA53E9",
+        "name": "20260915000600_structured_service_areas.sql"
+      },
+      {
+        "sha256": "5008F8BAD69FCBF4D560E83A693351C3E532D6A8352937D5E008CEA7836877EF",
+        "name": "20260915000700_business_details_editor.sql"
+      },
+      {
+        "sha256": "E8DA95C241DCE0B53240C40E88942F26715EC09D38B85D0AA60831899D414316",
+        "name": "20260915000800_controlled_business_appearance.sql"
+      },
+      {
+        "sha256": "51D3A202D22BACBF1BD5B2B04C8058148ED2B61861E05782E5D6CA1120F881B4",
+        "name": "20260915000900_review_and_offering_management.sql"
+      },
+      {
+        "sha256": "1D50D02A371E1D4C576192B2C38B1C9094E3AA751628119AA34469767C29028C",
+        "name": "20260915001000_offering_item_media.sql"
+      },
+      {
+        "sha256": "A8FF459849EFA3ACF8644722C42B5A4D5313AE027CFB70706FF675EB0E1BB9EA",
+        "name": "20260915001100_allow_trusted_moderation_updates.sql"
+      },
+      {
+        "sha256": "64DE17B4FDC3E9B769BFEBF0606691A9EFC736F94D5FF6F4768F75489FBA9898",
+        "name": "20260915001200_moderator_auth_audit_access.sql"
+      },
+      {
+        "sha256": "B71ED1F1EF4676836260EC399BA19EEBFD5B7E93871DEE5B1AB905A0A307E87A",
+        "name": "20260915001300_private_moderation_audit_helper.sql"
+      },
+      {
+        "sha256": "5B6EF23E15F96D70175E218B26E0DD5137345A620AB21D99730ACD7A05A2CD5B",
+        "name": "20260915001400_isolate_moderation_trigger_from_auth_schema.sql"
+      },
+      {
+        "sha256": "5885EFCCD0702446363D80C4AF0092BEC1DF6419626FC39F6A7C689B42228C6A",
+        "name": "20260915001500_phase_3_events.sql"
+      },
+      {
+        "sha256": "59842EA6B04F622A919B3703DC86B529E37874351EF307A99ADF017298A81028",
+        "name": "20260915001600_scheduled_events_and_discovery.sql"
+      },
+      {
+        "sha256": "F1D4C2A88D7E33E2AE2C4AAE434E813D497DC601E44D271F113A7F6628A052D9",
+        "name": "20260916001700_secure_loyalty.sql"
+      },
+      {
+        "sha256": "27FA78B6768FED92C05B4DD1B7994547CA55E3EE592A1D30A87FA0F69A51C648",
+        "name": "20260916001800_notifications.sql"
+      },
+      {
+        "sha256": "F291569FE3E6BA289054400C096A857E15098D8683B74B0DDD987AA975BAF086",
+        "name": "20260916001900_event_media_and_recurring_reminders.sql"
+      },
+      {
+        "sha256": "0DA8668E729FD4E35DC57FA9F30F36086F15BB8CEF75AE1BADD386752413799C",
+        "name": "20260916002000_business_follower_updates.sql"
+      },
+      {
+        "sha256": "74E93D6F402284D2974F883F6BFC1CF72A276F00DCDD3DB7C22114623900C09C",
+        "name": "20260916002100_notification_dispatch_observability.sql"
+      },
+      {
+        "sha256": "18A9BFE2B9B523D0454E2E3E2B912A6A2FAB331443CF5D490D453D95A3867898",
+        "name": "20260916002200_media_cleanup_claims.sql"
+      },
+      {
+        "sha256": "2FC0A658207845F4852ACAA572C744AA73E36557187738196467B9B7E6A7A607",
+        "name": "20260916002300_notification_inbox.sql"
+      },
+      {
+        "sha256": "C2D9F1BF66E9D6E8B24A774652D7E307B4C05FC8F493F8009F8566E597A9FA44",
+        "name": "20260916002350_expand_business_and_loyalty_enums.sql"
+      },
+      {
+        "sha256": "6594765E11AB27BF457FF69435D10A57EE559FDA275225E5E0E714042BDDC9EC",
+        "name": "20260916002400_mobile_businesses_and_points_loyalty.sql"
+      },
+      {
+        "sha256": "75AB0D5E8471C6F60F71906FEB4AA1236EB87C427057DCC3A487BEA2AE511F40",
+        "name": "20260916002500_scan_analytics.sql"
+      },
+      {
+        "sha256": "AE653B02FE41ACA6C070F9D01A5EAD69E61B4A2F186978FC51D1B85CAD7AB8A9",
+        "name": "20260917000100_staff_invitations.sql"
+      },
+      {
+        "sha256": "5849821F8F154D3D331729996596E9723B8D7AAF230429BDC93E92AD41D2DAEB",
+        "name": "20260917000200_staff_invitation_ambiguity_fix.sql"
+      },
+      {
+        "sha256": "E2DA024376CC0DFC40360E867D7FB4F3CBFBE7D1693AC16F1FE1FBE8B12A0B32",
+        "name": "20260917000300_staff_invite_output_cast_fix.sql"
+      },
+      {
+        "sha256": "4F4A47DBC839D5ED843DB01C88649681D5638FE1577951C640D184355F5D6FCC",
+        "name": "20260917000400_staff_invites_phone.sql"
+      },
+      {
+        "sha256": "8D811235F0F0207B90D87875E528A3EB4541F065C091689A52B79010BB40D33E",
+        "name": "20260917000500_staff_invite_accept_output_cast.sql"
+      },
+      {
+        "sha256": "A43ACA397BB37C3D7244E29D2E9119922DF6210CE17968AC17DA7494E8C4386A",
+        "name": "20260918000100_platform_admin_console.sql"
+      },
+      {
+        "sha256": "D10E410253AA78C4E082D2ACD593C51FC94A3C76A0158B85FE5AA0AC57F735A0",
+        "name": "20260918000200_grant_postgrest_api_access.sql"
+      },
+      {
+        "sha256": "95C371F4E8CC86E1FD2C5CCAA2E814F1975468B839DCA252571644E4829886C4",
+        "name": "20260918000300_expand_business_categories.sql"
+      },
+      {
+        "sha256": "924C935BB752CA2D71DFF6C22F8A4F138A6A6860841DD55D3D1D9D96E277DDF1",
+        "name": "20260919000100_grant_customer_safety_api_access.sql"
+      },
+      {
+        "sha256": "41DB51804C74BF1C2EC57DB87BE1E98FC0689CECD9815DDF274E636B6C9F55F9",
+        "name": "20260919000200_account_deletion.sql"
+      },
+      {
+        "sha256": "A700C4E1E0B1AB5CDAFFEB65463027E200FC03FA6E89282F046BE53DD42D7E63",
+        "name": "20260919000300_nearby_mobile_business_alerts.sql"
+      },
+      {
+        "sha256": "EB29CE336FDB49A86D31A02D0D7CA1F9865BFCD94961E7A9949DE481E12BA70E",
+        "name": "20260919000400_nearby_alert_radius_slider.sql"
+      },
+      {
+        "sha256": "2202888C366CCF64905942BE605A501DE5998DEDE38E10B380187ABA2D9FDC6A",
+        "name": "20260919000500_resumable_business_onboarding.sql"
+      },
+      {
+        "sha256": "10989DEBEB74A5B162FE6301049A4A59056C3A8A6A369F8F7E9A843D326B80D7",
+        "name": "20260919000600_loyalty_edge_service_grants.sql"
+      },
+      {
+        "sha256": "E728F7FC4ADC964F2380168567F82A84B09046DC4D1E1249F9F6991FE7A9633D",
+        "name": "20260920000100_business_listing_billing.sql"
+      },
+      {
+        "sha256": "D78E7C2001BD1E912DDA86A5328CB3F84702AE175093393C11F784AA39B8D09D",
+        "name": "20260920000200_billing_moderation_role.sql"
+      },
+      {
+        "sha256": "B8F86EBE075F20D2936F92B0DBB6AC3299D7050946908A59308553FEC47AF36A",
+        "name": "20260920000300_lock_down_billing_tables.sql"
+      },
+      {
+        "sha256": "DD8686B0C7513255D782BA0515343EEE3D3C652E0B5C10474CAB0D9CCE793E11",
+        "name": "20260920000400_google_billing_product_ids.sql"
+      },
+      {
+        "sha256": "A9D79CFDF1641C540CED0321114EF381E827C995409A43C9960626215E834202",
+        "name": "20260920000500_listing_billing_rollout_flag.sql"
+      },
+      {
+        "sha256": "D74EAB9AFE06BD930A76D28E0AD5E532B88B970AA843CCA2063F3CC2084D8B09",
+        "name": "20260920000600_square_commerce.sql"
+      },
+      {
+        "sha256": "8BE07C37E4575AE574EA92D154F8816B5E25056F104BFF9D2AD9E6757BDBBFB3",
+        "name": "20260920000700_square_platform_settings_grant.sql"
+      },
+      {
+        "sha256": "EC214B0F04F6BB5FD87B49E46A2C187E3D0C4477776C58EE238E78819DD8543B",
+        "name": "20260920000800_public_pickup_capabilities.sql"
+      },
+      {
+        "sha256": "3AFFE5D343C4C524CFD054E27772719791AED165F11AF11B7E75412869E85EE7",
+        "name": "20260920000900_square_pickup_stops_service_grant.sql"
+      },
+      {
+        "sha256": "09B813716A738E9547264554063B46E053D579A1704372C9A310952A7EC5C304",
+        "name": "20260920001000_pickup_order_workspace.sql"
+      },
+      {
+        "sha256": "3547607777914B19C149F5F1BEF4FCBBD7ED9618C759BD992979E661408A04AD",
+        "name": "20260920001100_automatic_pickup_timezone.sql"
+      },
+      {
+        "sha256": "939D00D3B897C871078384584EFBD34E0D1B3BCA343FF706B1BD1E3B02BDF18A",
+        "name": "20260920001200_pickup_order_notifications.sql"
+      },
+      {
+        "sha256": "5EA6E3176720A54F374838BAEA54A84E9DBA1EC60C5E991BE4C2F63E381F37A4",
+        "name": "20260920001300_pickup_confirmation.sql"
+      },
+      {
+        "sha256": "66E33099BC19A5BA978B48C94354E22DDFCD272466018E4D14E0239AC51F7CBE",
+        "name": "20260920001400_checkout_rewards.sql"
+      },
+      {
+        "sha256": "A8E870167831F71CC25759D910F1EF946CE395D70A4FA82C407045F2C810FE06",
+        "name": "20260920001500_notification_delivery_state_rpc.sql"
+      },
+      {
+        "sha256": "8BB87D9445EC667046A46E5432FBE5DE8F17300FA97F3FF6BA0C91E12A1EAC55",
+        "name": "20260920001600_business_push_recipient_routing.sql"
+      },
+      {
+        "sha256": "E97DD992BAA7D4F9A69C1B13F95EDF3B0A02DA1094FD65C01B60F47B526CFB84",
+        "name": "20260920001700_business_order_alert_copy.sql"
+      },
+      {
+        "sha256": "7C519AA1FF782714363DA5917F57CA48076BA541B18568E02C65C99BDCD16644",
+        "name": "20260921000100_stripe_pickup_ordering.sql"
+      },
+      {
+        "sha256": "B5AA8FC9FD75C84A32EB1CD8A64BE779CDA390F370538124ADD6DE60EA58F81E",
+        "name": "20260921000200_stripe_reserve_provider.sql"
+      },
+      {
+        "sha256": "C44744EECA58D10834423F6236ED81D21FAFE2F3B60EF7DC84C7421533EF0193",
+        "name": "20260921000300_provider_pickup_capabilities.sql"
+      },
+      {
+        "sha256": "29B5C2BD1DD06E9496BFE76901339384B663B316A2E4FEA699870FB0C866765D",
+        "name": "20260921000400_stripe_test_business.sql"
+      },
+      {
+        "sha256": "64DDCD0AE94E1A1118BB7B7BFFB4EAAADC81685B6CDAB1BB689E38C507A6695A",
+        "name": "20260921000500_stripe_test_rollout_fixture.sql"
+      },
+      {
+        "sha256": "2BB317E1250C4424F0B31B1CF9477241A6B0E68326F8D63973A893209AE1913B",
+        "name": "20260921000600_stripe_service_role_catalog_grants.sql"
+      },
+      {
+        "sha256": "0BA489F908C6E30106F10A0BAE098619BC2E892C4FE0F0AF280AA14A9440259C",
+        "name": "20260921000700_assign_stripe_test_business_owner.sql"
+      },
+      {
+        "sha256": "5A10F7A19D92D8D873EEACD4DC7A4BD84BB85696C96DBB7D357F1281451F48D0",
+        "name": "20260921000800_enable_stripe_fixture_pickup.sql"
+      },
+      {
+        "sha256": "4BD74C260216786B26BBEE0FB5A44B0E08A6189F90CEB6B907BE155C49C1F1D2",
+        "name": "20260921000900_ordering_provider_separation.sql"
+      },
+      {
+        "sha256": "AB8E2C74AAB6B8E29CD0435D607CEE3BDE2C8D457FC06AE45240022326931AAB",
+        "name": "20260921001000_pickup_rpc_row_security.sql"
+      },
+      {
+        "sha256": "37A1459B7A43E65A9E88AD5056B7FA815F7F81A9CFE5D0C313BF272125E43E56",
+        "name": "20260921001100_prevalidate_business_media_uploads.sql"
+      },
+      {
+        "sha256": "25B350C6BFC271B335525E843250FB74E2FBB4C5658789202E10E3FD892A646B",
+        "name": "20260926000100_bounded_media_staging.sql"
+      },
+      {
+        "sha256": "E1BFA28DBFF5C618BDABC65AA3587FED1C1EE582554036ECFDAC22481AB835FB",
+        "name": "20260927000100_local_growth_features.sql"
+      },
+      {
+        "sha256": "795762291725520E05D962B4B4BF348437FF890E8783B4806013270F554DF1D1",
+        "name": "20260927000200_customer_order_requests.sql"
+      },
+      {
+        "sha256": "DCA68BFA0B0A546E3D9E0B7CB8D9D6FC8F5669C7BB0221B8FD4B0FBDBEECA2FB",
+        "name": "20260927000300_verified_order_reviews.sql"
+      },
+      {
+        "sha256": "94DA7DFB3BCF5FA96C0DB7DF03F88935981766435174571126D2DD6D84F2EC30",
+        "name": "20260927000400_square_sandbox_appointments.sql"
+      },
+      {
+        "sha256": "F78C324C6FE3DA00197D2635A21F2B36E7550B4EDBA69F3F5C8975ACA167EEAD",
+        "name": "20260927000500_event_rsvp_groups.sql"
+      },
+      {
+        "sha256": "2C2370E2B0950F507BD590DB00ED5AE67633C3D42D07E30B5442BA27A3161B2E",
+        "name": "20260927000600_verified_event_reviews.sql"
+      },
+      {
+        "sha256": "6B3E61D4C8D18C5A6AB72B0E9057C4EAC2A3EEF06F22BF7F0D2CC1267CE8DABE",
+        "name": "20260928000100_payment_lifecycle_settlement.sql"
+      },
+      {
+        "sha256": "3A8D1A12AE38CF3207A847EE7A600EA6854DEF7EE4AAEBF3165267494ADD352D",
+        "name": "20260928000200_stripe_webhook_recovery.sql"
+      },
+      {
+        "sha256": "F6C8E2FD7AB0C87B4BF698A2711890E78089E4F408163592ECAFEA37FB1354F1",
+        "name": "20260928000300_item_refunds_and_request_queue.sql"
+      },
+      {
+        "sha256": "BB95F20FE3FE12A384B6766E5B9961242627C9193032B3374D7C68E520452128",
+        "name": "20260928000400_close_cancelled_order_requests.sql"
+      },
+      {
+        "sha256": "D518B86AF8F5CF5E6D2027811EFA83D845D38C386485DDB8E239331CF98660AB",
+        "name": "20260928050000_appointment_booking_rollout.sql"
+      },
+      {
+        "sha256": "9C63B0EB9019962EE4F87DC8EB00547F33AE3DEC4439F1054CDC17C792CD3D7E",
+        "name": "20260928060000_fix_appointment_setup_scope.sql"
+      },
+      {
+        "sha256": "82F97CD97BB79D8D2A605EB905361F5714EBE15BCE4B7A97AE67C1CD0882F5D2",
+        "name": "20260928070000_appointment_connection_capability.sql"
+      },
+      {
+        "sha256": "5625EBA9E44EC1A6FFDA110B62E9D96890B2E39EE8834F2C97682FC96D33CC70",
+        "name": "20260929000100_fix_rsvp_result_type.sql"
+      },
+      {
+        "sha256": "760CFF89A0AE5FD9F2D5466A3D6E9C5A9A50ECFC318EC2A4B24E562DB1D4319B",
+        "name": "20260929000200_feature_subscription_catalog.sql"
+      },
+      {
+        "sha256": "B04C5D6C1F9578B6A258C83138D9906947D55810D0F7AFC1E7062B6677FFC141",
+        "name": "20260929000300_business_creation_subscription_gate.sql"
+      },
+      {
+        "sha256": "818646973FA96657D90CAD2F1BC117AA652E860BEC4FC9921691F6C3B90C0225",
+        "name": "20260929000350_owner_review_inbox.sql"
+      },
+      {
+        "sha256": "7362435C5E083DF36A666265056ECFF2931E82027FD8F3099BBA5FBC105DDE36",
+        "name": "20260929000400_public_review_summaries.sql"
+      },
+      {
+        "sha256": "C688227E830BEEF6E22578C793E857A6D25D29D3C0C57792AC6965BAB3B814F0",
+        "name": "20260929000500_owner_review_replies.sql"
+      },
+      {
+        "sha256": "B1E69A0C37723305FBD10150B6043904982FE6082EC5D0424DDDDB51D985A706",
+        "name": "20260929000600_listing_subscription_event_ordering.sql"
+      },
+      {
+        "sha256": "6C04575CC978E6336BAADD0B9C9A91FCB7793D4C6EC262D779F805EFDE8A054F",
+        "name": "20260929000700_sandbox_subscription_rollout.sql"
+      },
+      {
+        "sha256": "F78DA86BED05A4EBA6DAC4F7BCCAD1D4E8BAC44D6E9418330C69BD0292CE1DB1",
+        "name": "20260929000800_attended_event_read_grants.sql"
+      },
+      {
+        "sha256": "214A0D911B05AAED6D5536C8A0E78D9D1CAF687302A606C0984D10C1E05CBB79",
+        "name": "20260929000900_storage_preflight_content_length.sql"
+      },
+      {
+        "sha256": "3FF394383C3EAAF7D34C5C7C1F011B6ACDA7CE5E50B0AE5CDA7B33092626AA3B",
+        "name": "20260929001000_automatic_checkout_reward_item.sql"
+      },
+      {
+        "sha256": "B3DAB11B9C284C441010AC55DD5E5ED34B23FB3A90E6CEEF1B233FF1FB06ADD8",
+        "name": "20260929001100_explicit_checkout_rewards.sql"
+      },
+      {
+        "sha256": "865DA042A695BBE68EB9ED38DB0272EB75CCC5CC236C3E357D96FB23514A929B",
+        "name": "20260929001200_service_request_forms.sql"
+      },
+      {
+        "sha256": "4F0AE31E5AECE9E61E7B0EEC6FCA5A619BFA2B3368B4816ECFD2F917B68E6F74",
+        "name": "20260929001300_pickup_short_codes.sql"
+      },
+      {
+        "sha256": "E36573836CBD07F5302B2C33AD9A847A909887EB13733876EE326ACA4A32FEF3",
+        "name": "20260929001400_public_review_initials.sql"
+      },
+      {
+        "sha256": "CC2C79229897E7B49EB62DF6977AF02E9081D905B8F34AC635F17C99400BE415",
+        "name": "20260930000100_request_contact_input_types.sql"
+      },
+      {
+        "sha256": "005FB774EC99FC432148257AE8CD4FB07C694FE2F020574D48B3478D8E99853E",
+        "name": "20260930000200_business_feature_enforcement.sql"
+      },
+      {
+        "sha256": "49B87E16D5AA8E3CAD6967B64F903BC93CE01B10040E35D843E3DF21572FA001",
+        "name": "20260930000300_private_rpc_execute_grants.sql"
+      },
+      {
+        "sha256": "0D35ABA56B1D6A895D31F1F30E7BDB91867E5069F37DCA94BA44C6F1104E7A73",
+        "name": "20260930000400_moderation_report_result_types.sql"
+      }
+    ],
+    "tests": [
+      {
+        "test": "attended_event_read_grants.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 208,
+        "sourceSha256": "384F5E3E2B7116699FA58D33111DF019CAA36DD08AF7A1F46876F10192BE880A",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\attended_event_read_grants.log"
+      },
+      {
+        "test": "automatic_checkout_reward_item.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 284,
+        "sourceSha256": "E93A3FE6A2A47B755B82153E835D1EA3AF082EBA76D7C025187104107F6E9C48",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\automatic_checkout_reward_item.log"
+      },
+      {
+        "test": "automatic_pickup_timezone.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 352,
+        "sourceSha256": "1194BFA521188258FECAE05ED7B414334EF935E19E30A29BA9FF91A2E8E70B08",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\automatic_pickup_timezone.log"
+      },
+      {
+        "test": "business_creation_subscription_gate.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 242,
+        "sourceSha256": "E365695B9D4CF1C900C629967A181FBC2559EBC3E16F946B20227CA9EDA13771",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\business_creation_subscription_gate.log"
+      },
+      {
+        "test": "business_feature_enforcement.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 218,
+        "sourceSha256": "99AA29D5FAACFF94394DFA8DCBA3C3AAB3637F4785159F4C2168C38C32ED278F",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\business_feature_enforcement.log"
+      },
+      {
+        "test": "business_listing_billing.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 200,
+        "sourceSha256": "2929642263E4FC52922BC8DD3F66881A5BF8C14FA8C412AF691C5A71970D2B4F",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\business_listing_billing.log"
+      },
+      {
+        "test": "business_onboarding.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 228,
+        "sourceSha256": "D25BEA3436F32BD948D2DEAF4864B8F80D77B06AD0083DCD395775244E8E086C",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\business_onboarding.log"
+      },
+      {
+        "test": "explicit_checkout_rewards.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 329,
+        "sourceSha256": "EE0AC64386475E98BEAA9A48D6A67389A1D7D0CCDE3DB22E9638E0CAB50C407F",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\explicit_checkout_rewards.log"
+      },
+      {
+        "test": "feature_subscription_catalog.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 189,
+        "sourceSha256": "D3536927A954B784F46A9154AE537390943C4F086D7997B414C28C4116721117",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\feature_subscription_catalog.log"
+      },
+      {
+        "test": "item_refund_settlement.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 204,
+        "sourceSha256": "C22512AF4CDED3005C96F66651FA7E44357E5BB4B33FD356E97BBD03F4AAAAB6",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\item_refund_settlement.log"
+      },
+      {
+        "test": "listing_subscription_event_ordering.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 207,
+        "sourceSha256": "011A0E36751DF3EB59EBECD597A33CCE168477A69886A7CCA9870E5C511EFC88",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\listing_subscription_event_ordering.log"
+      },
+      {
+        "test": "media_cleanup.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 203,
+        "sourceSha256": "260EE5675C5E73B818A91D0F6CEEABDB583182EFD4DE1210911A75C42E5525D4",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\media_cleanup.log"
+      },
+      {
+        "test": "moderation_report_contract.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 196,
+        "sourceSha256": "5DBE0F771FA5D7FE3A3CC7217DF89D1FD26FA16FAA18CE65315F5CBE1FAA78C3",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\moderation_report_contract.log"
+      },
+      {
+        "test": "nearby_alerts.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 203,
+        "sourceSha256": "4FED4BCF112EBBB6DCC57A947853BB45EC55262D1C58A702FE88FFEB069C2112",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\nearby_alerts.log"
+      },
+      {
+        "test": "notifications.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 207,
+        "sourceSha256": "5448EB4BB7332A0C382C9776CA2157FB76DADAEB62AEB424691DF3801BF73975",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\notifications.log"
+      },
+      {
+        "test": "order_support_lifecycle.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 198,
+        "sourceSha256": "C5869DA6CA9FBCF38C1A3D04662BF16491FF5F9CAC70F3C19563B7505B0B53AB",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\order_support_lifecycle.log"
+      },
+      {
+        "test": "ordering_provider_separation.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 525,
+        "sourceSha256": "970994D4C0E5F8F1A1E519D4835C007114F8E91D25B0B0B7EB1C483840E1CC81",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\ordering_provider_separation.log"
+      },
+      {
+        "test": "owner_review_inbox.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 199,
+        "sourceSha256": "29FC569ADD6E1B44E750AAA83C470D5B056560A29A3D5D39E0E81188C4E3F311",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\owner_review_inbox.log"
+      },
+      {
+        "test": "owner_review_replies.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 204,
+        "sourceSha256": "2E54D08DCE4B6908319D4A4E3042B9DD42CBEDB135E3B358F51832F6231A0327",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\owner_review_replies.log"
+      },
+      {
+        "test": "payment_lifecycle_settlement.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 245,
+        "sourceSha256": "FF6027DB616D89D6D01ACBB5841D7624A54B03299A5E477B7C516D139259B656",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\payment_lifecycle_settlement.log"
+      },
+      {
+        "test": "pickup_confirmation_and_notifications.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 216,
+        "sourceSha256": "AA8921ACF0E00614554B02F175B2464085AD0179D126E0B3C36603F435435954",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\pickup_confirmation_and_notifications.log"
+      },
+      {
+        "test": "pickup_order_workspace.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 366,
+        "sourceSha256": "02E905FF96763A48EDC8591940A6DDE726038F3D4B056B2D997EAC885AE198CD",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\pickup_order_workspace.log"
+      },
+      {
+        "test": "public_pickup_capabilities.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 401,
+        "sourceSha256": "B690AACC2C33F2AEF7AA02FF7B32A886ED949EEC487D6B2495189A426ED0563F",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\public_pickup_capabilities.log"
+      },
+      {
+        "test": "public_review_initials.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 213,
+        "sourceSha256": "247E108717E7D0B7F7B1B980D22B20180BC86FFAAFD705C999275C8B8828C48C",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\public_review_initials.log"
+      },
+      {
+        "test": "public_review_summaries.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 203,
+        "sourceSha256": "6B6A979909BC97F5E7245A3C3EA7C43F4A26DB6E42E6F4C6D138D06B59B65384",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\public_review_summaries.log"
+      },
+      {
+        "test": "request_contact_input_types.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 196,
+        "sourceSha256": "062835A0020C1F25DE2466BD9C4D0B197008BD8D063EC171119E3C27458969D2",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\request_contact_input_types.log"
+      },
+      {
+        "test": "rpc_execute_boundaries.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 187,
+        "sourceSha256": "0F90557F0691851CC4B23952E727E667082236D1E4EDFBFB9E498385696F1D90",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\rpc_execute_boundaries.log"
+      },
+      {
+        "test": "rsvp_result_contract.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 211,
+        "sourceSha256": "4538A54A2E2BEB3BE3F6BC16C0E7A25C1F1DB70806DE74A617F8D3C988665EC5",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\rsvp_result_contract.log"
+      },
+      {
+        "test": "sandbox_subscription_rollout.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 220,
+        "sourceSha256": "AA8E9D7D88DF8D8F2A21D23632F2651BB0E3AA788D2DE426123254F6A56F44B6",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\sandbox_subscription_rollout.log"
+      },
+      {
+        "test": "secure_loyalty.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 222,
+        "sourceSha256": "DE0A62FF815AF1927B9EEB398CF73528051824E99B417C4514F61A3AF097A8A8",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\secure_loyalty.log"
+      },
+      {
+        "test": "service_request_forms.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 207,
+        "sourceSha256": "755FEF56AE5BE3A21CAA1D7E9D7E87CEC5072769120226E352CBA06A4528540D",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\service_request_forms.log"
+      },
+      {
+        "test": "square_appointments.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 261,
+        "sourceSha256": "9534A20719FC24E2E238FE76EADA21AEEDEC27F42B3FBC3A3B10A4A018671EA5",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\square_appointments.log"
+      },
+      {
+        "test": "square_commerce.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 356,
+        "sourceSha256": "5F00181310B6B464F037E777FE8A0EEA6A1630D50AB4215F1EE3C476D4C4F743",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\square_commerce.log"
+      },
+      {
+        "test": "square_pickup_stops_service_grant.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 213,
+        "sourceSha256": "66031D4A2A2BB9B0378152D77497286BCBDB5071AAF1AB0C4831F62F581F8199",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\square_pickup_stops_service_grant.log"
+      },
+      {
+        "test": "storage_preflight_content_length.sql",
+        "passed": true,
+        "exitCode": 0,
+        "durationMs": 204,
+        "sourceSha256": "42E31DA959D50B2B8E3A1B19F768847595933B078DFD6C58B53A4BDF1719541B",
+        "log": "F:\\BusinessApp\\.codex-tmp\\database-verification\\results\\storage_preflight_content_length.log"
+      }
+    ]
+  },
+  "integration": {
+    "consecutivePasses": 2,
+    "checks": [
+      "OAuth state replay and encryption",
+      "Catalog synchronization and quotes",
+      "Concurrent duplicate checkout idempotency",
+      "Guest isolation",
+      "Payment webhook replay",
+      "Owner order transitions",
+      "QR pickup confirmation and repeat scan",
+      "Pending and completed refunds",
+      "Concurrent last-slot reservation",
+      "Unpaid checkout expiration",
+      "Provider disconnect"
+    ],
+    "remainingFixtureUsers": 0,
+    "provider": "Square transport simulated; real local Supabase database and auth",
+    "remainingFixtureOrders": 0,
+    "remainingFixtureBusinesses": 0
+  },
+  "structural": {
+    "publicTablesWithoutRls": 0,
+    "unvalidatedPublicConstraints": 0,
+    "postgisVersionRuntimePassed": true,
+    "publicSecurityDefinersWithoutFixedSearchPath": 0,
+    "invalidPublicIndexes": 0
+  },
+  "fixes": [
+    "Made staging-only seed migrations safe when their prerequisite staging accounts or business are absent.",
+    "Resolved duplicate migration version by moving owner_review_inbox to 20260929000350; did not rewrite hosted history.",
+    "Removed unintended client EXECUTE privileges from private RPCs and anonymous access from authenticated-only RPCs; verified 123 explicit permission contracts and fail-closed defaults for new functions. The initial local audit found 30 server-only functions executable by client roles.",
+    "Corrected varchar/text result mismatch in the moderation report RPC; verified both order and event reports and non-admin denial.",
+    "Removed staging-data dependencies from regression fixtures, updated pickup integration for QR confirmation, and made fixture cleanup checked and repeatable."
+  ],
+  "applicationLint": [
+    {
+      "function": "public.process_loyalty_action",
+      "issues": [
+        {
+          "level": "warning extra",
+          "message": "never read variable \"target_customer_id\"",
+          "sqlState": "00000"
+        },
+        {
+          "level": "warning extra",
+          "message": "never read variable \"required_stamps\"",
+          "sqlState": "00000"
+        }
+      ]
+    },
+    {
+      "function": "public.save_appointment_setup",
+      "issues": [
+        {
+          "level": "warning",
+          "message": "target type is different type than source type",
+          "statement": {
+            "lineNumber": "20",
+            "text": "statement block"
+          },
+          "hint": "The input expression type does not have an assignment cast to the target type.",
+          "detail": "cast \"text\" value to \"uuid[]\" type",
+          "context": "during statement block local variable \"service_ids\" initialization on line 14",
+          "sqlState": "42804"
+        },
+        {
+          "level": "warning",
+          "message": "target type is different type than source type",
+          "statement": {
+            "lineNumber": "20",
+            "text": "statement block"
+          },
+          "hint": "The input expression type does not have an assignment cast to the target type.",
+          "detail": "cast \"text\" value to \"uuid[]\" type",
+          "context": "during statement block local variable \"resource_ids\" initialization on line 15",
+          "sqlState": "42804"
+        },
+        {
+          "level": "warning extra",
+          "message": "never read variable \"business_record\"",
+          "sqlState": "00000"
+        }
+      ]
+    },
+    {
+      "function": "public.reserve_appointment_slot",
+      "issues": [
+        {
+          "level": "warning extra",
+          "message": "never read variable \"business_record\"",
+          "sqlState": "00000"
+        },
+        {
+          "level": "warning extra",
+          "message": "never read variable \"business_window\"",
+          "sqlState": "00000"
+        }
+      ]
+    },
+    {
+      "function": "public.submit_service_request",
+      "issues": [
+        {
+          "level": "warning",
+          "message": "target type is different type than source type",
+          "statement": {
+            "lineNumber": "9",
+            "text": "statement block"
+          },
+          "hint": "The input expression type does not have an assignment cast to the target type.",
+          "detail": "cast \"text\" value to \"jsonb\" type",
+          "context": "during statement block local variable \"snapshot\" initialization on line 8",
+          "sqlState": "42804"
+        }
+      ]
+    },
+    {
+      "function": "public.set_event_rsvp_check_in",
+      "issues": [
+        {
+          "level": "warning extra",
+          "message": "never read variable \"rsvp_row\"",
+          "sqlState": "00000"
+        }
+      ]
+    },
+    {
+      "function": "public.reschedule_appointment_slot",
+      "issues": [
+        {
+          "level": "warning extra",
+          "message": "never read variable \"business_record\"",
+          "sqlState": "00000"
+        },
+        {
+          "level": "warning extra",
+          "message": "never read variable \"business_window\"",
+          "sqlState": "00000"
+        }
+      ]
+    },
+    {
+      "function": "public.get_my_business_subscription_features",
+      "issues": [
+        {
+          "level": "warning",
+          "message": "target type is different type than source type",
+          "statement": {
+            "lineNumber": "5",
+            "text": "statement block"
+          },
+          "hint": "The input expression type does not have an assignment cast to the target type.",
+          "detail": "cast \"text\" value to \"text[]\" type",
+          "context": "during statement block local variable \"feature_codes_value\" initialization on line 4",
+          "sqlState": "42804"
+        }
+      ]
+    }
+  ],
+  "extensionLint": [
+    {
+      "function": "extensions.st_findextent",
+      "issues": [
+        {
+          "level": "warning",
+          "message": "cannot determinate a result of dynamic SQL",
+          "statement": {
+            "lineNumber": "8",
+            "text": "FOR over EXECUTE statement"
+          },
+          "hint": "Don't use dynamic SQL and record type together, when you would check function.",
+          "detail": "There is a risk of related false alarms.",
+          "sqlState": "00000"
+        },
+        {
+          "level": "error",
+          "message": "record \"myrec\" is not assigned yet",
+          "statement": {
+            "lineNumber": "9",
+            "text": "RETURN"
+          },
+          "detail": "The tuple structure of a not-yet-assigned record is indeterminate.",
+          "context": "SQL expression \"myrec.extent\"",
+          "sqlState": "55000"
+        }
+      ]
+    },
+    {
+      "function": "extensions.st_findextent",
+      "issues": [
+        {
+          "level": "warning",
+          "message": "cannot determinate a result of dynamic SQL",
+          "statement": {
+            "lineNumber": "8",
+            "text": "FOR over EXECUTE statement"
+          },
+          "hint": "Don't use dynamic SQL and record type together, when you would check function.",
+          "detail": "There is a risk of related false alarms.",
+          "sqlState": "00000"
+        },
+        {
+          "level": "error",
+          "message": "record \"myrec\" is not assigned yet",
+          "statement": {
+            "lineNumber": "9",
+            "text": "RETURN"
+          },
+          "detail": "The tuple structure of a not-yet-assigned record is indeterminate.",
+          "context": "SQL expression \"myrec.extent\"",
+          "sqlState": "55000"
+        }
+      ]
+    },
+    {
+      "function": "extensions.populate_geometry_columns",
+      "issues": [
+        {
+          "level": "warning",
+          "message": "unused variable \"gc\"",
+          "sqlState": "00000"
+        },
+        {
+          "level": "warning",
+          "message": "unused variable \"gsrid\"",
+          "sqlState": "00000"
+        },
+        {
+          "level": "warning",
+          "message": "unused variable \"gndims\"",
+          "sqlState": "00000"
+        },
+        {
+          "level": "warning",
+          "message": "unused variable \"gtype\"",
+          "sqlState": "00000"
+        },
+        {
+          "level": "warning",
+          "message": "unused variable \"query\"",
+          "sqlState": "00000"
+        },
+        {
+          "level": "warning",
+          "message": "unused variable \"gc_is_valid\"",
+          "sqlState": "00000"
+        },
+        {
+          "level": "warning extra",
+          "message": "never read variable \"stale\"",
+          "sqlState": "00000"
+        }
+      ]
+    },
+    {
+      "function": "extensions.populate_geometry_columns",
+      "issues": [
+        {
+          "level": "warning",
+          "message": "cannot determinate a result of dynamic SQL",
+          "statement": {
+            "lineNumber": "47",
+            "text": "EXECUTE"
+          },
+          "hint": "Don't use dynamic SQL and record type together, when you would check function.",
+          "detail": "There is a risk of related false alarms.",
+          "sqlState": "00000"
+        },
+        {
+          "level": "error",
+          "message": "record \"gc\" is not assigned yet",
+          "statement": {
+            "lineNumber": "55",
+            "text": "assignment"
+          },
+          "detail": "The tuple structure of a not-yet-assigned record is indeterminate.",
+          "context": "PL/pgSQL assignment \"gsrid := gc.srid\"",
+          "sqlState": "55000"
+        }
+      ]
+    },
+    {
+      "function": "extensions.addgeometrycolumn",
+      "issues": [
+        {
+          "level": "warning extra",
+          "message": "unreachable code",
+          "statement": {
+            "lineNumber": "28",
+            "text": "RETURN"
+          },
+          "sqlState": "00000"
+        },
+        {
+          "level": "warning extra",
+          "message": "unreachable code",
+          "statement": {
+            "lineNumber": "34",
+            "text": "RETURN"
+          },
+          "sqlState": "00000"
+        },
+        {
+          "level": "warning extra",
+          "message": "unreachable code",
+          "statement": {
+            "lineNumber": "39",
+            "text": "RETURN"
+          },
+          "sqlState": "00000"
+        },
+        {
+          "level": "warning extra",
+          "message": "unreachable code",
+          "statement": {
+            "lineNumber": "51",
+            "text": "RETURN"
+          },
+          "sqlState": "00000"
+        },
+        {
+          "level": "warning extra",
+          "message": "unreachable code",
+          "statement": {
+            "lineNumber": "70",
+            "text": "RETURN"
+          },
+          "sqlState": "00000"
+        },
+        {
+          "level": "warning extra",
+          "message": "unreachable code",
+          "statement": {
+            "lineNumber": "88",
+            "text": "RETURN"
+          },
+          "sqlState": "00000"
+        },
+        {
+          "level": "warning",
+          "message": "unused variable \"rec\"",
+          "sqlState": "00000"
+        },
+        {
+          "level": "warning extra",
+          "message": "never read variable \"sr\"",
+          "sqlState": "00000"
+        },
+        {
+          "level": "warning extra",
+          "message": "unused parameter \"catalog_name\"",
+          "sqlState": "00000"
+        }
+      ]
+    },
+    {
+      "function": "extensions.addgeometrycolumn",
+      "issues": [
+        {
+          "level": "warning",
+          "message": "routine is marked as STABLE, but expression is VOLATILE",
+          "statement": {
+            "lineNumber": "5",
+            "text": "SQL statement"
+          },
+          "hint": "When you fix this issue, please, recheck other functions that uses this function.",
+          "detail": "there is a risk of unwanted behave",
+          "sqlState": "00000"
+        }
+      ]
+    },
+    {
+      "function": "extensions.dropgeometrycolumn",
+      "issues": [
+        {
+          "level": "warning extra",
+          "message": "unreachable code",
+          "statement": {
+            "lineNumber": "34",
+            "text": "RETURN"
+          },
+          "sqlState": "00000"
+        },
+        {
+          "level": "warning extra",
+          "message": "never read variable \"myrec\"",
+          "sqlState": "00000"
+        },
+        {
+          "level": "warning extra",
+          "message": "unused parameter \"catalog_name\"",
+          "sqlState": "00000"
+        }
+      ]
+    },
+    {
+      "function": "extensions.dropgeometrytable",
+      "issues": [
+        {
+          "level": "warning extra",
+          "message": "unused parameter \"catalog_name\"",
+          "sqlState": "00000"
+        }
+      ]
+    },
+    {
+      "function": "extensions.updategeometrysrid",
+      "issues": [
+        {
+          "level": "warning extra",
+          "message": "unreachable code",
+          "statement": {
+            "lineNumber": "36",
+            "text": "RETURN"
+          },
+          "sqlState": "00000"
+        },
+        {
+          "level": "warning extra",
+          "message": "unreachable code",
+          "statement": {
+            "lineNumber": "43",
+            "text": "RETURN"
+          },
+          "sqlState": "00000"
+        },
+        {
+          "level": "warning extra",
+          "message": "unused parameter \"catalogn_name\"",
+          "sqlState": "00000"
+        }
+      ]
+    },
+    {
+      "function": "extensions.get_proj4_from_srid",
+      "issues": [
+        {
+          "level": "warning",
+          "message": "routine is marked as IMMUTABLE, but expression is STABLE",
+          "statement": {
+            "lineNumber": "3",
+            "text": "RETURN"
+          },
+          "hint": "When you fix this issue, please, recheck other functions that uses this function.",
+          "detail": "there is a risk of unwanted behave",
+          "sqlState": "00000"
+        },
+        {
+          "level": "warning extra",
+          "message": "expression is not pure expression",
+          "statement": {
+            "lineNumber": "3",
+            "text": "RETURN"
+          },
+          "query": {
+            "position": "1",
+            "text": "proj4text::text FROM extensions.spatial_ref_sys WHERE srid= $1"
+          },
+          "hint": "Maybe you forgot to use a semicolon.",
+          "detail": "there is a possibility of unwanted behave",
+          "sqlState": "42601"
+        }
+      ]
+    },
+    {
+      "function": "extensions.postgis_full_version",
+      "issues": [
+        {
+          "level": "warning",
+          "message": "routine is marked as IMMUTABLE, but expression is STABLE",
+          "statement": {
+            "lineNumber": "33",
+            "text": "SQL statement"
+          },
+          "hint": "When you fix this issue, please, recheck other functions that uses this function.",
+          "detail": "there is a risk of unwanted behave",
+          "sqlState": "00000"
+        },
+        {
+          "level": "error",
+          "message": "function extensions.postgis_gdal_version() does not exist",
+          "statement": {
+            "lineNumber": "35",
+            "text": "SQL statement"
+          },
+          "query": {
+            "position": "8",
+            "text": "SELECT extensions.postgis_gdal_version()"
+          },
+          "hint": "No function matches the given name and argument types. You might need to add explicit type casts.",
+          "sqlState": "42883"
+        }
+      ]
+    },
+    {
+      "function": "extensions.longtransactionsenabled",
+      "issues": [
+        {
+          "level": "warning",
+          "message": "target type is different type than source type",
+          "statement": {
+            "lineNumber": "7",
+            "text": "RETURN"
+          },
+          "hint": "The input expression type does not have an assignment cast to the target type.",
+          "detail": "cast \"text\" value to \"boolean\" type",
+          "context": "at RETURN",
+          "sqlState": "42804"
+        },
+        {
+          "level": "warning",
+          "message": "target type is different type than source type",
+          "statement": {
+            "lineNumber": "9",
+            "text": "RETURN"
+          },
+          "hint": "The input expression type does not have an assignment cast to the target type.",
+          "detail": "cast \"text\" value to \"boolean\" type",
+          "context": "at RETURN",
+          "sqlState": "42804"
+        },
+        {
+          "level": "warning extra",
+          "message": "never read variable \"rec\"",
+          "sqlState": "00000"
+        }
+      ]
+    },
+    {
+      "function": "extensions.lockrow",
+      "issues": [
+        {
+          "level": "error",
+          "message": "relation \"authorization_table\" does not exist",
+          "statement": {
+            "lineNumber": "18",
+            "text": "EXECUTE"
+          },
+          "query": {
+            "position": "13",
+            "text": "DELETE FROM authorization_table WHERE expires < now()"
+          },
+          "sqlState": "42P01"
+        }
+      ]
+    },
+    {
+      "function": "extensions.addauth",
+      "issues": [
+        {
+          "level": "error",
+          "message": "relation \"temp_lock_have_table\" does not exist",
+          "statement": {
+            "lineNumber": "24",
+            "text": "SQL statement"
+          },
+          "query": {
+            "position": "13",
+            "text": "INSERT INTO temp_lock_have_table VALUES (getTransactionID(), lockid)"
+          },
+          "sqlState": "42P01"
+        }
+      ]
+    },
+    {
+      "function": "extensions.enablelongtransactions",
+      "issues": [
+        {
+          "level": "warning extra",
+          "message": "never read variable \"rec\"",
+          "sqlState": "00000"
+        }
+      ]
+    },
+    {
+      "function": "extensions.st_letters",
+      "issues": [
+        {
+          "level": "warning",
+          "message": "target type is different type than source type",
+          "statement": {
+            "lineNumber": "98",
+            "text": "statement block"
+          },
+          "hint": "The input expression type does not have an assignment cast to the target type.",
+          "detail": "cast \"text\" value to \"json\" type",
+          "context": "during statement block local variable \"font_default\" initialization on line 18",
+          "sqlState": "42804"
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Hosted database contents, applied migration history, actual hosted ACLs and drift have not been verified or modified by this run.",
+    "PostGIS static lint reports six errors plus warnings in bundled extension functions involving dynamic SQL, optional raster functionality and optional long-transaction tables. postgis_full_version executes successfully; other flagged optional extension paths were not accepted by runtime tests. No vendor extension functions were rewritten.",
+    "Application lint retains 12 warnings for unused variables and implicit literal casts across seven functions.",
+    "Provider network responses were simulated; real Square/Stripe transactions and native store subscription acceptance remain separate.",
+    "The standalone loyalty Edge HTTP script, production backup/restore operations, load testing and native app acceptance were not part of this local SQL verification.",
+    "Store-readiness implementation is still in progress; this verification does not close all work-order findings or authorize rollout."
+  ],
+  "runners": [
+    "scripts/verify-database.ps1",
+    "scripts/verify-database-integration.ps1"
+  ],
+  "localEvidence": [
+    ".codex-tmp/database-verification/clean-reset.log",
+    ".codex-tmp/database-verification/results/summary.json",
+    ".codex-tmp/database-verification/integration.log",
+    ".codex-tmp/database-verification/integration-repeat.log",
+    ".codex-tmp/database-verification/structural-checks.log",
+    ".codex-tmp/database-verification/lint-public.log",
+    ".codex-tmp/database-verification/lint-final.log"
+  ]
+}

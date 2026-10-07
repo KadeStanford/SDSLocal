@@ -1,12 +1,26 @@
+import { FlowSection } from '@/components/flow-layout';
+import {
+  MerchantButton,
+  MerchantRow,
+  MerchantSheet,
+  MerchantStatus,
+} from '@/components/merchant-ui';
+import { useMerchantTheme } from '@/hooks/use-merchant-theme';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { AppButton } from './app-button';
 import { ThemedText } from './themed-text';
 import { CommerceToggle } from './commerce-fields';
 import { PickupSettingsEditor } from './pickup/pickup-settings-editor';
+import { PickupLaunchGuide } from './pickup/pickup-launch-guide';
 import { OrderNotificationSettings } from './pickup/order-notification-settings';
 import { commerce, openCheckout } from '@/lib/square-commerce';
+import {
+  isStripeEmbeddedOnboardingAvailable,
+  StripeEmbeddedOnboarding,
+  type StripeOnboardingFailure,
+} from './stripe-embedded-onboarding';
 import {
   createPickupEditor,
   persistPickupSettings,
@@ -24,18 +38,24 @@ export function StripeOrderingPanel({
   businessId,
   isMobile,
   onDirtyChange,
+  onConnectSquare,
 }: {
   readonly businessId: string;
   readonly isMobile: boolean;
   readonly onDirtyChange: (value: boolean) => void;
+  readonly onConnectSquare: () => void;
 }) {
   const colors = useTheme();
+  const merchantColors = useMerchantTheme();
+  const [pickupSettingsOpen, setPickupSettingsOpen] = useState(false);
   const [state, setState] = useState<any>(null);
   const [editor, setEditor] = useState(createPickupEditor);
   const editorRef = useRef(editor);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [showEmbeddedOnboarding, setShowEmbeddedOnboarding] = useState(false);
+  const [embeddedSetupFailed, setEmbeddedSetupFailed] = useState(false);
   const isDirty = pickupEditorDirty(editor);
   const updateEditor = useCallback(
     (event: PickupEditorEvent) => {
@@ -72,14 +92,17 @@ export function StripeOrderingPanel({
       setBusy(false);
     }
   };
-  const connected = state?.connection?.state === 'connected' && state?.account?.chargesEnabled;
+  const connected =
+    state?.connection?.state === 'connected' &&
+    state?.account?.chargesEnabled &&
+    state?.account?.payoutsEnabled;
   const hasStripeAccount = Boolean(
     state?.account?.accountId || state?.connection?.provider === 'stripe',
   );
   const stripeSetupNeedsReview = hasStripeAccount && !connected;
   const stripeSetupCopy = state?.account?.detailsSubmitted
-    ? 'Your Stripe account is saved. Verification or payout review is still in progress. Continue only if Stripe asks for more information.'
-    : 'Your Stripe test account is saved. Continue hosted setup to finish verification and payouts.';
+    ? 'Your payment details are saved. Verification or payout review is still in progress. You can return here to finish any remaining steps.'
+    : 'Stripe asks for the information currently required to start accepting payments. It may ask for more later, and identity or bank verification can still be required before payouts are enabled.';
   const ready = pickupReadiness(state as any, 'stripe');
   const enableIssue = pickupActivationIssue(editor.draft, ready, 'enabled', true);
   const openIssue = pickupActivationIssue(editor.draft, ready, 'is_open', true);
@@ -94,12 +117,58 @@ export function StripeOrderingPanel({
       control === 'enabled' && !value ? { enabled: false, is_open: false } : { [control]: value },
     );
   };
-  const connect = () =>
-    void run(async () => {
+  const continueStripeInBrowser = () =>
+    run(async () => {
       const result = await commerce<{ url: string }>('connect', { businessId, provider: 'stripe' });
       await openCheckout(result.url);
       await load();
     });
+  const connect = () => {
+    setError('');
+    setMessage('');
+    if (isStripeEmbeddedOnboardingAvailable()) {
+      setEmbeddedSetupFailed(false);
+      setShowEmbeddedOnboarding(true);
+      return;
+    }
+    if (Platform.OS === 'web') {
+      void continueStripeInBrowser();
+      return;
+    }
+    setError(
+      'In-app Stripe setup is not configured for this build. Update Parish Pass and try again.',
+    );
+  };
+  const handleEmbeddedOnboardingError = useCallback(
+    ({ reason, code, status, providerCode, providerRequestId }: StripeOnboardingFailure) => {
+      setShowEmbeddedOnboarding(false);
+      setEmbeddedSetupFailed(true);
+      const diagnostic = [
+        providerRequestId,
+        providerCode ? `Stripe ${providerCode}` : undefined,
+        code,
+        status ? `HTTP ${status}` : undefined,
+      ]
+        .filter(Boolean)
+        .join(' · ');
+      setError(
+        reason === 'session'
+          ? `Parish Pass could not start Stripe’s secure in-app setup. Check your connection and retry.${
+              diagnostic ? ` (${diagnostic})` : ''
+            }`
+          : `Stripe setup did not finish loading. Retry in Parish Pass.${diagnostic ? ` (${diagnostic})` : ''}`,
+      );
+    },
+    [],
+  );
+  const closeEmbeddedOnboarding = () => {
+    setShowEmbeddedOnboarding(false);
+    void load()
+      .then(() => setMessage('Payment setup status refreshed. You can resume anytime.'))
+      .catch(() =>
+        setError('Payment setup status could not be refreshed. Tap Retry to check again.'),
+      );
+  };
   const save = () =>
     void run(async () => {
       updateEditor({ type: 'saving' });
@@ -118,41 +187,68 @@ export function StripeOrderingPanel({
     });
   return (
     <View style={{ gap: 16, paddingBottom: 40 }}>
-      <View style={{ gap: 6 }}>
-        <ThemedText type="title">Stripe online ordering</ThemedText>
-        <ThemedText themeColor="textSecondary">
-          Accept pickup payments directly into the business’s Stripe account. SDS never holds the
-          customer’s payment.
-        </ThemedText>
-      </View>
+      <MerchantStatus label="Stripe · test mode" />
+      <PickupLaunchGuide
+        steps={[
+          { label: 'Connect your Stripe account', complete: ready.connected },
+          {
+            label: 'Submit business details and enable payouts',
+            complete: Boolean(state?.account?.detailsSubmitted && state.account.payoutsEnabled),
+          },
+          {
+            label: 'Sync a menu with at least one item',
+            complete: ready.synced && ready.variations > 0,
+          },
+          { label: 'Add pickup hours', complete: editor.draft.pickup_windows.length > 0 },
+          {
+            label: 'Turn on pickup and accept orders',
+            complete: editor.draft.enabled && editor.draft.is_open,
+          },
+        ]}
+      />
       {!connected ? (
         <View
           style={{
             gap: 12,
             padding: 18,
-            borderRadius: 18,
-            backgroundColor: colors.surfaceElevated,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: merchantColors.border,
+            backgroundColor: merchantColors.surface,
           }}
         >
           <ThemedText type="card">
-            {stripeSetupNeedsReview ? 'Stripe verification in progress' : 'Connect Stripe'}
+            {stripeSetupNeedsReview ? 'Payment verification in progress' : 'Online payment setup'}
           </ThemedText>
           <ThemedText themeColor="textSecondary">
             {hasStripeAccount
               ? stripeSetupCopy
-              : 'Create or finish a Stripe account in test mode before enabling pickup ordering.'}
+              : 'Stripe asks for the information currently required to start accepting payments. It may ask for more later, and identity or bank verification can still be required before payouts are enabled.'}
           </ThemedText>
           <AppButton
             label={
-              hasStripeAccount
-                ? state?.account?.detailsSubmitted
-                  ? 'Review Stripe verification'
-                  : 'Continue Stripe setup'
-                : 'Connect Stripe'
+              embeddedSetupFailed
+                ? 'Retry setup in Parish Pass'
+                : hasStripeAccount
+                  ? 'Continue payment setup'
+                  : isStripeEmbeddedOnboardingAvailable()
+                    ? 'Set up payments in Parish Pass'
+                    : 'Continue secure payment setup'
             }
             onPress={connect}
             disabled={busy}
           />
+          {!isStripeEmbeddedOnboardingAvailable() && (
+            <ThemedText type="small" themeColor="textSecondary">
+              {Platform.OS === 'web'
+                ? 'Stripe will securely open its account setup page.'
+                : 'In-app Stripe setup is unavailable in this build.'}
+            </ThemedText>
+          )}
+          <ThemedText type="small" themeColor="textSecondary">
+            Parish Pass adds no fee to Stripe orders. Stripe processing fees may apply to real
+            payments.
+          </ThemedText>
         </View>
       ) : (
         <View style={{ gap: 12 }}>
@@ -160,8 +256,10 @@ export function StripeOrderingPanel({
             style={{
               gap: 5,
               padding: 18,
-              borderRadius: 18,
-              backgroundColor: colors.surfaceElevated,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: merchantColors.border,
+              backgroundColor: merchantColors.surface,
             }}
           >
             <ThemedText type="card">Stripe is connected</ThemedText>
@@ -171,17 +269,23 @@ export function StripeOrderingPanel({
                 : 'Finish account details in Stripe'}{' '}
               · {state?.account?.payoutsEnabled ? 'Payouts enabled' : 'Payouts pending'}
             </ThemedText>
-            <AppButton
-              label="Sync SDS menu"
-              onPress={() =>
-                void run(async () => {
-                  await commerce('sync', { businessId, provider: 'stripe' });
-                  await load();
-                  setMessage('Menu synced from SDS.');
-                })
-              }
-              disabled={busy}
-            />
+            <FlowSection
+              title="Menu synchronization"
+              description="Update checkout when your menu changes."
+              collapsible
+            >
+              <AppButton
+                label="Sync Parish Pass menu"
+                onPress={() =>
+                  void run(async () => {
+                    await commerce('sync', { businessId, provider: 'stripe' });
+                    await load();
+                    setMessage('Menu synced from Parish Pass.');
+                  })
+                }
+                disabled={busy}
+              />
+            </FlowSection>
           </View>
           <View style={{ gap: Spacing.three }}>
             <ThemedText type="card">Order availability</ThemedText>
@@ -217,34 +321,91 @@ export function StripeOrderingPanel({
                 />
               )}
               <ThemedText type="small" themeColor="textSecondary">
-                {!editor.draft.enabled
-                  ? 'Pickup ordering is off.'
-                  : editor.draft.is_open
-                    ? 'Customers can order during your pickup hours.'
-                    : 'New orders are paused. Existing orders can still be fulfilled.'}
+                {isDirty
+                  ? 'Availability changes are not applied yet. Save changes to update customer ordering.'
+                  : !editor.draft.enabled
+                    ? 'Pickup ordering is off.'
+                    : editor.draft.is_open
+                      ? 'Customers can order during your pickup hours.'
+                      : 'New orders are paused. Existing orders can still be fulfilled.'}
               </ThemedText>
               {!!(editor.draft.enabled ? openIssue : enableIssue) && (
                 <ThemedText type="small" themeColor="textSecondary">
                   {editor.draft.enabled ? openIssue : enableIssue}
                 </ThemedText>
               )}
+              {isDirty && <MerchantButton label="Save changes" loading={busy} onPress={save} />}
             </View>
           </View>
-          <PickupSettingsEditor
-            draft={editor.draft}
-            disabled={busy}
-            isMobile={isMobile}
-            onChange={edit}
+          <MerchantRow
+            title="Pickup hours & rules"
+            subtitle={
+              editor.draft.pickup_windows.length +
+              ' weekly windows · ' +
+              editor.draft.preparation_minutes +
+              ' min preparation'
+            }
+            status={
+              <MerchantStatus
+                label={isDirty ? 'Unsaved changes' : 'Saved'}
+                tone={isDirty ? 'warning' : 'quiet'}
+              />
+            }
+            onPress={() => setPickupSettingsOpen(true)}
           />
-          <AppButton
-            label={isDirty ? 'Save pickup settings' : 'Pickup settings saved'}
-            onPress={save}
-            disabled={busy || !isDirty}
-          />
+          <MerchantSheet
+            visible={pickupSettingsOpen}
+            title="Pickup hours & rules"
+            blocked={busy}
+            onClose={() => setPickupSettingsOpen(false)}
+          >
+            <ThemedText type="small" themeColor="textSecondary">
+              Changes are retained while you browse. Save to apply them to customer orders.
+            </ThemedText>
+            {error && (
+              <ThemedText accessibilityRole="alert" style={{ color: colors.errorText }}>
+                {error}
+              </ThemedText>
+            )}
+            <PickupSettingsEditor
+              draft={editor.draft}
+              disabled={busy}
+              isMobile={isMobile}
+              onChange={edit}
+            />
+            <AppButton
+              label={isDirty ? 'Save pickup settings' : 'Pickup settings saved'}
+              onPress={save}
+              disabled={busy || !isDirty}
+            />
+          </MerchantSheet>
         </View>
       )}
       {error ? <ThemedText style={{ color: colors.errorText }}>{error}</ThemedText> : null}
       {message ? <ThemedText themeColor="textSecondary">{message}</ThemedText> : null}
+      <FlowSection
+        title="Other payment options"
+        description="Connect an existing Square account"
+        collapsible
+      >
+        <ThemedText type="smallBold">Already use Square?</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          Connect Square to sync an existing menu and use its checkout instead.
+        </ThemedText>
+        <AppButton
+          label="Connect Square POS (optional)"
+          variant="tertiary"
+          onPress={onConnectSquare}
+          disabled={busy || isDirty}
+        />
+      </FlowSection>
+      {showEmbeddedOnboarding && (
+        <StripeEmbeddedOnboarding
+          businessId={businessId}
+          onExit={closeEmbeddedOnboarding}
+          onError={handleEmbeddedOnboardingError}
+        />
+      )}
       <OrderNotificationSettings />
     </View>
   );

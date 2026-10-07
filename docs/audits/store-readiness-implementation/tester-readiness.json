@@ -1,0 +1,139 @@
+{
+  "at": "2026-10-01T10:42:50.372Z",
+  "stage": "Backend and compatible mobile fixes deployed to staging/preview OTA; separate tester native build still pending",
+  "project": "lgddhdexvwclfrnzjtly",
+  "buildProfile": "tester-store",
+  "easEnvironment": "preview",
+  "channel": "testers",
+  "runtimePolicy": "fingerprint",
+  "verification": {
+    "localSql": {
+      "passed": 36,
+      "failed": 0,
+      "migrationCount": 102
+    },
+    "stagingSql": [
+      {
+        "name": "expired_business_recovery",
+        "passed": true,
+        "rolledBack": true
+      },
+      {
+        "name": "rpc_execute_boundaries",
+        "passed": true,
+        "rolledBack": true
+      },
+      {
+        "name": "business_feature_enforcement",
+        "passed": true,
+        "rolledBack": true
+      },
+      {
+        "name": "moderation_report_contract",
+        "passed": true,
+        "rolledBack": true
+      }
+    ],
+    "mobile": {
+      "passed": 47,
+      "files": 7,
+      "note": "46 tests passed in combined run; isolated visual fixture needed its new capability-hook mock, then the remaining render test passed."
+    },
+    "mobileTypecheck": "passed",
+    "sharedUnitTests": {
+      "passed": 160,
+      "files": 11
+    },
+    "testerConfig": {
+      "actualEasPreview": "passed",
+      "safeFixturePassed": true,
+      "rejectedInvalidVariants": 14
+    },
+    "checkoutIntegration": "passed against real isolated Supabase with simulated Square transport",
+    "policyPages": "privacy, terms, support, delete-account each returned HTTP 200",
+    "functionAuthenticationSmoke": [
+      {
+        "function": "loyalty-token",
+        "unauthenticatedStatus": 401
+      },
+      {
+        "function": "loyalty-transact",
+        "unauthenticatedStatus": 401
+      },
+      {
+        "function": "square-commerce",
+        "unauthenticatedStatus": 401
+      }
+    ],
+    "diffCheck": "Changed enforcement/config/Edge files passed. Repository-wide check reports pre-existing CRLF whitespace in service-request-form.tsx."
+  },
+  "deployedFunctions": [
+    {
+      "slug": "loyalty-token",
+      "version": 16,
+      "status": "ACTIVE",
+      "verify_jwt": true,
+      "updated_at": 1790850843665
+    },
+    {
+      "slug": "loyalty-transact",
+      "version": 15,
+      "status": "ACTIVE",
+      "verify_jwt": true,
+      "updated_at": 1790850843665
+    },
+    {
+      "slug": "square-commerce",
+      "version": 51,
+      "status": "ACTIVE",
+      "verify_jwt": false,
+      "updated_at": 1790850843665
+    }
+  ],
+  "mobileChanges": [
+    "Owner/staff feature prompts and plan navigation",
+    "Business-specific capability validation and refresh on identity, entitlement, focus and app-state changes",
+    "Protected setup entry points with existing-order and appointment recovery navigation",
+    "Expired reward scan/redemption behavior",
+    "Removed local test-inbox wording from password reset"
+  ],
+  "enrollmentTool": {
+    "path": "scripts/staging-playground/tester-access.cjs",
+    "scope": "confirmed existing staging UUIDs only; no email or plan grants",
+    "verification": "Syntax check and read-only check against an existing confirmed staging tester passed; no enrollment changes performed."
+  },
+  "sourceCheckpoint": {
+    "path": "tester-source-checkpoint.json",
+    "files": 640
+  },
+  "pending": [
+    "Compile/sign iOS and Android tester candidates and record build/runtime identifiers",
+    "Physical-device acceptance for install/update/offline, auth, purchases/restore, payment webhooks, push and permissions",
+    "Resolve open moderation/privacy/deletion and youth-audience findings before broader tester distribution",
+    "Configure support/triage operations and verify recovery monitoring and backup procedure",
+    "Recruit real testers; verify console-specific Play testing eligibility"
+  ],
+  "publishedOta": true,
+  "nativeBuildStarted": false,
+  "storeSubmitted": false,
+  "realPaymentSent": false,
+  "emailSent": false,
+  "mobileOta": {
+    "verifiedAt": "2026-10-01T11:33:16.845Z",
+    "channel": "preview",
+    "environment": "staging",
+    "runtime": "0.1.0",
+    "group": "2217fdae-1e17-48ad-9ff7-2a895a867b46",
+    "updates": [
+      {
+        "platform": "android",
+        "id": "01a0f73c-a4db-763d-a595-0821a37120c8"
+      },
+      {
+        "platform": "ios",
+        "id": "01a0f73c-a4db-7e34-a1aa-14cc60c7a89b"
+      }
+    ],
+    "url": "https://expo.dev/accounts/kadestanford/projects/sds-local/updates/2217fdae-1e17-48ad-9ff7-2a895a867b46"
+  }
+}

@@ -8,12 +8,14 @@ import { useAuth } from '@/providers/auth-provider';
 import { useNotifications } from '@/providers/notification-provider';
 import { useTheme } from '@/hooks/use-theme';
 
-export function OrderNotificationSettings() {
+export function OrderNotificationSettings({ hideHeading = false }: { hideHeading?: boolean }) {
   const { session } = useAuth();
-  return <OrderNotificationSettingsForUser key={session?.user.id ?? 'guest'} />;
+  return (
+    <OrderNotificationSettingsForUser hideHeading={hideHeading} key={session?.user.id ?? 'guest'} />
+  );
 }
 
-function OrderNotificationSettingsForUser() {
+function OrderNotificationSettingsForUser({ hideHeading }: { hideHeading: boolean }) {
   const { session } = useAuth();
   const notifications = useNotifications();
   const c = useTheme();
@@ -65,7 +67,7 @@ function OrderNotificationSettingsForUser() {
     );
   return (
     <View style={{ gap: 10, padding: 16, borderRadius: 16, backgroundColor: c.backgroundElement }}>
-      <ThemedText type="card">Order alerts</ThemedText>
+      {!hideHeading && <ThemedText type="card">Order alerts</ThemedText>}
       <ThemedText type="small" themeColor="textSecondary">
         New business orders, preparation updates, and pickup confirmations. Order updates also
         appear in Alerts. This setting works for customer orders and business team members.

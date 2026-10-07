@@ -56,6 +56,32 @@ describe('public pickup discovery', () => {
       path: '/order?businessId=cafe',
     });
   });
+  it('offers future pickup while the physical business is closed', async () => {
+    const state = await loadPickupModule('cafe', ports());
+    expect(
+      pickupModulePresentation('staging', { ...state, physicalState: 'closed' }),
+    ).toMatchObject({
+      kind: 'scheduled',
+      action: 'Schedule pickup',
+      path: '/order?businessId=cafe',
+    });
+  });
+  it('honors a merchant pause without advertising cached or unavailable pickup slots', async () => {
+    const p = {
+      ...ports(),
+      capabilities: async () => [{ ...supported[0]!, pickup_status: 'paused' as const }],
+    };
+    const state = await loadPickupModule('cafe', p);
+    expect(p.availability).not.toHaveBeenCalled();
+    expect(pickupModulePresentation('staging', state)).toMatchObject({
+      kind: 'paused',
+      action: 'Check again',
+    });
+    expect(pickupModulePresentation('staging', { ...state, orderId: 'existing' })).toMatchObject({
+      kind: 'order',
+      path: '/order?orderId=existing',
+    });
+  });
   it('retains a supported closed module and refresh action', async () => {
     const p = {
       ...ports(),

@@ -8,9 +8,26 @@ interface CleanupAsset {
   storage_path: string;
 }
 
+interface CleanupObject {
+  id: string;
+  bucket_id: string;
+  storage_path: string;
+}
+
 interface AccountCleanupJob {
   job_id: string;
   storage_targets: { bucket: string; path: string }[];
+}
+
+interface MediaUsageSummary {
+  business_id: string;
+  staging_reserved_bytes: number;
+  staging_actual_bytes: number;
+  staging_object_count: number;
+  published_ready_bytes: number;
+  pending_delete_bytes: number;
+  pending_delete_object_count: number;
+  intents_created_last_hour: number;
 }
 
 function json(status: number, body: Record<string, unknown>) {
@@ -27,6 +44,14 @@ Deno.serve(async (request) => {
   const admin = createClient(Deno.env.get('SUPABASE_URL') ?? '', serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+  const { data: expiredStagingQueued, error: stagingSweepError } = await admin.rpc(
+    'enqueue_expired_media_staging_objects',
+    { p_limit: 100 },
+  );
+  if (stagingSweepError) {
+    console.error('Could not queue expired staging objects.', { code: stagingSweepError.code });
+    return json(500, { error: 'Expired photo staging cleanup could not be queued.' });
+  }
   const { data, error: claimError } = await admin.rpc('claim_media_cleanup', { p_limit: 100 });
   if (claimError) return json(500, { error: claimError.message });
 
@@ -79,6 +104,27 @@ Deno.serve(async (request) => {
     deleted += bucketAssets.length;
   }
 
+  const { data: cleanupObjects, error: objectClaimError } = await admin.rpc(
+    'claim_media_object_cleanup',
+    { p_limit: 100 },
+  );
+  if (objectClaimError)
+    return json(500, { error: 'Untracked media cleanup could not be claimed.' });
+
+  let orphanObjectsDeleted = 0;
+  let orphanObjectsRetried = 0;
+  for (const cleanupObject of (cleanupObjects ?? []) as CleanupObject[]) {
+    const { error: removeError } = await admin.storage
+      .from(cleanupObject.bucket_id)
+      .remove([cleanupObject.storage_path]);
+    const { error: finishError } = await admin.rpc('finish_media_object_cleanup', {
+      p_id: cleanupObject.id,
+      p_deleted: !removeError,
+    });
+    if (removeError || finishError) orphanObjectsRetried += 1;
+    else orphanObjectsDeleted += 1;
+  }
+
   const { data: accountJobs, error: accountClaimError } = await admin.rpc(
     'claim_account_deletion_cleanup',
     { p_limit: 10 },
@@ -111,12 +157,41 @@ Deno.serve(async (request) => {
     });
   }
 
+  const { data: usageSummary, error: usageSummaryError } = await admin.rpc(
+    'media_storage_usage_summary',
+  );
+  if (usageSummaryError) {
+    console.error('Could not read media storage usage summary.', {
+      code: usageSummaryError.code,
+    });
+  }
+  const unusualUsage = ((usageSummary ?? []) as MediaUsageSummary[]).filter(
+    (usage) =>
+      usage.intents_created_last_hour >= 20 ||
+      usage.staging_reserved_bytes >= 20 * 1024 * 1024 ||
+      usage.staging_object_count >= 25,
+  );
+  for (const usage of unusualUsage) {
+    console.warn('Unusual business photo upload activity.', {
+      businessId: usage.business_id,
+      intentsCreatedLastHour: usage.intents_created_last_hour,
+      stagingReservedBytes: usage.staging_reserved_bytes,
+      stagingActualBytes: usage.staging_actual_bytes,
+      stagingObjectCount: usage.staging_object_count,
+    });
+  }
+
   return json(200, {
     claimed: assets.length,
     deleted,
     retried,
+    orphanObjectsClaimed: (cleanupObjects ?? []).length,
+    orphanObjectsDeleted,
+    orphanObjectsRetried,
+    expiredStagingQueued: expiredStagingQueued ?? 0,
     accountJobsClaimed: (accountJobs ?? []).length,
     accountJobsCompleted,
     accountJobsRetried,
+    unusualMediaUsageBusinesses: unusualUsage.length,
   });
 });

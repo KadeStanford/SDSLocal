@@ -1,0 +1,359 @@
+{
+  "started": "2026-09-30",
+  "scope": "Full product preserved; implementation authorized; deployment/store actions require separate release direction.",
+  "findings": [
+    {
+      "id": "F01",
+      "title": "Apple submission and first subscription submission are unfinished",
+      "status": "open",
+      "packages": [
+        "W09"
+      ],
+      "changes": [],
+      "verification": [],
+      "remaining": []
+    },
+    {
+      "id": "F02",
+      "title": "Google submission declarations and listing are unfinished",
+      "status": "open",
+      "packages": [
+        "W09"
+      ],
+      "changes": [],
+      "verification": [],
+      "remaining": []
+    },
+    {
+      "id": "F03",
+      "title": "Google production testing eligibility has not been met",
+      "status": "open",
+      "packages": [
+        "W10"
+      ],
+      "changes": [],
+      "verification": [],
+      "remaining": [
+        "No volunteers yet. Recruit genuine eligible closed-test participants; complete the applicable continuous test and production-access review."
+      ]
+    },
+    {
+      "id": "F04",
+      "title": "Reviewers cannot currently access the complete product",
+      "status": "open",
+      "packages": [
+        "W09"
+      ],
+      "changes": [],
+      "verification": [],
+      "remaining": []
+    },
+    {
+      "id": "F05",
+      "title": "Paid feature tiers are advertised but not enforced",
+      "status": "in_progress",
+      "packages": [
+        "W01"
+      ],
+      "changes": [
+        "Added operation-to-feature policy preserving recovery operations separately from new benefits.",
+        "Drafted business-specific server capability snapshot based on the assigned payer, active owner membership, effective end date, environment and deterministic listing capacity.",
+        "Deployed table guards for catalog/event/reward/commerce configuration and new transaction obligations; sandbox enforcement is enabled; production remains off.",
+        "Added Square and Stripe checkout preflight checks after authenticated idempotent recovery, before new payment effects.",
+        "Added disable-only database exceptions for disconnecting commerce and disabling bookings after expiry.",
+        "Implemented mobile owner/staff plan prompts, capability refresh, and recovery entry points.",
+        "Fixed billing-suspended earned reward visibility/redemption, paid-pickup reward linkage, and appointment rescheduling; deployed recovery SQL and matching staging Edge functions."
+      ],
+      "verification": [
+        "269 shared/business-logic tests passed in 23 files; includes new denied-checkout and existing-checkout recovery tests for both providers.",
+        "Business-logic TypeScript check passed; git diff whitespace checks passed.",
+        "101 migrations replayed successfully in an isolated local database; all 35 SQL suites passed, including business_feature_enforcement plan, role, environment, expiry, configuration and recovery fixtures.",
+        "Checkout orchestration passed twice against real local Supabase with simulated Square responses; fixtures cleaned up to zero users, businesses and orders.",
+        "Deployed foundation and private RPC hardening to staging; 3 focused SQL suites pass including sandbox allowlist and staff plan restrictions. Sandbox enforcement is enabled.",
+        "36 local SQL suites, four staging suites, 160 targeted shared tests and 47 targeted mobile tests passed; mobile TypeScript passed. Local checkout integration passed with simulated provider transport."
+      ],
+      "remaining": [
+        "Complete boundary coverage for profile/media, analytics and public discovery; verify scheduled jobs and privacy cleanup.",
+        "Native/store sandbox acceptance and deliberate production rollout remain required."
+      ]
+    },
+    {
+      "id": "F06",
+      "title": "Production pickup ordering and appointment booking are explicitly disabled",
+      "status": "investigated",
+      "packages": [
+        "W02"
+      ],
+      "changes": [
+        "Traced hard-coded sandbox hosts, encryption contexts, OAuth rows, Stripe livemode checks, private schema constraints and mobile production rejection."
+      ],
+      "verification": [],
+      "remaining": [
+        "Implement and verify environment isolation across all these boundaries together; do not merely remove the production guard.",
+        "Provision and verify separate production provider configuration, then perform authorized acceptance."
+      ]
+    },
+    {
+      "id": "F07",
+      "title": "Production subscription lifecycle configuration is not established",
+      "status": "open",
+      "packages": [
+        "W01"
+      ],
+      "changes": [],
+      "verification": [],
+      "remaining": []
+    },
+    {
+      "id": "F08",
+      "title": "Privacy and support are not readily accessible to ordinary customers",
+      "status": "open",
+      "packages": [
+        "W05"
+      ],
+      "changes": [],
+      "verification": [],
+      "remaining": []
+    },
+    {
+      "id": "F09",
+      "title": "Data disclosures need an app and SDK data inventory",
+      "status": "open",
+      "packages": [
+        "W05"
+      ],
+      "changes": [],
+      "verification": [],
+      "remaining": []
+    },
+    {
+      "id": "F10",
+      "title": "UGC terms acceptance is not implemented",
+      "status": "open",
+      "packages": [
+        "W03"
+      ],
+      "changes": [],
+      "verification": [],
+      "remaining": []
+    },
+    {
+      "id": "F11",
+      "title": "Blocking businesses does not cover abusive reviewers or other users",
+      "status": "open",
+      "packages": [
+        "W03"
+      ],
+      "changes": [],
+      "verification": [],
+      "remaining": []
+    },
+    {
+      "id": "F12",
+      "title": "Existing moderation tools do not prove objectionable content is filtered before publication",
+      "status": "open",
+      "packages": [
+        "W03"
+      ],
+      "changes": [],
+      "verification": [],
+      "remaining": []
+    },
+    {
+      "id": "F13",
+      "title": "Sign in with Apple deletion does not revoke authorization",
+      "status": "open",
+      "packages": [
+        "W04"
+      ],
+      "changes": [],
+      "verification": [],
+      "remaining": []
+    },
+    {
+      "id": "F14",
+      "title": "Deletion coverage needs a retention and provider audit",
+      "status": "open",
+      "packages": [
+        "W04"
+      ],
+      "changes": [],
+      "verification": [],
+      "remaining": []
+    },
+    {
+      "id": "F15",
+      "title": "Delayed media cleanup is hidden from the deletion result",
+      "status": "open",
+      "packages": [
+        "W04"
+      ],
+      "changes": [],
+      "verification": [],
+      "remaining": []
+    },
+    {
+      "id": "F16",
+      "title": "Broad Android photo access is unnecessary for the implemented picker",
+      "status": "open",
+      "packages": [
+        "W06"
+      ],
+      "changes": [],
+      "verification": [],
+      "remaining": []
+    },
+    {
+      "id": "F17",
+      "title": "Native capabilities and permission strings exceed actual use",
+      "status": "open",
+      "packages": [
+        "W06"
+      ],
+      "changes": [],
+      "verification": [],
+      "remaining": []
+    },
+    {
+      "id": "F18",
+      "title": "Optional background nearby alerts may not qualify for Google approval",
+      "status": "open",
+      "packages": [
+        "W06"
+      ],
+      "changes": [],
+      "verification": [],
+      "remaining": []
+    },
+    {
+      "id": "F19",
+      "title": "Age and merchant-content boundaries are not established",
+      "status": "open",
+      "packages": [
+        "W03"
+      ],
+      "changes": [],
+      "verification": [],
+      "remaining": []
+    },
+    {
+      "id": "F20",
+      "title": "OTA compatibility relies on a manually maintained app version",
+      "status": "in_progress",
+      "packages": [
+        "W07"
+      ],
+      "changes": [
+        "Added tester-store profile with fingerprint runtime and separate testers update channel; existing production/preview profiles unchanged."
+      ],
+      "verification": [
+        "Actual EAS preview config preflight passes; 14 invalid config variants rejected."
+      ],
+      "remaining": [
+        "Compile and install the native tester builds; verify runtime-compatible updates and rollback. Existing builds still retain their embedded runtime policy."
+      ]
+    },
+    {
+      "id": "F21",
+      "title": "Production configuration and public deep links remain unverified",
+      "status": "open",
+      "packages": [
+        "W02",
+        "W07"
+      ],
+      "changes": [],
+      "verification": [],
+      "remaining": []
+    },
+    {
+      "id": "F22",
+      "title": "Native usability and compatibility acceptance is still missing",
+      "status": "open",
+      "packages": [
+        "W08"
+      ],
+      "changes": [],
+      "verification": [],
+      "remaining": []
+    },
+    {
+      "id": "F23",
+      "title": "Apple EU trader status needs review before EU distribution",
+      "status": "open",
+      "packages": [
+        "W09"
+      ],
+      "changes": [],
+      "verification": [],
+      "remaining": []
+    },
+    {
+      "id": "F24",
+      "title": "Android developer and package verification needs confirmation for distribution",
+      "status": "open",
+      "packages": [
+        "W09"
+      ],
+      "changes": [],
+      "verification": [],
+      "remaining": []
+    },
+    {
+      "id": "F25",
+      "title": "Local-build instructions remain in the password reset flow",
+      "status": "deployed_staging",
+      "packages": [
+        "W07"
+      ],
+      "changes": [
+        "Password recovery now directs users to the email code/spam folder without local test-inbox wording."
+      ],
+      "verification": [
+        "Mobile TypeScript passed.",
+        "Published and verified in preview OTA 2217fdae-1e17-48ad-9ff7-2a895a867b46."
+      ],
+      "remaining": [
+        "Verify real-device email recovery during native acceptance."
+      ]
+    }
+  ],
+  "externalInputs": [
+    "Native release devices and build acceptance",
+    "Production provider and RevenueCat configuration verification",
+    "Confirm storefront countries, age-rating answers, retention decisions and moderation alert destination",
+    "Genuine Google closed-test volunteers and required continuous test period"
+  ],
+  "operatorDecisions": {
+    "moderationAndSupport": "App owner will handle moderation and support.",
+    "automationPreference": "Prepare automated moderation triage with prompt alerts to the owner; delivery destination and escalation rules are not configured or verified.",
+    "serviceArea": "Southern Louisiana",
+    "audience": "User estimates ages 14–80. Includes teenagers. Not a completed store age-rating assessment or an approved age gate.",
+    "googleClosedTestVolunteers": 0,
+    "storefrontTerritories": "Not yet confirmed; service area is distinct from country-level storefront availability.",
+    "launchState": "Prelaunch. User confirms no real merchants or orders. Prepare production-like sandbox tester release."
+  },
+  "releaseStatus": "Four staging database migrations and three Edge functions deployed. Compatible mobile feature gates and recovery UI published and verified for iOS/Android on preview OTA, runtime 0.1.0. Dedicated tester native build and store distribution remain pending.",
+  "implementationFiles": [
+    "packages/business-logic/src/business-feature-policy.ts",
+    "packages/business-logic/src/business-feature-policy.test.ts",
+    "packages/business-logic/src/index.ts",
+    "supabase/functions/_shared/business-feature-access.ts",
+    "supabase/functions/_shared/business-feature-access.test.ts",
+    "supabase/functions/_shared/payment-audit.test.ts",
+    "supabase/functions/_shared/square-service.ts",
+    "supabase/functions/_shared/stripe-service.ts",
+    "supabase/migrations/20260930000200_business_feature_enforcement.sql",
+    "supabase/tests/business_feature_enforcement.sql"
+  ],
+  "testReceipt": ".codex-tmp/store-readiness-shared-tests.json",
+  "releasePrerequisites": [
+    "Finish remaining enforcement and recovery coverage; no finding is closed by this first implementation batch.",
+    "OTA or production/store publication requires separate release authorization.",
+    "Staging sandbox feature enforcement is enabled for tester accounts; production activation still requires full acceptance.",
+    "Hosted staging history reconciled; four targeted staging tests passed. Physical-device and store sandbox acceptance remain required."
+  ],
+  "databaseVerificationReceipt": "docs/audits/store-readiness-implementation/database-verification.json",
+  "stagingDatabaseReceipt": "docs/audits/store-readiness-implementation/staging-database-release.json",
+  "testerReadinessReceipt": "docs/audits/store-readiness-implementation/tester-readiness.json",
+  "mobileOtaReceipt": "docs/audits/store-readiness-implementation/mobile-feature-recovery-ota.json"
+}

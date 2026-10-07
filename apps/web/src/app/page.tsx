@@ -10,7 +10,7 @@ export default async function Home() {
     <main className="home-shell">
       <nav className="topbar home-nav">
         <Link className="brand" href="/">
-          SDS Local
+          Parish Pass
         </Link>
         <div className="nav-actions">
           <Link href="/explore">Explore</Link>

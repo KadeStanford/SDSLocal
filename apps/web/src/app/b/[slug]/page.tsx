@@ -1,3 +1,4 @@
+import { OpenInApp } from '@/components/open-in-app';
 import { getBusinessStatusLabel, getOfferingTerminology } from '@sds/business-logic';
 import type { BusinessType, ServiceAreaType } from '@sds/types';
 import { usRegionOptions } from '@sds/validation';
@@ -302,7 +303,7 @@ export default async function BusinessPage({ params, searchParams }: PageProps<'
       )}
       <nav className="business-nav">
         <Link className="brand" href="/">
-          SDS Local
+          Parish Pass
         </Link>
         <div className="nav-actions">
           <Link href="/explore">Explore</Link>
@@ -312,6 +313,7 @@ export default async function BusinessPage({ params, searchParams }: PageProps<'
           </Link>
         </div>
       </nav>
+      <OpenInApp path={`b/${encodeURIComponent(business.slug)}`} description="Follow this business, use its available booking or ordering tools, and manage your rewards in the app." />
       {query.followed === '1' && (
         <p className="business-page-notice">You are now following this business.</p>
       )}

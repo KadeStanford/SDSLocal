@@ -1,4 +1,5 @@
 begin;
+\ir fixtures/business.sql
 
 do $$
 declare

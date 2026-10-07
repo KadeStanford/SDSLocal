@@ -1,8 +1,8 @@
-import { themeColors } from '@sds/design-tokens';
+import type { AppTheme } from '@/constants/theme';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'destructive';
 export function buttonPresentation(
-  colors: typeof themeColors.light | typeof themeColors.dark,
+  colors: AppTheme,
   variant: ButtonVariant,
   disabled = false,
   loading = false,

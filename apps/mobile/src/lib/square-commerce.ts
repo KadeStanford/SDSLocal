@@ -29,14 +29,27 @@ export async function commerce<T>(action: string, body: Record<string, unknown>)
   if (error) {
     let message = 'Ordering is unavailable. Check your connection and retry.';
     let code: string | undefined;
+    let providerCode: string | undefined;
+    let providerRequestId: string | undefined;
     try {
       const detail = await error.context?.json();
       if (typeof detail?.error === 'string') message = detail.error;
       if (typeof detail?.code === 'string') code = detail.code;
+      if (typeof detail?.providerCode === 'string') providerCode = detail.providerCode;
+      if (
+        typeof detail?.providerRequestId === 'string' &&
+        /^req_[A-Za-z0-9]+$/.test(detail.providerRequestId)
+      )
+        providerRequestId = detail.providerRequestId;
     } catch {
       /* No private provider details are displayed. */
     }
-    throw Object.assign(new Error(message), { code, status: error.context?.status });
+    throw Object.assign(new Error(message), {
+      code,
+      status: error.context?.status,
+      providerCode,
+      providerRequestId,
+    });
   }
   return data as T;
 }
@@ -48,6 +61,7 @@ export interface OrderAccess {
   quoteId?: string;
   quoteExpiresAt?: string;
   customerId?: string | null;
+  paymentSubmittedAt?: string;
 }
 const accessKey = 'sds.square.active-order';
 const guestIndexKey = 'sds.square.guest-orders.v1';
@@ -189,14 +203,22 @@ export function saveCart(businessId: string, cart: CartLine[]) {
 export async function openCheckout(url: string) {
   if (!/^https:\/\//.test(url)) throw new Error('Checkout link is not secure.');
   const subscription = Linking.addEventListener('url', ({ url: returnedUrl }) => {
-    if (/^sdslocal:\/\/(?:business|order)(?:\?|$)/.test(returnedUrl) && Platform.OS === 'ios') WebBrowser.dismissBrowser();
+    if (/^sdslocal:\/\/(?:business|order)(?:\?|$)/.test(returnedUrl) && Platform.OS === 'ios')
+      WebBrowser.dismissBrowser();
   });
-  try { await WebBrowser.openBrowserAsync(url); } finally { subscription.remove(); }
+  try {
+    await WebBrowser.openBrowserAsync(url);
+  } finally {
+    subscription.remove();
+  }
 }
 export async function openSquare(url: string) {
   const trustedUrl = squareBrowserUrl(url, 'checkout');
   const subscription = Linking.addEventListener('url', ({ url: returnedUrl }) => {
-    if (/^sdslocal:\/\/(business|order)(?:\?|$)/.test(returnedUrl) && Platform.OS === 'ios') {
+    if (
+      /^sdslocal:\/\/(business|order|appointment)(?:\?|$)/.test(returnedUrl) &&
+      Platform.OS === 'ios'
+    ) {
       WebBrowser.dismissBrowser();
     }
   });
@@ -221,6 +243,3 @@ async function openSquareSystemBrowser(url: string) {
     throw new Error('Your browser could not open Square. Return here and try again.');
   }
 }
-
-
-

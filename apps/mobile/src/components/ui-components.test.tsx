@@ -36,6 +36,7 @@ vi.mock('react-native', () => {
     ActivityIndicator: element('progress'),
     StyleSheet: { create: (v: unknown) => v, hairlineWidth: 1 },
     useColorScheme: () => 'dark',
+    useWindowDimensions: () => ({ width: 390, height: 844, scale: 3, fontScale: 1 }),
     Platform: { select: (v: { default: unknown }) => v.default },
   };
 });

@@ -50,7 +50,7 @@ export default async function NotificationPreferencesPage({
     <main className="page-shell">
       <nav className="topbar">
         <Link className="brand" href="/">
-          SDS Local
+          Parish Pass
         </Link>
         <div className="nav-actions">
           <Link href="/account">Account</Link>

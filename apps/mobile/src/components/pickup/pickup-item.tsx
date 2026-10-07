@@ -1,13 +1,20 @@
+import { rewardTerms } from '@/lib/pickup-rewards';
 import { useState } from 'react';
 import { Modal, ScrollView, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppButton } from '../app-button';
+import { SymbolView } from 'expo-symbols';
+import { PickupActionButton } from './pickup-action-button';
 import { ThemedText } from '../themed-text';
 import { useReducedMotion } from '@/hooks/use-reduced-motion';
 import { useTheme } from '@/hooks/use-theme';
-import { editableModifiers, itemIssue, unitEstimate } from '@/lib/pickup-order-flow';
+import {
+  editableModifiers,
+  itemIssue,
+  unitEstimate,
+  safeProductImage,
+} from '@/lib/pickup-order-flow';
 import { modifierGroupIssue, toggleModifier } from '@/lib/pickup-menu-controls';
-import { money, type CartLine, type Product } from '@/lib/square-commerce-core';
+import { money, type CartLine, type Product, type RewardOffer } from '@/lib/square-commerce-core';
 import { QuantityStepper } from './quantity-stepper';
 import { ProductPhoto } from './product-photo';
 
@@ -15,12 +22,14 @@ export function PickupItem({
   product,
   variants,
   line,
+  reward,
   disabled = false,
   onClose,
   onSave,
 }: {
   product: Product;
   variants?: Product[];
+  reward?: RewardOffer | undefined;
   line?: CartLine | undefined;
   disabled?: boolean;
   onClose: () => void;
@@ -33,7 +42,7 @@ export function PickupItem({
   const selectedProduct = options.find((option) => option.id === selectedId) ?? product;
   const [storedIds, setIds] = useState(line?.modifierIds ?? []);
   const ids = editableModifiers(selectedProduct, storedIds);
-  const [quantity, setQuantity] = useState(line?.quantity ?? 1);
+  const [quantity, setQuantity] = useState(line?.quantity ?? (reward?.type === 'bogo' ? 2 : 1));
   const [saveError, setSaveError] = useState('');
   const issue = itemIssue(selectedProduct, ids, quantity);
   return (
@@ -54,21 +63,48 @@ export function PickupItem({
             gap: 12,
           }}
         >
-          <ThemedText type="smallBold">{line ? 'Edit your item' : 'Item details'}</ThemedText>
-          <AppButton
-            label="✕"
+          <ThemedText type="smallBold">
+            {line ? 'Edit your item' : 'Customize your item'}
+          </ThemedText>
+          <Pressable
+            accessibilityRole="button"
             accessibilityLabel="Close item details"
-            variant="tertiary"
             onPress={onClose}
-            style={{ minWidth: 48 }}
-          />
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: c.divider,
+              backgroundColor: c.backgroundElement,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <SymbolView
+              name={{ ios: 'xmark', android: 'close', web: 'close' }}
+              tintColor={c.text}
+              style={{ width: 18, height: 18 }}
+            />
+          </Pressable>
         </View>
         <ScrollView
           style={{ flex: 1, minHeight: 0 }}
-          contentContainerStyle={{ padding: 16, gap: 24 }}
+          contentContainerStyle={{ padding: 20, gap: 18, paddingBottom: 24 }}
           keyboardShouldPersistTaps="handled"
         >
-          <ProductPhoto image={selectedProduct.image} detail />
+          {safeProductImage(selectedProduct.image) && (
+            <View
+              style={{
+                padding: 8,
+                borderRadius: 20,
+                backgroundColor: c.backgroundElement,
+                boxShadow: '0 5px 18px rgba(16, 45, 37, 0.08)',
+              }}
+            >
+              <ProductPhoto image={selectedProduct.image} detail />
+            </View>
+          )}
           <View style={{ gap: 8 }}>
             <ThemedText type="subtitle">{selectedProduct.name}</ThemedText>
             <ThemedText type="smallBold">
@@ -81,8 +117,30 @@ export function PickupItem({
               <ThemedText themeColor="textSecondary">{selectedProduct.description}</ThemedText>
             )}
           </View>
+          {reward && (
+            <View
+              style={{
+                padding: 16,
+                borderRadius: 12,
+                backgroundColor: c.backgroundSelected,
+                gap: 6,
+              }}
+            >
+              <ThemedText type="smallBold">{reward.label}</ThemedText>
+              <ThemedText type="small">{rewardTerms(reward)}</ThemedText>
+            </View>
+          )}
           {options.length > 1 && (
-            <View style={{ gap: 10 }}>
+            <View
+              style={{
+                gap: 10,
+                padding: 17,
+                borderWidth: 1,
+                borderColor: c.divider,
+                borderRadius: 16,
+                backgroundColor: c.backgroundElement,
+              }}
+            >
               <ThemedText type="card">Choose a variation</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
                 Select the size or option you want.
@@ -106,10 +164,10 @@ export function PickupItem({
                       minHeight: 58,
                       paddingHorizontal: 14,
                       paddingVertical: 12,
-                      borderRadius: 14,
+                      borderRadius: 11,
                       borderWidth: 1,
                       borderColor: selected ? c.accent : c.divider,
-                      backgroundColor: selected ? c.backgroundElement : c.background,
+                      backgroundColor: selected ? c.backgroundSelected : c.backgroundElement,
                       flexDirection: 'row',
                       alignItems: 'center',
                       gap: 12,
@@ -128,9 +186,16 @@ export function PickupItem({
                         justifyContent: 'center',
                       }}
                     >
-                      <ThemedText type="smallBold" style={{ color: c.onAccent }}>
-                        {selected ? '●' : ''}
-                      </ThemedText>
+                      {selected && (
+                        <View
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: 4,
+                            backgroundColor: c.onAccent,
+                          }}
+                        />
+                      )}
                     </View>
                     <ThemedText
                       style={{ flex: 1 }}
@@ -156,7 +221,17 @@ export function PickupItem({
               const selectedCount = group.modifiers.filter((m) => ids.includes(m.id)).length;
               const radio = group.min > 0 && group.max === 1;
               return (
-                <View key={group.id} style={{ gap: 8 }}>
+                <View
+                  key={group.id}
+                  style={{
+                    gap: 8,
+                    padding: 17,
+                    borderWidth: 1,
+                    borderColor: c.divider,
+                    borderRadius: 16,
+                    backgroundColor: c.backgroundElement,
+                  }}
+                >
                   <View
                     style={{
                       flexDirection: 'row',
@@ -168,7 +243,15 @@ export function PickupItem({
                     <ThemedText type="card">{group.name}</ThemedText>
                     <ThemedText
                       type="smallBold"
-                      style={{ color: group.min ? c.warningText : c.textSecondary }}
+                      style={{
+                        color: c.accent,
+                        fontSize: 11,
+                        lineHeight: 16,
+                        paddingHorizontal: 7,
+                        paddingVertical: 4,
+                        borderRadius: 5,
+                        backgroundColor: c.backgroundSelected,
+                      }}
                     >
                       {group.min ? 'Required' : 'Optional'}
                     </ThemedText>
@@ -199,8 +282,12 @@ export function PickupItem({
                         style={{
                           minHeight: 56,
                           paddingVertical: 12,
-                          borderBottomWidth: 1,
-                          borderBottomColor: c.divider,
+                          paddingHorizontal: 12,
+                          borderWidth: 1,
+                          borderRadius: 11,
+                          borderColor: checked ? c.accent : c.divider,
+                          backgroundColor: checked ? c.backgroundSelected : c.backgroundElement,
+                          opacity: disabled || atLimit ? 0.5 : 1,
                           flexDirection: 'row',
                           alignItems: 'center',
                           gap: 12,
@@ -219,9 +306,23 @@ export function PickupItem({
                             justifyContent: 'center',
                           }}
                         >
-                          <ThemedText type="smallBold" style={{ color: c.onAccent }}>
-                            {checked ? (radio ? '●' : '✓') : ''}
-                          </ThemedText>
+                          {checked &&
+                            (radio ? (
+                              <View
+                                style={{
+                                  width: 8,
+                                  height: 8,
+                                  borderRadius: 4,
+                                  backgroundColor: c.onAccent,
+                                }}
+                              />
+                            ) : (
+                              <SymbolView
+                                name={{ ios: 'checkmark', android: 'check', web: 'check' }}
+                                tintColor={c.onAccent}
+                                style={{ width: 14, height: 14 }}
+                              />
+                            ))}
                         </View>
                         <ThemedText
                           style={{ flex: 1, minWidth: 0 }}
@@ -253,17 +354,6 @@ export function PickupItem({
                 </View>
               );
             })}
-        </ScrollView>
-        <View
-          style={{
-            padding: 16,
-            gap: 12,
-            flexShrink: 0,
-            borderTopWidth: 1,
-            borderTopColor: c.divider,
-            backgroundColor: c.background,
-          }}
-        >
           <View
             style={{
               flexDirection: 'row',
@@ -275,18 +365,26 @@ export function PickupItem({
           >
             <View>
               <ThemedText type="smallBold">Quantity</ThemedText>
-              <ThemedText type="caption" themeColor="textSecondary">
-                Estimate before tax
-              </ThemedText>
             </View>
             <QuantityStepper
               name={selectedProduct.name}
               quantity={quantity}
-              minimum={1}
+              minimum={reward?.type === 'bogo' ? 2 : 1}
               disabled={disabled}
               onChange={(delta) => setQuantity((q) => q + delta)}
             />
           </View>
+        </ScrollView>
+        <View
+          style={{
+            padding: 16,
+            gap: 12,
+            flexShrink: 0,
+            borderTopWidth: 1,
+            borderTopColor: c.divider,
+            backgroundColor: c.background,
+          }}
+        >
           {(disabled || selectedProduct.available === false || saveError) && (
             <ThemedText
               type="small"
@@ -299,8 +397,32 @@ export function PickupItem({
                   : 'Ordering changed. Close this item and refresh pickup options.')}
             </ThemedText>
           )}
-          <AppButton
-            label={`${line ? 'Update item' : 'Add to cart'} · ${money(unitEstimate(selectedProduct, ids) * quantity, selectedProduct.currency)}`}
+          <ThemedText type="caption" themeColor="textSecondary" style={{ textAlign: 'center' }}>
+            {issue ||
+              (reward
+                ? 'Reward applied · paid extras are additional'
+                : 'Includes selected options · before tax')}
+          </ThemedText>
+          <PickupActionButton
+            label={
+              reward
+                ? line
+                  ? 'Update reward item'
+                  : 'Add reward item'
+                : line
+                  ? 'Save changes'
+                  : 'Add to order'
+            }
+            amount={money(
+              unitEstimate(selectedProduct, ids) * quantity -
+                (reward
+                  ? Math.floor(
+                      selectedProduct.price *
+                        (reward.type === 'item_discount' ? reward.percent! / 100 : 1),
+                    )
+                  : 0),
+              selectedProduct.currency,
+            )}
             disabled={disabled || !!issue}
             onPress={() => setSaveError(onSave(selectedProduct, ids, quantity) || '')}
           />

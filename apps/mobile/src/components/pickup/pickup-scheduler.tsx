@@ -1,3 +1,4 @@
+import { CustomerSurface, CustomerSectionHeading } from '../customer-ui';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -41,7 +42,9 @@ function PickupChoice({
       style={{
         minHeight: 72,
         padding: 16,
-        borderRadius: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: selected ? c.accent : c.divider,
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
@@ -54,7 +57,7 @@ function PickupChoice({
           height: 24,
           borderRadius: 12,
           borderWidth: selected ? 7 : 2,
-          borderColor: selected ? c.actionPrimary : c.textSecondary,
+          borderColor: selected ? c.accent : c.textSecondary,
         }}
       />
       <View style={{ flex: 1, gap: 4 }}>
@@ -121,7 +124,7 @@ export function PickupTimePicker({
               <ThemedText type="card" style={{ flex: 1 }}>
                 Choose pickup time
               </ThemedText>
-              <AppButton label="Cancel" variant="tertiary" onPress={onClose} />
+              <AppButton label="Cancel" variant="secondary" onPress={onClose} />
             </View>
             {date?.slots[0] && (
               <ThemedText type="small" themeColor="textSecondary">
@@ -239,10 +242,8 @@ export function PickupScheduler({
   const [pickerOpen, setPickerOpen] = useState(false);
   return (
     <View style={{ gap: 24 }}>
-      <View style={{ gap: 8 }}>
-        <ThemedText type="small" themeColor="textSecondary">
-          PICKUP LOCATION
-        </ThemedText>
+      <CustomerSurface>
+        <CustomerSectionHeading title="Pickup location" />
         {places.length > 1
           ? places.map((p) => (
               <AppButton
@@ -261,7 +262,7 @@ export function PickupScheduler({
                 <ThemedText themeColor="textSecondary">{selectedPlace.address}</ThemedText>
               </>
             )}
-      </View>
+      </CustomerSurface>
       {!place && <ThemedText>Choose a location to see pickup times.</ThemedText>}
       {first && (
         <View style={{ gap: 12 }}>

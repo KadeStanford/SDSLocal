@@ -12,7 +12,12 @@ import { ThemedText } from './themed-text';
 export interface DismissibleAlertRow {
   readonly id: string;
   readonly entity_type:
-    'event' | 'loyalty_membership' | 'business_update' | 'account' | 'pickup_order';
+    | 'event'
+    | 'loyalty_membership'
+    | 'business_update'
+    | 'account'
+    | 'pickup_order'
+    | 'service_request';
   readonly entity_id: string;
   readonly title: string;
   readonly body: string;
@@ -34,6 +39,7 @@ export function alertTypeLabel(row: Pick<DismissibleAlertRow, 'entity_type' | 'o
   if (row.entity_type === 'loyalty_membership') return 'Rewards';
   if (row.entity_type === 'pickup_order')
     return row.order_audience === 'business' ? 'Pickup queue' : 'Pickup order';
+  if (row.entity_type === 'service_request') return 'Service request';
   return 'Account';
 }
 
@@ -154,13 +160,7 @@ interface DismissibleAlertProps {
  * Keeping the swipe threshold and exit animation here prevents the two entry
  * points from drifting apart as the inbox evolves.
  */
-export function DismissibleAlert({
-  alert,
-  onOpen,
-  onDismiss,
-  surfaceColor,
-  unreadSurfaceColor,
-}: DismissibleAlertProps) {
+export function DismissibleAlert({ alert, onOpen, onDismiss }: DismissibleAlertProps) {
   const colors = useTheme();
   const reducedMotion = useReducedMotion();
   const [exitProgress] = useState(() => new Animated.Value(0));
@@ -191,6 +191,8 @@ export function DismissibleAlert({
   return (
     <Animated.View
       style={{
+        width: '100%',
+        alignSelf: 'stretch',
         opacity: exitProgress.interpolate({ inputRange: [0, 1], outputRange: [1, 0.92] }),
         transform: [
           {
@@ -221,23 +223,32 @@ export function DismissibleAlert({
         <Pressable
           accessibilityLabel={`${alert.title}${alert.read_at ? '' : ', unread'}`}
           accessibilityRole="button"
+          accessibilityActions={[
+            { name: 'activate', label: 'Open alert' },
+            { name: 'dismiss', label: 'Clear alert' },
+          ]}
+          onAccessibilityAction={({ nativeEvent }) => {
+            if (nativeEvent.actionName === 'dismiss') onDismiss();
+            else if (nativeEvent.actionName === 'activate') onOpen();
+          }}
           onPress={onOpen}
           style={({ pressed }) => [
             styles.alertRow,
             alert.entity_type === 'pickup_order' && styles.alertRowOrder,
-            isBusinessOrder ? styles.alertRowBusiness : styles.alertRowCustomer,
             {
-              backgroundColor: alert.read_at ? surfaceColor : unreadSurfaceColor,
-              borderColor: alert.read_at ? colors.divider : orderAccent,
+              backgroundColor: colors.backgroundElement,
+              borderColor: colors.divider,
             },
-            !alert.read_at && styles.alertRowUnread,
+
             pressed && styles.pressed,
           ]}
         >
           <View style={styles.alertRowCopy}>
             <View style={styles.alertRowTop}>
               <View style={styles.alertRowHeading}>
-                {!alert.read_at && <View style={styles.unreadDot} />}
+                {!alert.read_at && (
+                  <View style={[styles.unreadDot, { backgroundColor: colors.accent }]} />
+                )}
                 <ThemedText style={[styles.alertType, { color: orderAccent }]} type="smallBold">
                   {alert.entity_type === 'pickup_order'
                     ? alert.order_audience === 'business'
@@ -264,22 +275,17 @@ export function DismissibleAlert({
                 </View>
               )}
             </View>
-            <ThemedText themeColor="textSecondary" type="small">
-              {formatAlertDate(alert.created_at)}
-            </ThemedText>
             <ThemedText style={styles.alertTitle} numberOfLines={2}>
               {alert.title}
             </ThemedText>
-            <ThemedText style={styles.alertBody} themeColor="textSecondary" numberOfLines={3}>
+            <ThemedText style={styles.alertBody} themeColor="textSecondary" numberOfLines={2}>
               {alert.body}
             </ThemedText>
-            {alert.entity_type === 'pickup_order' && (
-              <ThemedText style={styles.alertHint} themeColor="textSecondary" numberOfLines={2}>
-                {orderAlertNextStep(alert.order_status, alert.order_audience ?? 'customer')}
-              </ThemedText>
-            )}
+            <ThemedText themeColor="textSecondary" type="small">
+              {formatAlertDate(alert.created_at)}
+            </ThemedText>
           </View>
-          <ThemedText style={styles.chevron} type="subtitle">
+          <ThemedText style={[styles.chevron, { color: colors.textSecondary }]} type="subtitle">
             ›
           </ThemedText>
         </Pressable>
@@ -289,8 +295,8 @@ export function DismissibleAlert({
 }
 
 const styles = StyleSheet.create({
-  alertRowFrame: { width: '100%', overflow: 'hidden', borderRadius: Radius.large },
-  swipeableChild: { flex: 1 },
+  alertRowFrame: { width: '100%', overflow: 'hidden', borderRadius: 16 },
+  swipeableChild: { width: '100%' },
   dismissBackground: {
     width: 92,
     height: '100%',
@@ -301,22 +307,24 @@ const styles = StyleSheet.create({
   },
   dismissText: { color: Brand.onPrimary },
   alertRow: {
+    width: '100%',
+    alignSelf: 'stretch',
     minHeight: 104,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    borderRadius: Radius.large,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(113,128,120,0.35)',
-    padding: Spacing.three,
+    padding: 18,
   },
   alertRowUnread: { borderWidth: 1.5 },
-  alertRowOrder: { alignItems: 'flex-start', minHeight: 136, paddingVertical: Spacing.four },
+  alertRowOrder: { alignItems: 'flex-start', minHeight: 104, paddingVertical: 20 },
   alertRowBusiness: { borderLeftWidth: 4, borderLeftColor: '#F2D992' },
   alertRowCustomer: { borderLeftWidth: 4, borderLeftColor: Brand.primary },
   alertRowCopy: { flex: 1, minWidth: 0, gap: Spacing.one },
   alertRowTop: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     gap: Spacing.two,
@@ -328,15 +336,15 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
   },
   unreadDot: { width: 8, height: 8, borderRadius: Radius.pill, backgroundColor: Brand.primary },
-  alertType: { color: Brand.primary, letterSpacing: 0.8 },
+  alertType: { color: Brand.primary, fontSize: 11, lineHeight: 16, letterSpacing: 1 },
   orderStatusPill: {
-    borderWidth: 1,
-    borderRadius: Radius.pill,
+    borderWidth: 0,
+    borderRadius: 6,
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 4,
   },
-  alertTitle: { fontSize: 19, lineHeight: 25, fontWeight: '700', letterSpacing: -0.15 },
-  alertBody: { fontSize: 15, lineHeight: 21 },
+  alertTitle: { fontSize: 16, lineHeight: 22, fontWeight: '700', letterSpacing: -0.15 },
+  alertBody: { fontSize: 14, lineHeight: 20 },
   alertHint: {
     fontSize: 14,
     lineHeight: 19,
@@ -345,6 +353,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: 'rgba(113,128,120,0.28)',
   },
-  chevron: { color: Brand.primary, fontSize: 30 },
+  chevron: { color: Brand.primary, fontSize: 22 },
   pressed: { opacity: 0.72 },
 });

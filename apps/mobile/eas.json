@@ -15,6 +15,31 @@
       "environment": "preview",
       "channel": "preview"
     },
+    "preview-store": {
+      "extends": "preview",
+      "distribution": "store",
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      }
+    },
+    "tester-store": {
+      "extends": "preview-store",
+      "channel": "testers",
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "staging",
+        "EXPO_PUBLIC_TESTER_BUILD": "true",
+        "EXPO_PUBLIC_PRIVACY_URL": "https://parish-pass--policies.expo.app/privacy.html",
+        "EXPO_PUBLIC_TERMS_URL": "https://parish-pass--policies.expo.app/terms.html",
+        "EXPO_PUBLIC_SUPPORT_URL": "https://parish-pass--policies.expo.app/support.html"
+      }
+    },
+    "preview-billing-diagnostics": {
+      "extends": "preview",
+      "channel": "billing-diagnostics",
+      "autoIncrement": true,
+      "env": { "EXPO_PUBLIC_IAP_DIAGNOSTICS": "true" }
+    },
     "production": {
       "autoIncrement": true,
       "environment": "production",

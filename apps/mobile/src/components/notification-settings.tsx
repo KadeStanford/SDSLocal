@@ -1,5 +1,15 @@
+import {
+  MerchantButton,
+  MerchantRow,
+  MerchantSearch,
+  MerchantSheet,
+  merchantStyles,
+} from '@/components/merchant-ui';
+import { StateNotice } from '@/components/data-state';
+import { useMerchantTheme } from '@/hooks/use-merchant-theme';
+import { useAuth } from '@/providers/auth-provider';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   type GestureResponderEvent,
@@ -69,6 +79,7 @@ function RadiusSlider({
   readonly borderColor: string;
   readonly onChange: (value: NearbyAlertRadiusMiles) => Promise<void>;
 }) {
+  const sliderColors = useMerchantTheme();
   const [draft, setDraft] = useState<NearbyAlertRadiusMiles | null>(null);
   const [width, setWidth] = useState(0);
   const { beginControlGesture, endControlGesture } = useSwipeBackGestureBlocker();
@@ -93,7 +104,11 @@ function RadiusSlider({
     <View style={styles.sliderBlock}>
       <View style={styles.sliderValueRow}>
         <ThemedText type="smallBold">Alert distance</ThemedText>
-        <ThemedText accessibilityLiveRegion="polite" type="smallBold" style={styles.sliderValue}>
+        <ThemedText
+          accessibilityLiveRegion="polite"
+          type="smallBold"
+          style={[styles.sliderValue, { color: sliderColors.text }]}
+        >
           {mileLabel(displayedValue)}
         </ThemedText>
       </View>
@@ -152,26 +167,41 @@ function RadiusSlider({
 }
 
 export function NotificationSettings() {
+  const { session } = useAuth();
+  return <NotificationSettingsForUser key={session?.user.id ?? 'guest'} />;
+}
+function NotificationSettingsForUser() {
   const notifications = useNotifications();
   const nearby = useNearbyAlerts();
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const [settings, setSettings] = useState<BusinessSettings[]>([]);
+  const merchantColors = useMerchantTheme();
+  const [panel, setPanel] = useState<'order' | 'nearby' | null>(null);
+  const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [error, setError] = useState('');
+  const pending = useRef(false);
+  const selectedBusiness = settings.find((b) => b.business_id === selectedBusinessId);
+  const visibleSettings = settings.filter((b) =>
+    b.business_name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()),
+  );
   const [loading, setLoading] = useState(true);
   const [busyKey, setBusyKey] = useState<string | null>(null);
 
   const loadSettings = useCallback(async () => {
-    const { data, error } = await supabase.rpc('get_notification_settings');
-    if (error) {
-      Alert.alert(
-        'Could not load notifications',
-        userMessageFromError(error, 'We could not load your notification settings.'),
-      );
+    setLoading(true);
+    setError('');
+    try {
+      const { data, error } = await supabase.rpc('get_notification_settings');
+      if (error) throw error;
+      setSettings((data ?? []) as BusinessSettings[]);
+    } catch (cause) {
+      setError(userMessageFromError(cause, 'Your notification settings could not load.'));
+    } finally {
+      setLoading(false);
     }
-    setSettings((data ?? []) as BusinessSettings[]);
-    setLoading(false);
   }, []);
-
   useEffect(() => {
     const timeout = setTimeout(() => void loadSettings(), 0);
     return () => clearTimeout(timeout);
@@ -183,29 +213,29 @@ export function NotificationSettings() {
     type: PreferenceType,
     value: boolean,
   ) {
-    const operationKey = `${businessId}:${type}`;
-    setBusyKey(operationKey);
-    const previous = settings;
-    setSettings((current) =>
-      current.map((business) =>
-        business.business_id === businessId ? { ...business, [key]: value } : business,
-      ),
-    );
-    const { error } = await supabase.rpc('set_notification_preference', {
-      p_business_id: businessId,
-      p_notification_type: type,
-      p_is_enabled: value,
-    });
-    if (error) {
-      setSettings(previous);
-      Alert.alert(
-        'Could not save preference',
-        userMessageFromError(error, 'That preference could not be saved. Please try again.'),
+    if (pending.current) return;
+    pending.current = true;
+    setBusyKey(businessId + ':' + type);
+    setError('');
+    try {
+      const { error } = await supabase.rpc('set_notification_preference', {
+        p_business_id: businessId,
+        p_notification_type: type,
+        p_is_enabled: value,
+      });
+      if (error) throw error;
+      setSettings((current) =>
+        current.map((business) =>
+          business.business_id === businessId ? { ...business, [key]: value } : business,
+        ),
       );
+    } catch (cause) {
+      setError(userMessageFromError(cause, 'That preference could not be saved. Please retry.'));
+    } finally {
+      pending.current = false;
+      setBusyKey(null);
     }
-    setBusyKey(null);
   }
-
   const needsSettings = [
     'needs_notification_permission',
     'needs_foreground_location_permission',
@@ -214,156 +244,222 @@ export function NotificationSettings() {
   ].includes(nearby.status);
 
   return (
-    <View style={styles.stack}>
-      <OrderNotificationSettings />
-      <View style={[styles.card, { borderColor: colors.border }]}>
-        <View style={styles.titleRow}>
-          <View style={styles.titleCopy}>
-            <ThemedText type="subtitle">Nearby mobile-business alerts</ThemedText>
-            <ThemedText themeColor="textSecondary" type="small">
-              {statusCopy[nearby.status]}
-            </ThemedText>
-          </View>
-          <Switch
-            accessibilityLabel="Nearby mobile-business alerts"
-            accessibilityHint="Alerts when followed mobile businesses have an active published stop nearby"
-            disabled={nearby.loading || nearby.busy || nearby.status === 'unsupported'}
-            value={nearby.accountEnabled}
-            onValueChange={(value) => void (value ? nearby.enable() : nearby.disable())}
-          />
-        </View>
-        <ThemedText themeColor="textSecondary">
-          Get an alert when a mobile business you follow has an active published stop nearby.
-          Location may be checked even when the app is closed or not in use.
-        </ThemedText>
-        <View style={[styles.disclosure, { backgroundColor: colors.backgroundElement }]}>
-          <ThemedText type="small">
-            Your location is evaluated on this device and is not used for advertising. SDS Local
-            does not upload a continuous location history.
-          </ThemedText>
-        </View>
-
-        <RadiusSlider
-          borderColor={colors.border}
-          disabled={nearby.busy}
-          onChange={nearby.setRadius}
-          value={nearby.radiusMiles}
+    <View style={{ gap: 20 }}>
+      <View style={[merchantStyles.list, { borderColor: merchantColors.border }]}>
+        <MerchantRow
+          title="Order alerts"
+          subtitle="Push updates for customer orders and your team"
+          onPress={() => setPanel('order')}
         />
-
-        {needsSettings && nearby.accountEnabled && (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => void nearby.openSettings()}
-            style={styles.secondaryButton}
-          >
-            <ThemedText type="smallBold">Open settings</ThemedText>
-          </Pressable>
-        )}
-
-        {nearby.businesses.length > 0 && (
-          <View style={styles.businessList}>
-            <ThemedText type="smallBold">Followed mobile businesses</ThemedText>
-            {nearby.businesses.map((business) => (
-              <View key={business.businessId} style={styles.switchRow}>
-                <ThemedText type="small" style={styles.flexText}>
-                  {business.businessName}
-                </ThemedText>
-                <Switch
-                  accessibilityLabel={`Nearby alerts from ${business.businessName}`}
-                  disabled={nearby.busy}
-                  value={business.enabled}
-                  onValueChange={(enabled) =>
-                    void nearby.setBusinessEnabled(business.businessId, enabled)
-                  }
-                />
-              </View>
-            ))}
-          </View>
-        )}
-
-        {nearby.isStaging && (
-          <View style={styles.testBlock}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Send test nearby alert"
-              disabled={nearby.busy}
-              onPress={() => void nearby.sendTest()}
-              style={styles.secondaryButton}
-            >
-              <ThemedText type="smallBold">Send test nearby alert</ThemedText>
-            </Pressable>
-            <ThemedText themeColor="textSecondary" type="small">
-              Staging test: verifies notification display and navigation, not geofence entry.
-            </ThemedText>
-          </View>
-        )}
-        {nearby.errorMessage && (
-          <ThemedText accessibilityLiveRegion="polite" style={styles.error}>
-            {nearby.errorMessage}
-          </ThemedText>
-        )}
-        {!nearby.errorMessage && notifications.errorMessage && nearby.accountEnabled && (
-          <ThemedText accessibilityLiveRegion="polite" style={styles.error}>
-            Nearby alerts can still run locally, but push registration needs another try when you
-            are online.
-          </ThemedText>
-        )}
+        <MerchantRow
+          title="Nearby business alerts"
+          subtitle={statusCopy[nearby.status] + ' · ' + mileLabel(nearby.radiusMiles)}
+          onPress={() => setPanel('nearby')}
+        />
       </View>
-
-      <View style={[styles.card, { borderColor: colors.border }]}>
-        <ThemedText type="subtitle">Other notifications</ThemedText>
-        {loading ? (
-          <ThemedText themeColor="textSecondary">Loading preferences…</ThemedText>
-        ) : settings.length === 0 ? (
-          <ThemedText themeColor="textSecondary">
-            Follow a business, set an event reminder, or join rewards to choose its updates.
-          </ThemedText>
-        ) : (
+      <View style={{ gap: 12 }}>
+        <ThemedText type="smallBold">Business updates</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          Choose events, rewards and news for each business you follow.
+        </ThemedText>
+        {error && (
           <>
-            <ThemedText themeColor="textSecondary">
-              Event reminders, reward updates, and followed-business news remain separate from
-              nearby alerts.
-            </ThemedText>
-            {notifications.status !== 'enabled' && Platform.OS !== 'web' && (
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => void notifications.enable()}
-                style={styles.enableButton}
-              >
-                <ThemedText type="smallBold" style={styles.enableText}>
-                  Enable notifications on {notificationDeviceDescription}
-                </ThemedText>
-              </Pressable>
-            )}
-            {settings.map((business) => (
-              <View key={business.business_id} style={styles.businessGroup}>
-                <ThemedText type="smallBold">{business.business_name}</ThemedText>
-                {preferenceRows.map((preference) => {
-                  const key = `${business.business_id}:${preference.type}`;
-                  return (
-                    <View key={preference.type} style={styles.switchRow}>
-                      <ThemedText type="small">{preference.label}</ThemedText>
-                      <Switch
-                        accessibilityLabel={`${preference.label} from ${business.business_name}`}
-                        disabled={busyKey === key}
-                        value={business[preference.key]}
-                        onValueChange={(value) =>
-                          void changePreference(
-                            business.business_id,
-                            preference.key,
-                            preference.type,
-                            value,
-                          )
-                        }
-                      />
-                    </View>
-                  );
-                })}
-              </View>
-            ))}
+            <StateNotice kind="error" message={error} />
+            <MerchantButton
+              label="Retry preferences"
+              secondary
+              disabled={!!busyKey}
+              onPress={() => void loadSettings()}
+            />
           </>
         )}
+        <MerchantSearch
+          value={search}
+          onChange={setSearch}
+          placeholder="Search followed businesses"
+        />
+        {loading ? (
+          <ThemedText type="small">Loading preferences…</ThemedText>
+        ) : (
+          !visibleSettings.length && (
+            <ThemedText type="small" themeColor="textSecondary">
+              {settings.length
+                ? 'No matching businesses.'
+                : 'Follow a business or join rewards to choose its updates.'}
+            </ThemedText>
+          )
+        )}
+        {!!visibleSettings.length && (
+          <View style={[merchantStyles.list, { borderColor: merchantColors.border }]}>
+            {visibleSettings.map((business) => (
+              <MerchantRow
+                key={business.business_id}
+                title={business.business_name}
+                subtitle={
+                  preferenceRows
+                    .filter((p) => business[p.key])
+                    .map((p) =>
+                      p.type === 'events' ? 'Events' : p.type === 'loyalty' ? 'Rewards' : 'News',
+                    )
+                    .join(' · ') || 'Updates off'
+                }
+                onPress={() => {
+                  setError('');
+                  setSelectedBusinessId(business.business_id);
+                }}
+              />
+            ))}
+          </View>
+        )}
       </View>
+      {notifications.status !== 'enabled' && Platform.OS !== 'web' && (
+        <MerchantButton
+          label="Enable notifications on this device"
+          secondary
+          onPress={() => void notifications.enable()}
+        />
+      )}
+      <MerchantSheet
+        visible={!!panel}
+        title={panel === 'order' ? 'Order alerts' : 'Nearby business alerts'}
+        blocked={nearby.busy}
+        onClose={() => setPanel(null)}
+      >
+        {panel === 'order' && <OrderNotificationSettings hideHeading />}
+        {panel === 'nearby' && (
+          <View style={[styles.card, { borderColor: colors.border }]}>
+            <View style={styles.titleRow}>
+              <View style={styles.titleCopy}>
+                <ThemedText type="subtitle">Nearby mobile-business alerts</ThemedText>
+                <ThemedText themeColor="textSecondary" type="small">
+                  {statusCopy[nearby.status]}
+                </ThemedText>
+              </View>
+              <Switch
+                accessibilityLabel="Nearby mobile-business alerts"
+                accessibilityHint="Alerts when followed mobile businesses have an active published stop nearby"
+                disabled={nearby.loading || nearby.busy || nearby.status === 'unsupported'}
+                value={nearby.accountEnabled}
+                onValueChange={(value) => void (value ? nearby.enable() : nearby.disable())}
+              />
+            </View>
+            <ThemedText themeColor="textSecondary">
+              Get an alert when a mobile business you follow has an active published stop nearby.
+              Location may be checked even when the app is closed or not in use.
+            </ThemedText>
+            <View style={[styles.disclosure, { backgroundColor: colors.backgroundElement }]}>
+              <ThemedText type="small">
+                Your location is evaluated on this device and is not used for advertising. Parish
+                Pass does not upload a continuous location history.
+              </ThemedText>
+            </View>
+
+            <RadiusSlider
+              borderColor={colors.border}
+              disabled={nearby.busy}
+              onChange={nearby.setRadius}
+              value={nearby.radiusMiles}
+            />
+
+            {needsSettings && nearby.accountEnabled && (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => void nearby.openSettings()}
+                style={styles.secondaryButton}
+              >
+                <ThemedText type="smallBold">Open settings</ThemedText>
+              </Pressable>
+            )}
+
+            {nearby.businesses.length > 0 && (
+              <View style={styles.businessList}>
+                <ThemedText type="smallBold">Followed mobile businesses</ThemedText>
+                {nearby.businesses.map((business) => (
+                  <View key={business.businessId} style={styles.switchRow}>
+                    <ThemedText type="small" style={styles.flexText}>
+                      {business.businessName}
+                    </ThemedText>
+                    <Switch
+                      accessibilityLabel={`Nearby alerts from ${business.businessName}`}
+                      disabled={nearby.busy}
+                      value={business.enabled}
+                      onValueChange={(enabled) =>
+                        void nearby.setBusinessEnabled(business.businessId, enabled)
+                      }
+                    />
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {nearby.isStaging && (
+              <View style={styles.testBlock}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Send test nearby alert"
+                  disabled={nearby.busy}
+                  onPress={() => void nearby.sendTest()}
+                  style={styles.secondaryButton}
+                >
+                  <ThemedText type="smallBold">Send test nearby alert</ThemedText>
+                </Pressable>
+                <ThemedText themeColor="textSecondary" type="small">
+                  Staging test: verifies notification display and navigation, not geofence entry.
+                </ThemedText>
+              </View>
+            )}
+            {nearby.errorMessage && (
+              <ThemedText
+                accessibilityLiveRegion="polite"
+                style={[styles.error, { color: colors.errorText }]}
+              >
+                {nearby.errorMessage}
+              </ThemedText>
+            )}
+            {!nearby.errorMessage && notifications.errorMessage && nearby.accountEnabled && (
+              <ThemedText
+                accessibilityLiveRegion="polite"
+                style={[styles.error, { color: colors.errorText }]}
+              >
+                Nearby alerts can still run locally, but push registration needs another try when
+                you are online.
+              </ThemedText>
+            )}
+          </View>
+        )}
+      </MerchantSheet>
+      <MerchantSheet
+        visible={!!selectedBusiness}
+        title={selectedBusiness?.business_name ?? 'Business updates'}
+        blocked={!!busyKey}
+        onClose={() => setSelectedBusinessId(null)}
+      >
+        {error && <StateNotice kind="error" message={error} />}
+        <ThemedText type="small" themeColor="textSecondary">
+          Preferences save when you change a switch.
+        </ThemedText>
+        {selectedBusiness &&
+          preferenceRows.map((preference) => (
+            <View key={preference.type} style={styles.switchRow}>
+              <ThemedText style={{ flex: 1 }} type="small">
+                {preference.label}
+              </ThemedText>
+              <Switch
+                accessibilityLabel={preference.label + ' from ' + selectedBusiness.business_name}
+                disabled={!!busyKey}
+                value={selectedBusiness[preference.key]}
+                onValueChange={(value) =>
+                  void changePreference(
+                    selectedBusiness.business_id,
+                    preference.key,
+                    preference.type,
+                    value,
+                  )
+                }
+              />
+            </View>
+          ))}
+      </MerchantSheet>
     </View>
   );
 }

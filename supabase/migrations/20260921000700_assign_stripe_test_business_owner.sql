@@ -8,13 +8,18 @@ do $$
 declare
   staging_owner uuid;
 begin
+  -- Fresh local/production installs have no staging demo to transfer.
+  if not exists (select 1 from public.businesses
+    where id = '88888888-8888-4888-8888-888888888888'::uuid) then
+    return;
+  end if;
   select id into staging_owner
   from auth.users
   where email = 'kade20413@gmail.com'
   limit 1;
 
   if staging_owner is null then
-    raise exception 'The staging owner account kade20413@gmail.com does not exist';
+    return;
   end if;
 
   update public.businesses

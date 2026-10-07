@@ -18,6 +18,9 @@ export function notificationAudience(row: AlertAudienceRow): AlertAudience {
   ) {
     return 'business';
   }
+  if (row.entity_type === 'service_request' && row.url?.startsWith('/service-requests?')) {
+    return 'business';
+  }
   return 'customer';
 }
 

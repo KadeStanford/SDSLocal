@@ -1,3 +1,10 @@
+import { FlowSection } from '@/components/flow-layout';
+import {
+  MerchantButton,
+  MerchantRow,
+  MerchantSheet,
+  MerchantStatus,
+} from '@/components/merchant-ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, AppState, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
@@ -7,6 +14,7 @@ import { AppButton } from './app-button';
 import { ThemedText } from './themed-text';
 import { CommerceToggle } from './commerce-fields';
 import { PickupSettingsEditor } from './pickup/pickup-settings-editor';
+import { PickupLaunchGuide } from './pickup/pickup-launch-guide';
 import { OrderNotificationSettings } from './pickup/order-notification-settings';
 import { commerce, openSquareOAuth, openSquareSandboxDashboard } from '@/lib/square-commerce';
 import {
@@ -40,6 +48,7 @@ export function SquareOrderingPanel({
   readonly onDirtyChange: (value: boolean) => void;
 }) {
   const colors = useTheme();
+  const [pickupSettingsOpen, setPickupSettingsOpen] = useState(false);
   const pickup = usePickupWorkspace();
   const [state, setState] = useState<OwnerConnection | null>(null);
   const [showConnection, setShowConnection] = useState(false);
@@ -269,142 +278,210 @@ export function SquareOrderingPanel({
         <ThemedText accessibilityLiveRegion="polite">Checking Square connection…</ThemedText>
       )}
       {!state && busy && <ThemedText>Loading Square connection…</ThemedText>}
-      <View style={{ gap: Spacing.three }}>
-        <ThemedText type="card">{connected ? 'Square connection' : 'Connect Square'}</ThemedText>
-        {state?.connection?.lastError && <ThemedText>{state.connection.lastError}</ThemedText>}
-        {!connected && (
-          <>
-            <ThemedText themeColor="textSecondary">
-              Connect your Square Sandbox seller account to set up pickup ordering.
-            </ThemedText>
-            {!preparingSquare && (
-              <AppButton
-                label={state?.connection ? 'Reconnect Square' : 'Connect Square'}
-                loading={busy}
-                onPress={() => {
-                  preparationStep('prepare');
-                }}
-              />
-            )}
-            {preparingSquare && (
-              <View
-                style={{
-                  gap: Spacing.three,
-                  backgroundColor: colors.backgroundElement,
-                  padding: Spacing.four,
-                }}
-              >
-                <ThemedText type="smallBold">Square Sandbox testing only</ThemedText>
-                <ThemedText themeColor="textSecondary">
-                  This is test mode. It cannot move real money. Square Sandbox requires an open
-                  seller dashboard before authorization.
-                </ThemedText>
-                <ThemedText type="smallBold">1. Prepare your test seller</ThemedText>
-                <ThemedText themeColor="textSecondary">
-                  Sign in to Square in your regular browser. Open a non-default Sandbox seller
-                  account’s Square Dashboard and leave it open. Then return here. This preparation
-                  is only needed for Sandbox testing.
-                </ThemedText>
-                <AppButton
-                  label="Open Sandbox seller dashboard"
-                  variant="secondary"
-                  disabled={busy}
-                  onPress={() => preparationStep('dashboard')}
-                />
-                <ThemedText type="smallBold">2. Authorize SDS Local</ThemedText>
-                <ThemedText themeColor="textSecondary">
-                  Use the same browser, outside private browsing. Continue when the seller dashboard
-                  is open.
-                </ThemedText>
-                <AppButton
-                  label="Continue to Square authorization"
-                  loading={busy}
-                  onPress={() => preparationStep('continue')}
-                />
-                <AppButton
-                  label="Cancel"
-                  variant="tertiary"
-                  disabled={busy}
-                  onPress={() => preparationStep('cancel')}
-                />
-              </View>
-            )}
-          </>
-        )}
-        {connected && (
-          <View style={{ gap: 8 }}>
-            <ThemedText type="small" themeColor="textSecondary">
-              {state.connection?.merchantName ?? 'Square'} ·{' '}
-              {state.settings?.sync_summary?.variations ?? 0} menu items
-            </ThemedText>
-            <AppButton
-              label={showConnection ? 'Done with connection' : 'Connection details'}
-              variant="secondary"
-              onPress={() => setShowConnection((value) => !value)}
-            />
-          </View>
-        )}
-        {connected && readiness.ready && !showConnection && (
-          <AppButton
-            label="Sync menu from Square"
-            variant="tertiary"
-            loading={busy}
-            onPress={() => {
-              void run(async () => {
-                await ownerAction('sync');
-                setMessage('Menu updated from Square.');
-              });
-            }}
+      <MerchantRow
+        title={connected ? 'Square account' : 'Connect Square'}
+        subtitle={
+          connected
+            ? (state?.connection?.merchantName ?? 'Square') +
+              ' · ' +
+              (state?.connection?.location?.name ?? 'Choose a location')
+            : 'Link your Sandbox seller for test payments'
+        }
+        status={
+          <MerchantStatus
+            label={connected ? 'Connected' : 'Not connected'}
+            tone={connected ? 'success' : 'warning'}
           />
+        }
+        disabled={busy || checkingReturn}
+        onPress={() => setShowConnection(true)}
+      />
+      <MerchantSheet
+        visible={showConnection}
+        title="Square account"
+        blocked={busy || checkingReturn}
+        onClose={() => setShowConnection(false)}
+      >
+        {error && (
+          <ThemedText accessibilityRole="alert" style={{ color: colors.errorText }}>
+            {error}
+          </ThemedText>
         )}
-        {connected && (showConnection || !readiness.ready) && (
-          <>
-            <ThemedText type="smallBold">Square location</ThemedText>
-            <ThemedText>{state.connection?.location?.name ?? 'Choose a location'}</ThemedText>
-            {state.connection?.location?.address && (
+        {message && <ThemedText accessibilityLiveRegion="polite">{message}</ThemedText>}
+        <View style={{ gap: Spacing.three }}>
+          <ThemedText type="card">{connected ? 'Square connection' : 'Connect Square'}</ThemedText>
+          {state?.connection?.lastError && <ThemedText>{state.connection.lastError}</ThemedText>}
+          {!connected && (
+            <>
               <ThemedText themeColor="textSecondary">
-                {state.connection.location.address}
+                Connect your Square Sandbox seller account to set up pickup ordering.
               </ThemedText>
-            )}
-            {state.locations.map((location) => (
-              <AppButton
-                key={location.id}
-                label={`${location.id === state.connection?.locationId ? 'Selected: ' : 'Use '}${location.name}`}
-                variant="secondary"
-                disabled={busy || location.id === state.connection?.locationId || isDirty}
-                onPress={() => {
-                  void run(() => ownerAction('location', { locationId: location.id }));
-                }}
-              />
-            ))}
-            <ThemedText type="smallBold">Catalog</ThemedText>
-            <ThemedText>
-              {state.settings?.synced_at
-                ? `Last synchronized ${new Date(state.settings.synced_at).toLocaleString()}`
-                : 'Not synchronized yet'}
-            </ThemedText>
-            {state.settings?.sync_summary && (
-              <ThemedText themeColor="textSecondary">
-                {state.settings.sync_summary.variations} purchasable variations ·{' '}
-                {state.settings.sync_summary.excluded} unavailable or unsupported variations
-                excluded
+              {!preparingSquare && (
+                <AppButton
+                  label={state?.connection ? 'Reconnect Square' : 'Connect Square'}
+                  loading={busy}
+                  onPress={() => {
+                    preparationStep('prepare');
+                  }}
+                />
+              )}
+              {preparingSquare && (
+                <View
+                  style={{
+                    gap: Spacing.three,
+                    backgroundColor: colors.backgroundElement,
+                    padding: Spacing.four,
+                  }}
+                >
+                  <ThemedText type="smallBold">Square Sandbox testing only</ThemedText>
+                  <ThemedText themeColor="textSecondary">
+                    This is test mode. It cannot move real money. Square Sandbox requires an open
+                    seller dashboard before authorization.
+                  </ThemedText>
+                  <ThemedText type="smallBold">1. Prepare your test seller</ThemedText>
+                  <ThemedText themeColor="textSecondary">
+                    Sign in to Square in your regular browser. Open a non-default Sandbox seller
+                    account’s Square Dashboard and leave it open. Then return here. This preparation
+                    is only needed for Sandbox testing.
+                  </ThemedText>
+                  <AppButton
+                    label="Open Sandbox seller dashboard"
+                    variant="secondary"
+                    disabled={busy}
+                    onPress={() => preparationStep('dashboard')}
+                  />
+                  <ThemedText type="smallBold">2. Authorize Parish Pass</ThemedText>
+                  <ThemedText themeColor="textSecondary">
+                    Use the same browser, outside private browsing. Continue when the seller
+                    dashboard is open.
+                  </ThemedText>
+                  <AppButton
+                    label="Continue to Square authorization"
+                    loading={busy}
+                    onPress={() => preparationStep('continue')}
+                  />
+                  <AppButton
+                    label="Cancel"
+                    variant="tertiary"
+                    disabled={busy}
+                    onPress={() => preparationStep('cancel')}
+                  />
+                </View>
+              )}
+            </>
+          )}
+          {connected && (
+            <View style={{ gap: 8 }}>
+              <ThemedText type="small" themeColor="textSecondary">
+                {state.connection?.merchantName ?? 'Square'} ·{' '}
+                {state.settings?.sync_summary?.variations ?? 0} menu items
               </ThemedText>
-            )}
+            </View>
+          )}
+          {connected && readiness.ready && !showConnection && (
             <AppButton
-              label="Sync Square catalog"
-              variant="secondary"
+              label="Sync menu from Square"
+              variant="tertiary"
               loading={busy}
-              disabled={!state.connection?.locationId}
               onPress={() => {
                 void run(async () => {
                   await ownerAction('sync');
-                  setMessage('Square catalog synchronized. Your SDS menu has not changed.');
+                  setMessage('Menu updated from Square.');
                 });
               }}
             />
-          </>
+          )}
+          {connected && (showConnection || !readiness.ready) && (
+            <>
+              <FlowSection
+                title="Location & menu"
+                description="Choose the location and sync its catalog."
+              >
+                <ThemedText type="smallBold">Square location</ThemedText>
+                <ThemedText>{state.connection?.location?.name ?? 'Choose a location'}</ThemedText>
+                {state.connection?.location?.address && (
+                  <ThemedText themeColor="textSecondary">
+                    {state.connection.location.address}
+                  </ThemedText>
+                )}
+                {state.locations.map((location) => (
+                  <AppButton
+                    key={location.id}
+                    label={`${location.id === state.connection?.locationId ? 'Selected: ' : 'Use '}${location.name}`}
+                    variant="secondary"
+                    disabled={busy || location.id === state.connection?.locationId || isDirty}
+                    onPress={() => {
+                      void run(() => ownerAction('location', { locationId: location.id }));
+                    }}
+                  />
+                ))}
+                <ThemedText type="smallBold">Catalog</ThemedText>
+                <ThemedText>
+                  {state.settings?.synced_at
+                    ? `Last synchronized ${new Date(state.settings.synced_at).toLocaleString()}`
+                    : 'Not synchronized yet'}
+                </ThemedText>
+                {state.settings?.sync_summary && (
+                  <ThemedText themeColor="textSecondary">
+                    {state.settings.sync_summary.variations} purchasable variations ·{' '}
+                    {state.settings.sync_summary.excluded} unavailable or unsupported variations
+                    excluded
+                  </ThemedText>
+                )}
+                <AppButton
+                  label="Sync Square catalog"
+                  variant="secondary"
+                  loading={busy}
+                  disabled={!state.connection?.locationId}
+                  onPress={() => {
+                    void run(async () => {
+                      await ownerAction('sync');
+                      setMessage(
+                        'Square catalog synchronized. Your Parish Pass menu has not changed.',
+                      );
+                    });
+                  }}
+                />
+              </FlowSection>
+            </>
+          )}
+        </View>
+        {connected && showConnection && (
+          <AppButton
+            label="Disconnect Square"
+            variant="destructive"
+            disabled={busy || isDirty}
+            onPress={() =>
+              Alert.alert(
+                'Disconnect Square?',
+                'Ordering will close. Settle active orders first. Past orders are retained; your Square account remains open.',
+                [
+                  { text: 'Keep connected', style: 'cancel' },
+                  {
+                    text: 'Disconnect',
+                    style: 'destructive',
+                    onPress: () => {
+                      void run(() => ownerAction('disconnect', { confirmed: true }));
+                    },
+                  },
+                ],
+              )
+            }
+          />
         )}
-      </View>
+      </MerchantSheet>
+      <PickupLaunchGuide
+        steps={[
+          { label: 'Connect a Square seller account', complete: readiness.connected },
+          { label: 'Choose an active Square location', complete: readiness.activeLocation },
+          {
+            label: 'Sync a menu with at least one item',
+            complete: readiness.synced && readiness.variations > 0,
+          },
+          { label: 'Add pickup hours', complete: draft.pickup_windows.length > 0 },
+          { label: 'Turn on pickup and accept orders', complete: draft.enabled && draft.is_open },
+        ]}
+      />
       {state?.settings && (
         <View style={{ gap: Spacing.three }}>
           <ThemedText type="card">Order availability</ThemedText>
@@ -438,73 +515,101 @@ export function SquareOrderingPanel({
               />
             )}
             <ThemedText type="small" themeColor="textSecondary">
-              {!draft.enabled
-                ? 'Pickup ordering is off.'
-                : draft.is_open
-                  ? 'Customers can order during your pickup hours.'
-                  : 'New orders are paused. Existing orders can still be fulfilled.'}
+              {isDirty
+                ? 'Availability changes are not applied yet. Save changes to update customer ordering.'
+                : !draft.enabled
+                  ? 'Pickup ordering is off.'
+                  : draft.is_open
+                    ? 'Customers can order during your pickup hours.'
+                    : 'New orders are paused. Existing orders can still be fulfilled.'}
             </ThemedText>
             {!!(draft.enabled ? openIssue : enableIssue) && (
               <ThemedText type="small" themeColor="textSecondary">
                 {draft.enabled ? openIssue : enableIssue}
               </ThemedText>
             )}
-          </View>
-          <PickupSettingsEditor draft={draft} disabled={busy} isMobile={isMobile} onChange={edit} />
-          <View style={{ gap: Spacing.two }}>
             {!!editor.error && (
-              <ThemedText
-                accessibilityRole="alert"
-                accessibilityLiveRegion="assertive"
-                style={{ color: colors.errorText }}
-              >
+              <ThemedText accessibilityRole="alert" style={{ color: colors.errorText }}>
                 {editor.error}
               </ThemedText>
             )}
-            {!!editor.message && (
-              <ThemedText accessibilityLiveRegion="polite">{editor.message}</ThemedText>
-            )}
-            <ThemedText type="small" themeColor="textSecondary">
-              {isDirty
-                ? 'You have unsaved changes.'
-                : 'Changes are saved before they apply to customer orders.'}
-            </ThemedText>
             {isDirty && (
-              <AppButton
+              <MerchantButton
                 label="Save changes"
                 loading={busy}
-                disabled={!isDirty}
-                onPress={() => {
-                  void saveSettings();
-                }}
+                onPress={() => void saveSettings()}
               />
             )}
           </View>
+          <MerchantRow
+            title="Pickup hours & rules"
+            subtitle={
+              draft.pickup_windows.length +
+              ' weekly windows · ' +
+              draft.preparation_minutes +
+              ' min preparation'
+            }
+            status={
+              <MerchantStatus
+                label={isDirty ? 'Unsaved changes' : 'Saved'}
+                tone={isDirty ? 'warning' : 'quiet'}
+              />
+            }
+            onPress={() => setPickupSettingsOpen(true)}
+          />
+          <MerchantSheet
+            visible={pickupSettingsOpen}
+            title="Pickup hours & rules"
+            blocked={busy}
+            onClose={() => setPickupSettingsOpen(false)}
+          >
+            <ThemedText type="small" themeColor="textSecondary">
+              Changes are retained while you browse. Save to apply them to customer orders.
+            </ThemedText>
+            {error && (
+              <ThemedText accessibilityRole="alert" style={{ color: colors.errorText }}>
+                {error}
+              </ThemedText>
+            )}
+            <PickupSettingsEditor
+              draft={draft}
+              disabled={busy}
+              isMobile={isMobile}
+              onChange={edit}
+            />
+            <View style={{ gap: Spacing.two }}>
+              {!!editor.error && (
+                <ThemedText
+                  accessibilityRole="alert"
+                  accessibilityLiveRegion="assertive"
+                  style={{ color: colors.errorText }}
+                >
+                  {editor.error}
+                </ThemedText>
+              )}
+              {!!editor.message && (
+                <ThemedText accessibilityLiveRegion="polite">{editor.message}</ThemedText>
+              )}
+              <ThemedText type="small" themeColor="textSecondary">
+                {isDirty
+                  ? 'You have unsaved changes.'
+                  : 'Changes are saved before they apply to customer orders.'}
+              </ThemedText>
+              {isDirty && (
+                <AppButton
+                  label="Save changes"
+                  loading={busy}
+                  disabled={!isDirty}
+                  onPress={() => {
+                    void saveSettings();
+                  }}
+                />
+              )}
+            </View>
+          </MerchantSheet>
         </View>
       )}
-      {connected && showConnection && (
-        <AppButton
-          label="Disconnect Square"
-          variant="destructive"
-          disabled={busy || isDirty}
-          onPress={() =>
-            Alert.alert(
-              'Disconnect Square?',
-              'Ordering will close. Settle active orders first. Past orders are retained; your Square account remains open.',
-              [
-                { text: 'Keep connected', style: 'cancel' },
-                {
-                  text: 'Disconnect',
-                  style: 'destructive',
-                  onPress: () => {
-                    void run(() => ownerAction('disconnect', { confirmed: true }));
-                  },
-                },
-              ],
-            )
-          }
-        />
-      )}
+
       {connected && <OrderNotificationSettings />}
     </View>
   );

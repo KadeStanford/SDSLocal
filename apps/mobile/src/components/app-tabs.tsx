@@ -1,24 +1,44 @@
+import { BusinessAccessRecovery } from './business-access-recovery';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { BusinessColors } from './business-theme';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { router, usePathname } from 'expo-router';
 import { useEffect } from 'react';
 
 import { Brand, Colors } from '@/constants/theme';
-import { guestCanOpenPath } from '@/lib/navigation-policy';
 import { useAppMode } from '@/providers/app-mode-provider';
 import { useAuth } from '@/providers/auth-provider';
 import { usePickupWorkspace } from '@/providers/pickup-workspace-provider';
 import { ordersTabVisible } from '@/lib/pickup-workspace';
 import { pickupDiscoveryEnabled } from '@/lib/pickup-discovery';
+import { useServiceOperations } from '@/providers/service-operations-provider';
+import { useBusinessActivity } from '@/hooks/use-business-activity';
 
 export default function AppTabs() {
   const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
-  const { session, loading } = useAuth();
-  const { mode, hasBusinessAccess, loading: modeLoading } = useAppMode();
+  const { session } = useAuth();
+  const { mode, hasBusinessAccess, accessError, refreshBusinessAccess } = useAppMode();
+  const colors = (session && mode === 'business' ? BusinessColors : Colors)[
+    scheme === 'unspecified' ? 'light' : scheme
+  ];
   const pathname = usePathname();
   const pickup = usePickupWorkspace();
+  const services = useServiceOperations();
+  const activity = useBusinessActivity();
+  const serviceTabs = Boolean(
+    session && mode === 'business' && hasBusinessAccess && services.businesses.length,
+  );
+  const requestCount = pickup.businesses.reduce((n, b) => n + (b.counts?.requests ?? 0), 0);
   const showOrders = ordersTabVisible(Boolean(session), mode, pickup.businesses);
+  useEffect(() => {
+    if (
+      ['/business-appointments', '/business-requests'].includes(pathname) &&
+      !services.loading &&
+      !services.error &&
+      !serviceTabs
+    )
+      router.replace(session && mode === 'business' ? '/businesses' : '/explore');
+  }, [pathname, services.loading, services.error, serviceTabs, session, mode]);
   useEffect(() => {
     if (pathname === '/pickup-orders' && !pickup.loading && !pickup.error && !showOrders) {
       router.replace(
@@ -35,31 +55,7 @@ export default function AppTabs() {
     }
   }, [pathname, pickup.loading, pickup.error, showOrders, session, mode]);
 
-  useEffect(() => {
-    if (loading || modeLoading) return;
-    if (!session && !guestCanOpenPath(pathname)) {
-      router.replace('/explore');
-      return;
-    }
-    const isBusinessRoute =
-      pathname === '/businesses' ||
-      pathname === '/staff-scan' ||
-      pathname === '/business' ||
-      pathname === '/pickup-orders' ||
-      pathname === '/pickup-order';
-    const isCustomerRoute =
-      pathname === '/' ||
-      pathname === '/explore' ||
-      pathname === '/calendar' ||
-      pathname === '/rewards';
-    if (session && mode === 'customer' && isBusinessRoute) {
-      router.replace('/explore');
-    }
-    if (session && mode === 'business' && isCustomerRoute) {
-      router.replace('/businesses');
-    }
-  }, [loading, mode, modeLoading, pathname, session]);
-
+  if (accessError) return <BusinessAccessRecovery onRetry={refreshBusinessAccess} />;
   return (
     <NativeTabs
       backgroundColor={colors.background}
@@ -68,18 +64,18 @@ export default function AppTabs() {
     >
       {(!session || mode === 'customer') && (
         <NativeTabs.Trigger name="explore">
-          <NativeTabs.Trigger.Label>Discover</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
           <NativeTabs.Trigger.Icon
-            md={{ default: 'search', selected: 'search' }}
+            md={{ default: 'home', selected: 'home' }}
             selectedColor={Brand.primary}
-            sf={{ default: 'magnifyingglass', selected: 'magnifyingglass.circle.fill' }}
+            sf={{ default: 'house', selected: 'house.fill' }}
           />
         </NativeTabs.Trigger>
       )}
 
       {(!session || mode === 'customer') && (
         <NativeTabs.Trigger name="calendar">
-          <NativeTabs.Trigger.Label>Calendar</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Label>Events</NativeTabs.Trigger.Label>
           <NativeTabs.Trigger.Icon
             md={{ default: 'event', selected: 'event' }}
             selectedColor={Brand.primary}
@@ -135,6 +131,7 @@ export default function AppTabs() {
       {(showOrders || pathname === '/pickup-orders') && (
         <NativeTabs.Trigger name="pickup-orders">
           <NativeTabs.Trigger.Label>Orders</NativeTabs.Trigger.Label>
+          {(requestCount > 0 || activity.orders) && <NativeTabs.Trigger.Badge />}
           <NativeTabs.Trigger.Icon
             md={{ default: 'receipt_long', selected: 'receipt_long' }}
             sf={{ default: 'bag', selected: 'bag.fill' }}
@@ -143,23 +140,30 @@ export default function AppTabs() {
         </NativeTabs.Trigger>
       )}
 
-      <NativeTabs.Trigger name="notification" hidden />
-      <NativeTabs.Trigger name="index" hidden />
-      <NativeTabs.Trigger name="business" hidden />
-      <NativeTabs.Trigger name="business-new" hidden />
-      <NativeTabs.Trigger name="listing-plans" hidden />
-      <NativeTabs.Trigger name="staff-invite" hidden />
-      <NativeTabs.Trigger name="auth/callback" hidden />
-      <NativeTabs.Trigger name="b/[slug]" hidden />
-
-      <NativeTabs.Trigger name="account">
-        <NativeTabs.Trigger.Label>Account</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          md={{ default: 'person_outline', selected: 'account_circle' }}
-          selectedColor={Brand.primary}
-          sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }}
-        />
-      </NativeTabs.Trigger>
+      {serviceTabs && (
+        <NativeTabs.Trigger name="business-appointments">
+          <NativeTabs.Trigger.Label>Appointments</NativeTabs.Trigger.Label>
+          {activity.appointments && <NativeTabs.Trigger.Badge />}
+          <NativeTabs.Trigger.Icon sf="calendar" md="event" selectedColor={Brand.primary} />
+        </NativeTabs.Trigger>
+      )}
+      {serviceTabs && (
+        <NativeTabs.Trigger name="business-requests">
+          <NativeTabs.Trigger.Label>Requests</NativeTabs.Trigger.Label>
+          {activity.requests && <NativeTabs.Trigger.Badge />}
+          <NativeTabs.Trigger.Icon sf="doc.text" md="description" selectedColor={Brand.primary} />
+        </NativeTabs.Trigger>
+      )}
+      {!serviceTabs && (
+        <NativeTabs.Trigger name="account">
+          <NativeTabs.Trigger.Label>Account</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Icon
+            md={{ default: 'person_outline', selected: 'account_circle' }}
+            selectedColor={Brand.primary}
+            sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }}
+          />
+        </NativeTabs.Trigger>
+      )}
     </NativeTabs>
   );
 }

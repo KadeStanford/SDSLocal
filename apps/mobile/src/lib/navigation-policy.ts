@@ -10,6 +10,11 @@ export function guestCanOpenPath(pathname: string) {
     pathname === '/calendar' ||
     pathname === '/order' ||
     pathname === '/orders' ||
+    pathname === '/my-appointments' ||
+    pathname === '/book-appointment' ||
+    pathname === '/appointment' ||
+    pathname === '/book-appointment' ||
+    pathname === '/appointment' ||
     pathname === '/account' ||
     pathname === '/staff-invite' ||
     pathname === '/auth/callback' ||

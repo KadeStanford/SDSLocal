@@ -1,0 +1,31 @@
+import Svg, { Path } from 'react-native-svg';
+
+export const ParishPalette = { evergreen: '#102D25', ivory: '#F4F2E9', mint: '#89C9A2' } as const;
+
+// Clean scalable geometry for the selected paired-P parish emblem.
+export const ParishPaths = {
+  leaf: 'M626 200 C562 270 510 333 510 383 C510 471 600 527 626 623 C652 527 742 471 742 383 C742 333 690 270 626 200 Z',
+  scroll:
+    'M546 706 C593 753 600 813 553 850 C522 876 475 883 434 869 C485 844 491 803 490 765 L490 621 C490 582 474 559 445 559 C409 559 387 585 387 617 C387 650 408 671 442 668 L442 723 C404 743 356 739 319 713 C245 662 226 577 280 516 C318 473 380 458 435 466 C522 477 584 535 584 612 C584 651 570 682 546 706 Z',
+  base: 'M626 786 C608 841 585 877 525 910 L626 1038 L728 910 C668 877 644 841 626 786 Z',
+  diamond: 'M626 636 L671 702 L626 767 L582 702 Z',
+} as const;
+
+export function ParishMark({
+  size = 36,
+  dark = false,
+}: {
+  readonly size?: number;
+  readonly dark?: boolean;
+}) {
+  const ink = dark ? ParishPalette.ivory : ParishPalette.evergreen;
+  return (
+    <Svg width={size} height={size} viewBox="200 180 854 880" accessible={false}>
+      <Path d={ParishPaths.leaf} fill={ink} />
+      <Path d={ParishPaths.scroll} fill={ink} />
+      <Path d={ParishPaths.scroll} transform="translate(1254 0) scale(-1 1)" fill={ink} />
+      <Path d={ParishPaths.base} fill={ink} />
+      <Path d={ParishPaths.diamond} fill={ParishPalette.mint} />
+    </Svg>
+  );
+}

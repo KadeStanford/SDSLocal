@@ -1,7 +1,22 @@
-import { stripeSessionPatch, stripeRefundPatch } from './stripe-order-state.ts';
+import { rewardLineDiscounts, stripeRewardLines } from './checkout-rewards.ts';
+import { requireBusinessFeature, requireCommerceSetupFeature } from './business-feature-access.ts';
+import { planItemRefund } from './item-refunds.ts';
+import {
+  stripePaymentIntentPatch,
+  stripeSessionPatch,
+  stripeRefundPatch,
+  stripeChargePatch,
+} from './stripe-order-state.ts';
 import { PickupOperations } from './pickup-operations.ts';
+import { moneyPatch } from './payment-money.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
-import { StripeClient, stripeAccountId, stripeCheckoutUrl } from './stripe-client.ts';
+import {
+  StripeClient,
+  stripeAccountId,
+  stripeCheckoutUrl,
+  stripeConnectAccountCreateParams,
+  stripeOnboardingSessionIsReady,
+} from './stripe-client.ts';
 import {
   CommerceError,
   canonicalJson,
@@ -48,6 +63,14 @@ export class StripeService extends PickupOperations {
     if (!flag?.value?.enabled || !flag.value.business_ids?.includes(businessId))
       fail('DISABLED', 'This business is not in the Stripe ordering pilot.', 503);
   }
+  async authorizeOnboarding(businessId: string, userId: string, accountId: string) {
+    await this.owner(businessId, userId);
+    await this.rollout(businessId);
+    const current = await this.accountState(businessId);
+    if (!current || current.account_id !== accountId || current.state === 'revoked')
+      fail('INVALID_STATE', 'Stripe setup changed. Start again from the app.', 409);
+    return current;
+  }
   async accountState(businessId: string) {
     return (await this.checked(
       this.db.from('stripe_account_states').select('*').eq('business_id', businessId).maybeSingle(),
@@ -64,6 +87,36 @@ export class StripeService extends PickupOperations {
           last_error: account.last_error,
         }
       : null;
+  }
+  async refreshAccountReadiness(businessId: string, cached: Row) {
+    const account = await new StripeClient(this.config.secretKey).request(
+      '/v1/accounts/' + encodeURIComponent(stripeAccountId(cached.account_id)),
+      undefined,
+      'GET',
+    );
+    if (
+      account.id !== cached.account_id ||
+      typeof account.charges_enabled !== 'boolean' ||
+      typeof account.payouts_enabled !== 'boolean'
+    )
+      fail('STRIPE_NOT_READY', 'Stripe account readiness could not be verified.', 503);
+    const patch = {
+      state: account.charges_enabled && account.payouts_enabled ? 'connected' : 'pending',
+      charges_enabled: account.charges_enabled,
+      payouts_enabled: account.payouts_enabled,
+      details_submitted: account.details_submitted === true,
+      last_checked_at: new Date().toISOString(),
+    };
+    // A refresh cannot undo a simultaneous owner disconnect or replace an account.
+    await this.checked(
+      this.db
+        .from('stripe_account_states')
+        .update(patch)
+        .eq('business_id', businessId)
+        .eq('account_id', cached.account_id)
+        .neq('state', 'revoked'),
+    );
+    return { ...cached, ...patch };
   }
   async ownerStatus(input: { businessId: string }, userId: string | null) {
     const businessId = uuid(input.businessId, 'businessId');
@@ -115,6 +168,8 @@ export class StripeService extends PickupOperations {
         }
       }
     }
+    if (account && accountState && account.id !== accountState.account_id)
+      fail('ACCOUNT_MISMATCH', 'Stripe account could not be verified.', 409);
     if (account && accountState && accountState.state !== 'revoked') {
       const merchant = account.configuration?.merchant;
       const cardPaymentsStatus = merchant?.capabilities?.card_payments?.status;
@@ -138,8 +193,9 @@ export class StripeService extends PickupOperations {
             ? (account.requirements.currently_due?.length ?? 0) === 0 &&
               (account.requirements.past_due?.length ?? 0) === 0
             : Boolean(accountState.details_submitted);
+      const readyForOrdering = chargesEnabled && payoutsEnabled;
       Object.assign(accountState, {
-        state: chargesEnabled ? 'connected' : 'pending',
+        state: readyForOrdering ? 'connected' : 'pending',
         details_submitted: detailsSubmitted,
         charges_enabled: chargesEnabled,
         payouts_enabled: payoutsEnabled,
@@ -148,14 +204,16 @@ export class StripeService extends PickupOperations {
         this.db
           .from('stripe_account_states')
           .update({
-            state: chargesEnabled ? 'connected' : 'pending',
+            state: readyForOrdering ? 'connected' : 'pending',
             details_submitted: detailsSubmitted,
             charges_enabled: chargesEnabled,
             payouts_enabled: payoutsEnabled,
             last_checked_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
-          .eq('business_id', businessId),
+          .eq('business_id', businessId)
+          .eq('account_id', accountState.account_id)
+          .neq('state', 'revoked'),
       );
     }
     const settings = await this.checked(
@@ -169,8 +227,9 @@ export class StripeService extends PickupOperations {
     const connectionState =
       accountState?.state === 'revoked'
         ? 'revoked'
-        : account?.charges_enabled ||
-            account?.configuration?.merchant?.capabilities?.card_payments?.status === 'active'
+        : (account?.charges_enabled ||
+              account?.configuration?.merchant?.capabilities?.card_payments?.status === 'active') &&
+            (account?.payouts_enabled ?? accountState?.payouts_enabled)
           ? 'connected'
           : (accountState?.state ?? connection?.state);
     return {
@@ -198,7 +257,7 @@ export class StripeService extends PickupOperations {
       products: await this.products(businessId),
     };
   }
-  async beginConnect(input: { businessId: string }, userId: string | null) {
+  async beginConnect(input: { businessId: string }, userId: string | null, embedded = false) {
     const businessId = uuid(input.businessId, 'businessId');
     await this.owner(businessId, userId);
     await this.rollout(businessId);
@@ -224,24 +283,11 @@ export class StripeService extends PickupOperations {
       ? { id: previous.account_id }
       : await platform.request(
           '/v2/core/accounts',
-          {
-            ...(contactEmail ? { contact_email: contactEmail } : {}),
-            display_name: business?.name ?? 'Business',
-            identity: {
-              country: 'us',
-              entity_type: 'company',
-              business_details: { registered_name: business?.name ?? 'Business' },
-            },
-            configuration: {
-              merchant: { capabilities: { card_payments: { requested: true } } },
-            },
-            defaults: {
-              responsibilities: { fees_collector: 'stripe', losses_collector: 'stripe' },
-            },
-            dashboard: 'full',
-            include: ['configuration.merchant', 'identity', 'defaults'],
-            metadata: { sds_business_id: businessId },
-          },
+          stripeConnectAccountCreateParams({
+            businessId,
+            businessName: business?.name,
+            contactEmail,
+          }),
           'POST',
           `sds-connect-${businessId}`,
         );
@@ -251,11 +297,15 @@ export class StripeService extends PickupOperations {
       this.db.from('stripe_account_states').upsert({
         business_id: businessId,
         account_id: accountId,
-        state: preserved?.state ?? 'pending',
+        state: preserved?.state === 'revoked' ? 'pending' : (preserved?.state ?? 'pending'),
         details_submitted: Boolean(preserved?.details_submitted),
         charges_enabled: Boolean(preserved?.charges_enabled),
         payouts_enabled: Boolean(preserved?.payouts_enabled),
         last_checked_at: new Date().toISOString(),
+        authorization_started_at:
+          preserved?.state !== 'revoked' && preserved?.authorization_started_at
+            ? preserved.authorization_started_at
+            : new Date().toISOString(),
       }),
     );
     await this.checked(
@@ -265,6 +315,13 @@ export class StripeService extends PickupOperations {
     );
     if (!(await this.selectedProvider(businessId)))
       await this.selectProvider(businessId, userId, 'stripe');
+    if (embedded)
+      return {
+        provider: 'stripe',
+        accountId,
+        resumed: Boolean(previous?.account_id),
+        status: resumeSetup ? 'verification' : 'onboarding',
+      };
     const state = randomToken();
     await this.checked(
       this.db.from('stripe_onboarding_states').insert({
@@ -304,6 +361,45 @@ export class StripeService extends PickupOperations {
       url: stripeCheckoutUrl(links.url),
       resumed: Boolean(previous?.account_id),
       status: resumeSetup ? 'verification' : 'onboarding',
+    };
+  }
+  async connectSession(input: { businessId: string }, userId: string | null) {
+    const businessId = uuid(input.businessId, 'businessId');
+    await this.owner(businessId, userId);
+    await this.rollout(businessId);
+    let accountState = await this.accountState(businessId);
+    if (!accountState?.account_id || accountState.state === 'revoked') {
+      await this.beginConnect({ businessId }, userId, true);
+      accountState = await this.accountState(businessId);
+    }
+    if (!accountState?.account_id)
+      fail('STRIPE_NOT_READY', 'Payment setup could not be started. Please retry.', 409);
+
+    const session = await new StripeClient(this.config.secretKey).request(
+      '/v1/account_sessions',
+      {
+        account: stripeAccountId(accountState.account_id),
+        components: {
+          account_onboarding: {
+            enabled: true,
+            features: {
+              external_account_collection: true,
+            },
+          },
+        },
+      },
+      'POST',
+    );
+    if (!stripeOnboardingSessionIsReady(session, accountState.account_id))
+      fail(
+        'PROVIDER_ERROR',
+        'Stripe could not verify the secure setup session. Please retry.',
+        503,
+      );
+    return {
+      provider: 'stripe',
+      clientSecret: string(session.client_secret, 4096),
+      expiresAt: Number(session.expires_at) || null,
     };
   }
   async products(businessId: string): Promise<Product[]> {
@@ -376,8 +472,8 @@ export class StripeService extends PickupOperations {
     userId: string | null,
   ) {
     const businessId = uuid(input.businessId, 'businessId');
+    await this.owner(businessId, userId);
     if (input.settings !== undefined) {
-      await this.owner(businessId, userId);
       const parsed = parseSettings(input.settings);
       await this.rollout(businessId);
       return {
@@ -473,11 +569,19 @@ export class StripeService extends PickupOperations {
       business?.status !== 'active' ||
       connection?.state !== 'connected' ||
       account?.state !== 'connected' ||
-      !account.charges_enabled
+      !account.charges_enabled ||
+      !account.payouts_enabled
     )
       return { available: false, status: 'unsupported', slots: [], products: [] };
     const settings = parseSettings(settingsRow);
     if (!settings.is_open) return { available: false, status: 'paused', slots: [], products: [] };
+    try {
+      const live = await this.refreshAccountReadiness(businessId, account);
+      if (!live.charges_enabled || !live.payouts_enabled)
+        return { available: false, status: 'unsupported', slots: [], products: [] };
+    } catch {
+      return { available: false, status: 'unavailable', slots: [], products: [] };
+    }
     const address = [
       business.address_line_1,
       business.address_line_2,
@@ -542,8 +646,10 @@ export class StripeService extends PickupOperations {
     cart: unknown;
     statusToken?: unknown;
     userId?: string | null;
+    rewardSelection?: unknown;
   }) {
     const businessId = uuid(input.businessId, 'businessId');
+    await requireBusinessFeature(this.db, businessId, 'pickup_ordering');
     const pickup = parsePickup(input.pickup);
     const cart = parseCart(input.cart);
     const available = await this.availability({ businessId, pickup, cart });
@@ -561,8 +667,17 @@ export class StripeService extends PickupOperations {
     if (!selected?.available) fail('INVALID_SLOT', 'Choose an available pickup time.', 409);
     const quoteId = crypto.randomUUID();
     const guestHash = await hash(opaqueToken(input.statusToken));
-    const reward = await this.checkoutReward(businessId, input.userId ?? null, cart, products);
+    const reward = await this.checkoutReward(
+      businessId,
+      input.userId ?? null,
+      cart,
+      products,
+      input.rewardSelection,
+      'stripe',
+    );
     const total = subtotal - (reward?.discountMinor ?? 0);
+    if (total > 0 && total < 50)
+      fail('MINIMUM_PAYMENT', 'Stripe orders must total at least $0.50 after rewards.', 409);
     const account = await this.accountState(businessId);
     const expiresAt = new Date(Date.now() + 5 * 60000).toISOString();
     await this.checked(
@@ -619,6 +734,7 @@ export class StripeService extends PickupOperations {
         fail('IDEMPOTENCY_CONFLICT', 'This checkout request does not match.', 409);
       return this.ensureCheckout(existing);
     }
+    await requireBusinessFeature(this.db, businessId, 'pickup_ordering');
     const quoteRow = quoteId
       ? ((await this.checked(
           this.db
@@ -647,12 +763,30 @@ export class StripeService extends PickupOperations {
       0,
     );
     const account = await this.accountState(businessId);
-    if (!account?.account_id || account.state !== 'connected' || !account.charges_enabled)
-      fail('STRIPE_NOT_READY', 'This business is still finishing Stripe setup.', 409);
-    const reward = await this.checkoutReward(businessId, userId, cart, products);
+    if (
+      !account?.account_id ||
+      account.state !== 'connected' ||
+      !account.charges_enabled ||
+      !account.payouts_enabled
+    )
+      fail(
+        'STRIPE_NOT_READY',
+        'Finish Stripe verification and payout setup before accepting orders.',
+        409,
+      );
+    const reward = await this.checkoutReward(
+      businessId,
+      userId,
+      cart,
+      products,
+      quotePayload.reward?.selection,
+      'stripe',
+    );
     if (canonicalJson(reward) !== canonicalJson(quotePayload.reward ?? null))
       fail('REWARD_CHANGED', 'Your rewards changed. Review a fresh total.', 409);
     const total = subtotal - (reward?.discountMinor ?? 0);
+    if (total < 50)
+      fail('MINIMUM_PAYMENT', 'Stripe orders must total at least $0.50 after rewards.', 409);
     if (
       subtotal !== quotePayload.subtotal ||
       total !== quotePayload.total ||
@@ -665,31 +799,28 @@ export class StripeService extends PickupOperations {
       (candidate) => candidate.at === pickup.at && candidate.stopId === pickup.stopId,
     );
     if (!slot?.available) fail('INVALID_SLOT', 'That pickup time is no longer available.', 409);
-    const itemSnapshots = cart.map((line) => {
+    const lineDiscounts = rewardLineDiscounts(cart, products, reward);
+    const itemSnapshots = cart.map((line, index) => {
       const product = products.find((p) => p.id === line.variationId)!;
+      const gross = product.price * line.quantity;
+      const discount = lineDiscounts[index];
       return {
         name: product.name,
         variation_name: product.variation,
+        variation_id: line.variationId,
+        modifier_ids: line.modifierIds,
         quantity: String(line.quantity),
-        total_money: { amount: product.price * line.quantity, currency: product.currency },
+        total_money: { amount: gross - discount, currency: product.currency },
+        total_discount_money: { amount: discount, currency: product.currency },
         modifiers: [],
       };
     });
     const providerRequest = {
       provider: 'stripe',
-      lineItems: cart.map((line) => {
-        const product = products.find((p) => p.id === line.variationId)!;
-        return {
-          name: product.name,
-          description: product.description,
-          image: product.image,
-          currency: product.currency,
-          unitAmount: product.price,
-          quantity: line.quantity,
-        };
-      }),
+      checkoutMode: input.checkoutMode === 'payment_sheet' ? 'payment_sheet' : 'hosted',
+      lineItems: stripeRewardLines(cart, products, reward),
       accountId: account.account_id,
-      discountMinor: reward?.discountMinor ?? 0,
+      discountMinor: reward?.type === 'percent_discount' ? reward.discountMinor : 0,
       rewardLabel: reward?.label,
     };
     const reserve = await this.checked(
@@ -706,7 +837,7 @@ export class StripeService extends PickupOperations {
           pickup_timezone: (available.settings as OrderingSettings).timezone,
           pickup_address: slot.address,
           recipient,
-          subtotal_minor: subtotal,
+          subtotal_minor: subtotal - (reward?.discountMinor ?? 0),
           tax_minor: 0,
           total_minor: total,
           stop_id: pickup.stopId,
@@ -728,15 +859,126 @@ export class StripeService extends PickupOperations {
     return this.ensureCheckout(order);
   }
   async ensureCheckout(order: Row) {
-    if (order.status !== 'checkout_pending' || order.checkout_url)
+    if (order.provider !== 'stripe') fail('NOT_FOUND', 'Order not found.', 404);
+    const checkoutMode = record(order.provider_request).checkoutMode;
+    if (
+      order.status !== 'checkout_pending' ||
+      (checkoutMode !== 'payment_sheet' && order.checkout_url)
+    )
       return { order: await this.orderProjection(order) };
+    if (checkoutMode === 'payment_sheet') return this.ensurePaymentSheet(order);
     if (Date.parse(order.expires_at) <= Date.now())
       fail('CHECKOUT_EXPIRED', 'This checkout expired. Refresh your order.', 409);
-    return this.withOrderLease(order.id, null, async (locked, lease) => ({
-      order: await this.orderProjection(
-        locked.checkout_url ? locked : await this.createCheckout(locked, lease),
-      ),
-    }));
+    return this.withOrderLease(order.id, null, async (locked, lease) => {
+      if (locked.status !== 'checkout_pending')
+        return { order: await this.orderProjection(locked) };
+      if (Date.parse(locked.expires_at) <= Date.now())
+        fail('CHECKOUT_EXPIRED', 'This checkout expired. Refresh your order.', 409);
+      return {
+        order: await this.orderProjection(
+          locked.checkout_url ? locked : await this.createCheckout(locked, lease),
+        ),
+      };
+    });
+  }
+  async ensurePaymentSheet(order: Row) {
+    const reconciled = await this.reconcile(order);
+    if (reconciled.status !== 'checkout_pending')
+      return { order: await this.orderProjection(reconciled) };
+    if (Date.parse(reconciled.expires_at) <= Date.now())
+      return { order: await this.orderProjection(await this.reconcile(reconciled)) };
+    return this.withOrderLease(reconciled.id, null, async (locked, lease) => {
+      if (locked.status !== 'checkout_pending')
+        return { order: await this.orderProjection(locked) };
+      if (Date.parse(locked.expires_at) <= Date.now())
+        fail('CHECKOUT_EXPIRED', 'This checkout expired. Refresh your order.', 409);
+      if (record(locked.provider_request).checkoutMode !== 'payment_sheet')
+        fail('PAYMENT_UNAVAILABLE', 'This order needs its original secure checkout.', 409);
+
+      const client = new StripeClient(this.config.secretKey, stripeAccountId(locked.merchant_id));
+      let intent: Row;
+      if (locked.square_payment_id) {
+        if (!/^pi_[A-Za-z0-9]+$/.test(String(locked.square_payment_id)))
+          fail('PAYMENT_MISMATCH', 'Stripe payment does not match this order.', 409);
+        intent = await client.request(
+          '/v1/payment_intents/' + encodeURIComponent(locked.square_payment_id),
+          undefined,
+          'GET',
+        );
+      } else {
+        const request: Row = {
+          amount: Number(locked.total_minor),
+          currency: String(locked.currency).toLowerCase(),
+          payment_method_types: ['card'],
+          description:
+            `${String(locked.business_name ?? 'SDS Local')} pickup order ${String(locked.order_number ?? '')}`.trim(),
+          metadata: {
+            sds_order_id: locked.id,
+            sds_business_id: String(locked.business_id ?? ''),
+            sds_payment_flow: 'payment_sheet',
+          },
+        };
+        if (this.config.applicationFeeMinor > 0)
+          request.application_fee_amount = Math.min(
+            this.config.applicationFeeMinor,
+            Number(locked.total_minor),
+          );
+        intent = await client.request(
+          '/v1/payment_intents',
+          request,
+          'POST',
+          `sds-payment-intent-${locked.id}`,
+        );
+      }
+
+      if (
+        intent.livemode !== false ||
+        typeof intent.id !== 'string' ||
+        !/^pi_[A-Za-z0-9]+$/.test(intent.id) ||
+        intent.metadata?.sds_order_id !== locked.id
+      )
+        fail('PAYMENT_MISMATCH', 'Stripe payment does not match this test order.', 409);
+      if (!locked.square_payment_id)
+        Object.assign(
+          locked,
+          await this.patchOrder(locked.id, lease, {
+            square_payment_id: intent.id,
+            provider_status: 'PAYMENT_INTENT_CREATED',
+          }),
+        );
+
+      const patch = stripePaymentIntentPatch(locked, intent);
+      if (Object.keys(patch).length) {
+        const updated = await this.patchOrder(locked.id, lease, patch);
+        if (updated.status !== locked.status)
+          await this.checked(
+            this.db.from('square_order_events').insert({
+              order_id: locked.id,
+              actor_type: 'provider',
+              from_state: locked.status,
+              to_state: updated.status,
+            }),
+          );
+        if (updated.status !== 'checkout_pending')
+          return { order: await this.orderProjection(updated) };
+        Object.assign(locked, updated);
+      }
+      if (
+        !['requires_payment_method', 'requires_confirmation', 'requires_action'].includes(
+          intent.status,
+        )
+      )
+        return { order: await this.orderProjection(locked) };
+      if (typeof intent.client_secret !== 'string' || !intent.client_secret)
+        fail('PAYMENT_UNAVAILABLE', 'Secure payment is not ready. Please retry.', 503);
+
+      return {
+        order: await this.orderProjection(locked),
+        paymentIntentClientSecret: intent.client_secret,
+        stripeAccountId: locked.merchant_id,
+        merchantDisplayName: String(locked.business_name ?? 'SDS Local'),
+      };
+    });
   }
   async createCheckout(order: Row, lease: string) {
     const client = new StripeClient(this.config.secretKey, stripeAccountId(order.merchant_id));
@@ -813,12 +1055,47 @@ export class StripeService extends PickupOperations {
   }
 
   async reconcile(order: Row) {
-    if (!['checkout_pending', 'refund_pending'].includes(order.status)) return order;
+    if (order.provider_status === 'REWARD_COVERED') return order;
+    if (order.provider !== 'stripe') fail('NOT_FOUND', 'Order not found.', 404);
+    if (
+      order.status === 'refunded' ||
+      ['checkout_expired', 'checkout_failed'].includes(order.status)
+    )
+      return order;
     return this.withOrderLease(order.id, null, async (locked, lease) => {
       const client = new StripeClient(this.config.secretKey, stripeAccountId(locked.merchant_id));
       let patch: Row = {};
       if (locked.status === 'checkout_pending') {
-        if (!locked.square_order_id) {
+        if (record(locked.provider_request).checkoutMode === 'payment_sheet') {
+          if (!locked.square_payment_id) {
+            if (Date.parse(locked.expires_at) <= Date.now())
+              patch = { status: 'checkout_expired', checkout_url: null };
+            else return locked;
+          } else {
+            const path = '/v1/payment_intents/' + encodeURIComponent(locked.square_payment_id);
+            let intent = await client.request(path, undefined, 'GET');
+            patch = stripePaymentIntentPatch(locked, intent);
+            if (
+              !patch.status &&
+              Date.parse(locked.expires_at) <= Date.now() &&
+              ['requires_payment_method', 'requires_confirmation', 'requires_action'].includes(
+                intent.status,
+              )
+            ) {
+              try {
+                intent = await client.request(
+                  path + '/cancel',
+                  {},
+                  'POST',
+                  `sds-expire-payment-${locked.id}`,
+                );
+              } catch {
+                intent = await client.request(path, undefined, 'GET');
+              }
+              patch = stripePaymentIntentPatch(locked, intent);
+            }
+          }
+        } else if (!locked.square_order_id) {
           if (Date.parse(locked.expires_at) <= Date.now())
             patch = { status: 'checkout_expired', checkout_url: null };
           else return locked;
@@ -835,7 +1112,10 @@ export class StripeService extends PickupOperations {
           }
           patch = stripeSessionPatch(locked, session);
         }
-      } else if (locked.status === 'refund_pending' && locked.refund_key) {
+      } else if (
+        locked.status === 'refund_pending' &&
+        (locked.square_refund_id || locked.refund_key)
+      ) {
         const refund = locked.square_refund_id
           ? await client.request(
               '/v1/refunds/' + encodeURIComponent(locked.square_refund_id),
@@ -846,13 +1126,73 @@ export class StripeService extends PickupOperations {
               '/v1/refunds',
               {
                 payment_intent: locked.square_payment_id,
-                amount: Number(locked.total_minor),
+                amount: Number(locked.refund_amount_minor ?? locked.total_minor),
                 reason: 'requested_by_customer',
               },
               'POST',
               locked.refund_key,
             );
         patch = stripeRefundPatch(locked, refund);
+      }
+      // Keep fulfillment separate from money. A successful PaymentIntent can
+      // subsequently have a Dashboard refund or a disputed charge.
+      if (locked.square_payment_id && (locked.paid_at || patch.status === 'placed')) {
+        const intent = await client.request(
+          '/v1/payment_intents/' + encodeURIComponent(locked.square_payment_id),
+          { expand: ['latest_charge.refunds'] },
+          'GET',
+        );
+        stripePaymentIntentPatch(locked, intent); // Validate order/environment binding even after payment.
+        if (intent.latest_charge && typeof intent.latest_charge === 'object') {
+          const charge = intent.latest_charge;
+          const chargePatch = stripeChargePatch(locked, charge);
+          if (Object.keys(chargePatch).length) patch = { ...patch, ...chargePatch };
+          if (charge.disputed === true || locked.dispute_id) {
+            const dispute = locked.dispute_id
+              ? await client.request(
+                  '/v1/disputes/' + encodeURIComponent(locked.dispute_id),
+                  undefined,
+                  'GET',
+                )
+              : (await client.request('/v1/disputes', { charge: charge.id, limit: 100 }, 'GET'))
+                  .data?.[0];
+            if (
+              !dispute ||
+              dispute.livemode !== false ||
+              (dispute.payment_intent !== locked.square_payment_id &&
+                dispute.charge !== charge.id) ||
+              String(dispute.currency).toUpperCase() !== locked.currency ||
+              !Number.isSafeInteger(dispute.amount) ||
+              dispute.amount < 1 ||
+              dispute.amount > Number(locked.total_minor)
+            )
+              fail('DISPUTE_MISMATCH', 'The provider dispute needs review.', 409);
+            const state =
+              dispute.status === 'lost'
+                ? 'LOST'
+                : dispute.status === 'won'
+                  ? 'WON'
+                  : ['warning_closed', 'prevented'].includes(dispute.status)
+                    ? 'RESOLVED'
+                    : String(dispute.status).toUpperCase();
+            if (['WON', 'RESOLVED'].includes(state)) {
+              delete patch.status;
+              delete patch.provider_status;
+            }
+            const pendingRefund =
+              charge.refunds?.data?.some((r: Row) =>
+                ['pending', 'requires_action'].includes(r.status),
+              ) ?? false;
+            patch = {
+              ...patch,
+              ...moneyPatch(locked, charge.amount_refunded, pendingRefund, {
+                id: dispute.id,
+                state,
+                amount: dispute.amount,
+              }),
+            };
+          }
+        }
       }
       const updated = await this.patchOrder(locked.id, lease, {
         ...patch,
@@ -873,32 +1213,84 @@ export class StripeService extends PickupOperations {
   async status(input: Row, userId: string | null) {
     const order = await this.authorizeOrder(uuid(input.orderId), userId, input.statusToken);
     if (order.provider !== 'stripe') fail('NOT_FOUND', 'Order not found.', 404);
-    return { order: await this.orderProjection(await this.reconcile(order)) };
+    return await this.customerOrderProjection(await this.reconcile(order));
+  }
+  async resumePayment(input: Row, userId: string | null) {
+    const order = await this.authorizeOrder(uuid(input.orderId), userId, input.statusToken);
+    if (order.provider !== 'stripe') fail('NOT_FOUND', 'Order not found.', 404);
+    if (record(order.provider_request).checkoutMode !== 'payment_sheet')
+      return this.ensureCheckout(order);
+    if (order.status !== 'checkout_pending')
+      return { order: await this.orderProjection(await this.reconcile(order)) };
+    return this.ensurePaymentSheet(order);
   }
   async refund(id: string, userId: string | null, body: Row) {
-    await this.authorizeOrder(id, userId, null, true);
+    const authorized = await this.authorizeOrder(id, userId, null, true);
+    if (authorized.provider !== 'stripe') fail('NOT_FOUND', 'Order not found.', 404);
     if (body.confirmed !== true) fail('CONFIRM_REQUIRED', 'Confirm the full refund.');
+    if (authorized.paid_at && !authorized.dispute_state) await this.reconcile(authorized);
     return this.withOrderLease(id, integer(body.version, 1, 10000000), async (order, lease) => {
       if (order.status === 'refunded') return { order: await this.orderProjection(order, true) };
-      if (!canRefund(order.status) && order.status !== 'refund_pending')
+      if (Number(order.total_minor) === 0 && order.provider_status === 'REWARD_COVERED') {
+        if (body.items !== undefined || body.amountMinor !== undefined)
+          fail('INVALID_REFUND_ITEMS', 'Cancel the whole reward order to restore the reward.');
+        return this.cancelCoveredOrder(order, lease, userId);
+      }
+      if (order.dispute_state && !['WON', 'RESOLVED'].includes(order.dispute_state))
+        fail('DISPUTE_OPEN', 'Resolve this dispute in Stripe Dashboard before refunding.', 409);
+      if (!canRefund(order.status) && !['refund_pending', 'payment_review'].includes(order.status))
         fail('INVALID_TRANSITION', 'This order cannot be refunded here.', 409);
       if (!order.square_payment_id) fail('PAYMENT_PENDING', 'Payment is not confirmed.', 409);
       const key =
-        order.status === 'refund_failed'
+        order.status !== 'refund_pending'
           ? crypto.randomUUID()
           : (order.refund_key ?? crypto.randomUUID());
-      order = await this.patchOrder(id, lease, { status: 'refund_pending', refund_key: key });
+      if (body.amountMinor !== undefined)
+        fail('INVALID_REFUND_ITEMS', 'Choose items to refund instead of entering an amount.');
+      const plan =
+        order.status !== 'refund_pending' && body.items !== undefined
+          ? planItemRefund(
+              order,
+              (await this.checked(
+                this.db.from('square_order_items').select('id,snapshot').eq('order_id', id),
+              )) ?? [],
+              body.items,
+              key,
+            )
+          : null;
+      const amount =
+        order.status === 'refund_pending' && order.refund_amount_minor
+          ? Number(order.refund_amount_minor)
+          : (plan?.amount ??
+            integer(
+              Number(order.total_minor) - Number(order.refunded_minor ?? 0),
+              1,
+              Number(order.total_minor),
+            ));
+      order = await this.patchOrder(id, lease, {
+        status: 'refund_pending',
+        refund_key: key,
+        refund_amount_minor: amount,
+        ...(plan ? { item_refunds: plan.history } : {}),
+        ...(order.status !== 'refund_pending' ? { square_refund_id: null } : {}),
+      });
       const client = new StripeClient(this.config.secretKey, stripeAccountId(order.merchant_id));
-      const refund = await client.request(
-        '/v1/refunds',
-        {
-          payment_intent: order.square_payment_id,
-          amount: Number(order.total_minor),
-          reason: 'requested_by_customer',
-        },
-        'POST',
-        key,
-      );
+      const refund = order.square_refund_id
+        ? await client.request(
+            '/v1/refunds/' + encodeURIComponent(order.square_refund_id),
+            undefined,
+            'GET',
+          )
+        : await client.request(
+            '/v1/refunds',
+            {
+              payment_intent: order.square_payment_id,
+              amount,
+              reason: 'requested_by_customer',
+            },
+            'POST',
+            key,
+          );
       const updated = await this.patchOrder(id, lease, stripeRefundPatch(order, refund));
       await this.checked(
         this.db.from('square_order_events').insert({
@@ -912,17 +1304,53 @@ export class StripeService extends PickupOperations {
     });
   }
   async maintenance() {
+    await this.checked(
+      this.db
+        .from('stripe_webhook_inbox')
+        .delete()
+        .lt('processed_at', new Date(Date.now() - 30 * 86400000).toISOString()),
+    );
+    const pendingEvents = await this.checked(
+      this.db
+        .from('stripe_webhook_inbox')
+        .select('payload')
+        .is('processed_at', null)
+        .order('last_attempt_at', { nullsFirst: true })
+        .limit(10),
+    );
+    let eventFailures = 0;
+    for (const entry of pendingEvents ?? []) {
+      try {
+        await this.queuedWebhookEvent(entry.payload, false);
+      } catch {
+        eventFailures++;
+      }
+    }
     const orders = await this.checked(
       this.db
         .from('square_orders')
         .select('*')
         .eq('provider', 'stripe')
-        .in('status', ['checkout_pending', 'refund_pending'])
+        .in('status', [
+          'checkout_pending',
+          'refund_pending',
+          'placed',
+          'accepted',
+          'preparing',
+          'ready',
+          'completed',
+          'payment_review',
+          'refund_failed',
+          'dispute_lost',
+        ])
+        .or(
+          `status.neq.completed,completed_at.gt.${new Date(Date.now() - 30 * 86400000).toISOString()}`,
+        )
         .order('last_reconciled_at', { nullsFirst: true })
         .limit(50),
     );
     let reconciled = 0,
-      failures = 0;
+      failures = eventFailures;
     for (const order of orders ?? []) {
       try {
         await this.reconcile(order);
@@ -933,8 +1361,160 @@ export class StripeService extends PickupOperations {
     }
     return { reconciled, failures };
   }
+  async queuedWebhookEvent(event: Row, persist = true) {
+    const id = string(event.id, 200);
+    if (event.livemode !== false)
+      fail('INVALID_ENVIRONMENT', 'Only sandbox events are accepted.', 400);
+    if (persist) {
+      const object = event.data?.object ?? {};
+      const payload = {
+        id,
+        type: event.type,
+        livemode: false,
+        account: event.account,
+        created: event.created,
+        data: {
+          object: {
+            id: object.id,
+            payment_intent:
+              typeof object.payment_intent === 'string'
+                ? object.payment_intent
+                : object.payment_intent?.id,
+            charge: typeof object.charge === 'string' ? object.charge : object.charge?.id,
+            client_reference_id: object.client_reference_id,
+            metadata: { sds_order_id: object.metadata?.sds_order_id },
+          },
+        },
+      };
+      await this.checked(
+        this.db
+          .from('stripe_webhook_inbox')
+          .upsert({ event_id: id, payload }, { onConflict: 'event_id', ignoreDuplicates: true }),
+      );
+    }
+    const lease = crypto.randomUUID();
+    const claimed = await this.checked(
+      this.db.rpc('stripe_webhook_claim', { p_id: id, p_lease: lease }),
+    );
+    if (!claimed?.length) return;
+    try {
+      await this.webhookEvent(claimed[0].payload);
+      await this.checked(
+        this.db
+          .from('stripe_webhook_inbox')
+          .update({ processed_at: new Date().toISOString(), lease_until: null, last_error: null })
+          .eq('event_id', id)
+          .eq('lease_id', lease),
+      );
+    } catch (error) {
+      await this.checked(
+        this.db
+          .from('stripe_webhook_inbox')
+          .update({ lease_until: null, last_error: 'PROCESSING_ERROR' })
+          .eq('event_id', id)
+          .eq('lease_id', lease),
+      );
+      throw error;
+    }
+  }
+  async webhookEvent(event: Row) {
+    if (event.livemode !== false)
+      fail('INVALID_ENVIRONMENT', 'Only sandbox events are accepted.', 400);
+    const object = event.data?.object;
+    if (!object) return;
+    if (event.type === 'account.updated') {
+      const cached = await this.checked(
+        this.db
+          .from('stripe_account_states')
+          .select('*')
+          .eq('account_id', stripeAccountId(object.id))
+          .maybeSingle(),
+      );
+      if (cached && cached.state !== 'revoked')
+        await this.refreshAccountReadiness(cached.business_id, cached);
+      return;
+    }
+    if (event.type === 'account.application.deauthorized') {
+      await this.checked(
+        this.db
+          .from('stripe_account_states')
+          .update({
+            state: 'revoked',
+            charges_enabled: false,
+            payouts_enabled: false,
+            last_error: 'authorization_revoked',
+          })
+          .eq('account_id', stripeAccountId(event.account))
+          .or(
+            `authorization_started_at.is.null,authorization_started_at.lte.${new Date(Number(event.created) * 1000).toISOString()}`,
+          ),
+      );
+      return;
+    }
+    if (
+      ![
+        'checkout.session.completed',
+        'checkout.session.expired',
+        'payment_intent.succeeded',
+        'payment_intent.canceled',
+        'payment_intent.payment_failed',
+        'charge.refunded',
+        'charge.dispute.created',
+        'charge.dispute.updated',
+        'charge.dispute.closed',
+        'refund.created',
+        'refund.updated',
+        'refund.failed',
+      ].includes(event.type)
+    )
+      return;
+    const orderId = object.metadata?.sds_order_id ?? object.client_reference_id;
+    let paymentId = event.type.startsWith('payment_intent.') ? object.id : object.payment_intent;
+    if (event.type.startsWith('charge.dispute.') && !paymentId && object.charge) {
+      const charge = await new StripeClient(
+        this.config.secretKey,
+        stripeAccountId(event.account),
+      ).request('/v1/charges/' + encodeURIComponent(string(object.charge, 100)), undefined, 'GET');
+      if (charge.livemode !== false)
+        fail('DISPUTE_MISMATCH', 'The provider dispute needs review.', 409);
+      paymentId = charge.payment_intent;
+    }
+    if (!orderId && !paymentId) return;
+    let query = this.db.from('square_orders').select('*').eq('provider', 'stripe');
+    query = orderId
+      ? query.eq('id', uuid(orderId))
+      : query.eq('square_payment_id', string(paymentId, 100));
+    const order = await this.checked(query.maybeSingle());
+    if (!order) return;
+    if (event.account !== order.merchant_id)
+      fail('ACCOUNT_MISMATCH', 'Event belongs to another connected account.', 400);
+    if (event.type.startsWith('charge.dispute.')) {
+      const dispute = await new StripeClient(
+        this.config.secretKey,
+        stripeAccountId(order.merchant_id),
+      ).request('/v1/disputes/' + encodeURIComponent(string(object.id, 100)), undefined, 'GET');
+      if (dispute.livemode !== false || dispute.payment_intent !== order.square_payment_id)
+        fail('DISPUTE_MISMATCH', 'The provider dispute needs review.', 409);
+      await this.withOrderLease(order.id, null, async (locked, lease) =>
+        this.patchOrder(order.id, lease, { dispute_id: dispute.id }),
+      );
+      order.dispute_id = dispute.id;
+    }
+    await this.reconcile(order);
+  }
   async route(body: Row, userId: string | null) {
+    await requireCommerceSetupFeature(this.db, body);
+    if (body.action === 'resolve_payment_review')
+      return this.resolvePaymentReview(uuid(body.orderId), userId, body);
     const action = string(body.action, 40);
+    if (action === 'my_event_review_candidates') return this.customerEventReviewCandidates(userId);
+    if (action === 'submit_event_review')
+      return this.submitVerifiedEventReview(uuid(body.eventId), userId, body);
+    if (action === 'merchant_reviews')
+      return this.merchantPickupReviews(uuid(body.businessId), userId);
+    if (action === 'merchant_review_reply')
+      return this.replyToPickupReview(uuid(body.businessId), userId, body);
+    if (action === 'report_customer_review') return this.reportPickupReview(userId, body);
     if (action === 'pickup_code')
       return this.pickupCode(uuid(body.orderId), userId, body.statusToken);
     if (action === 'pickup_scan') return this.pickupScan(uuid(body.businessId), userId, body);
@@ -959,20 +1539,49 @@ export class StripeService extends PickupOperations {
           (await this.checked(this.db.rpc('square_operator_businesses', { p_user_id: userId }))) ??
           [],
       };
-    if (['status', 'operator_detail', 'order_action', 'refund'].includes(action)) {
+    if (
+      [
+        'status',
+        'operator_detail',
+        'order_action',
+        'refund',
+        'customer_order_request',
+        'customer_order_reorder',
+        'resolve_order_request',
+        'submit_pickup_review',
+      ].includes(action)
+    ) {
       const id = uuid(body.orderId);
       if (action === 'status')
         return this.status({ orderId: id, statusToken: body.statusToken }, userId);
       if (action === 'operator_detail') return this.operatorDetail(id, userId);
       if (action === 'refund') return this.refund(id, userId, body);
+      if (action === 'customer_order_request')
+        return this.submitOrderSupportRequest(id, userId, body);
+      if (action === 'customer_order_reorder') return this.customerOrderReorder(id, userId, body);
+      if (action === 'resolve_order_request')
+        return this.resolveOrderSupportRequest(id, userId, body);
+      if (action === 'submit_pickup_review') return this.submitPickupReview(id, userId, body);
       return this.orderAction(id, userId, body);
     }
+    if (action === 'resume_payment') return this.resumePayment(body, userId);
     const businessId = uuid(body.businessId);
     switch (action) {
+      case 'reward_options':
+      case 'reward_catalog': {
+        await this.rollout(businessId);
+        if (action === 'reward_catalog') await this.owner(businessId, userId);
+        const products = await this.products(businessId);
+        return action === 'reward_catalog'
+          ? { provider: 'stripe', products }
+          : this.checkoutRewardOptions(businessId, userId, products, 'stripe');
+      }
       case 'availability':
         return this.availability({ businessId, pickup: body.pickup, cart: body.cart });
       case 'connect':
         return this.beginConnect({ businessId }, userId);
+      case 'connect_session':
+        return this.connectSession({ businessId }, userId);
       case 'owner_status':
         return this.ownerStatus({ businessId }, userId);
       case 'select_provider':
@@ -989,6 +1598,7 @@ export class StripeService extends PickupOperations {
           pickup: body.pickup,
           cart: body.cart,
           statusToken: body.statusToken,
+          rewardSelection: body.rewardSelection,
           userId,
         });
       case 'checkout':

@@ -178,7 +178,7 @@ export const passwordRecoverySchema = z
   });
 
 export const customerProfileSchema = z.object({
-  displayName: z.string().trim().min(2).max(100),
+  displayName: z.string().trim().max(100).refine((value) => value.length === 0 || value.length >= 2, "Use at least 2 characters, or leave your name blank."),
   city: optionalTrimmedString(100),
   regionCode: optionalUsRegion,
   postalCode: optionalUsPostalCode,

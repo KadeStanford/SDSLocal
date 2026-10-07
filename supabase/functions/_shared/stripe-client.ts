@@ -2,6 +2,38 @@ import { CommerceError, fail, string } from './square-security.ts';
 
 type StripeObject = Record<string, any>;
 
+export function stripeConnectAccountCreateParams(input: {
+  businessId: string;
+  businessName: string | null | undefined;
+  contactEmail?: string;
+}) {
+  const businessName = input.businessName?.trim() || 'Business';
+  const contactEmail = input.contactEmail?.trim();
+  return {
+    ...(contactEmail ? { contact_email: contactEmail } : {}),
+    display_name: businessName,
+    // The pickup catalog is currently US-only. Let Stripe collect each owner's
+    // legal entity type; prefilling company excludes sole proprietors and can
+    // lock in the wrong legal profile before the owner sees the form.
+    identity: { country: 'us' },
+    configuration: { merchant: { capabilities: { card_payments: { requested: true } } } },
+    defaults: { responsibilities: { fees_collector: 'stripe', losses_collector: 'stripe' } },
+    dashboard: 'full',
+    include: ['configuration.merchant', 'defaults'],
+    metadata: { sds_business_id: input.businessId },
+  };
+}
+
+export function stripeOnboardingSessionIsReady(session: StripeObject, accountId: string) {
+  return (
+    session.livemode === false &&
+    session.account === accountId &&
+    session.components?.account_onboarding?.enabled === true &&
+    typeof session.client_secret === 'string' &&
+    session.client_secret.trim().length > 0
+  );
+}
+
 export class StripeClient {
   constructor(
     readonly secretKey: string,
@@ -30,14 +62,44 @@ export class StripeClient {
       if (query) url += `?${query}`;
     } else if (params)
       init.body = isV2 ? JSON.stringify(params) : new URLSearchParams(flatten(params));
-    const response = await this.fetchImpl(url, init);
+    const endpoint = path.replace(/\/acct_[A-Za-z0-9]+/g, '/acct_[redacted]');
+    let response: Response;
+    try {
+      response = await this.fetchImpl(url, init);
+    } catch (error) {
+      console.error('Stripe API request failed before a response', {
+        endpoint,
+        errorName: error instanceof Error ? error.name : 'UnknownError',
+      });
+      throw error;
+    }
     const body = (await response.json().catch(() => ({}))) as StripeObject;
     if (!response.ok) {
-      const message =
-        typeof body.error?.message === 'string'
-          ? body.error.message
-          : 'Stripe test checkout is temporarily unavailable.';
-      throw new CommerceError('PROVIDER_ERROR', message, response.status >= 500 ? 503 : 409);
+      console.error('Stripe API request failed', {
+        endpoint,
+        status: response.status,
+        requestId: response.headers.get('Request-Id'),
+        errorType: typeof body.error?.type === 'string' ? body.error.type : undefined,
+        errorCode: typeof body.error?.code === 'string' ? body.error.code : undefined,
+      });
+      const providerCode =
+        typeof body.error?.code === 'string' && /^[A-Za-z0-9_.-]{1,80}$/.test(body.error.code)
+          ? body.error.code
+          : undefined;
+      const providerRequestId = response.headers.get('Request-Id');
+      throw Object.assign(
+        new CommerceError(
+          'PROVIDER_ERROR',
+          'Stripe could not complete this action. Please retry or contact support with the request reference.',
+          response.status >= 500 ? 503 : 409,
+        ),
+        {
+          ...(providerCode ? { providerCode } : {}),
+          ...(providerRequestId && /^req_[A-Za-z0-9]+$/.test(providerRequestId)
+            ? { providerRequestId }
+            : {}),
+        },
+      );
     }
     return body;
   }

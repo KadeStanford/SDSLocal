@@ -1,3 +1,4 @@
+import { ParishBusinessBrand } from '../business-screen-header';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Linking, Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
@@ -8,7 +9,7 @@ import { type PickupOrder } from '@/lib/square-commerce-core';
 import { useTheme } from '@/hooks/use-theme';
 import { AppButton } from '../app-button';
 import { ThemedText } from '../themed-text';
-import { CommerceField } from '../commerce-fields';
+import { PickupScanEntry } from './pickup-manual-entry';
 import { OrderReceipt } from './order-presentation';
 
 type Confirmation = {
@@ -122,26 +123,21 @@ export function PickupScanPanel({
             ]}
             showsVerticalScrollIndicator={false}
           >
+            <ParishBusinessBrand />
             <View style={styles.modalHeader}>
               <View style={styles.modalHeaderCopy}>
-                <ThemedText type="smallBold" style={{ color: c.accent }}>
-                  PICKUP HANDOFF
-                </ThemedText>
                 <ThemedText type="title">Confirm pickup</ThemedText>
               </View>
               <AppButton
                 label="Close"
                 accessibilityLabel="Close pickup scanner"
-                variant="tertiary"
+                variant="secondary"
                 disabled={busy}
                 onPress={() => setOpen(false)}
                 style={styles.closeButton}
               />
             </View>
-            <View style={[styles.businessCard, { backgroundColor: c.backgroundElement }]}>
-              <ThemedText type="small" themeColor="textSecondary">
-                Scanning for
-              </ThemedText>
+            <View style={{ gap: 6 }}>
               <ThemedText type="subtitle">{businessName}</ThemedText>
             </View>
             {result ? (
@@ -180,78 +176,59 @@ export function PickupScanPanel({
                 />
                 <AppButton
                   label="Scan a different order"
-                  variant="tertiary"
+                  variant="secondary"
                   disabled={busy}
                   onPress={reset}
                 />
               </>
             ) : (
-              <View style={[styles.scanCard, { backgroundColor: c.backgroundElement }]}>
-                <ThemedText type="smallBold">Scan the customer’s pickup QR</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  Confirm the handoff only when the ready order is in front of you.
-                </ThemedText>
-                {permission?.granted && open && active && focused && !code && !manual ? (
-                  <View style={styles.cameraFrame}>
-                    <CameraView
-                      style={StyleSheet.absoluteFill}
-                      facing="back"
-                      barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-                      onBarcodeScanned={online ? ({ data }) => void preview(data) : undefined}
-                    />
-                    <View pointerEvents="none" style={styles.scanTarget} />
-                    <ThemedText type="smallBold" style={styles.cameraHint}>
-                      Center the QR in the frame
-                    </ThemedText>
-                  </View>
-                ) : (
-                  !permission?.granted && (
-                    <AppButton
-                      label={
-                        permission?.canAskAgain === false
-                          ? 'Open camera settings'
-                          : 'Allow camera for pickup scanning'
-                      }
-                      onPress={() =>
-                        void (permission?.canAskAgain === false
-                          ? Linking.openSettings()
-                          : requestPermission())
-                      }
-                    />
-                  )
-                )}
-                {busy && (
-                  <ThemedText accessibilityLiveRegion="polite">Checking pickup code…</ThemedText>
-                )}
-                <AppButton
-                  label={manual ? 'Use camera' : 'Enter pickup code'}
-                  variant="tertiary"
-                  disabled={busy}
-                  onPress={() => {
+              <View style={{ gap: 16 }}>
+                <PickupScanEntry
+                  manual={manual}
+                  code={code}
+                  onChange={setCode}
+                  busy={busy}
+                  online={online}
+                  onToggleMode={() => {
                     reset();
                     setManual(!manual);
                   }}
+                  onCheck={() => {
+                    captured.current = false;
+                    void preview(code.trim());
+                  }}
+                  camera={
+                    <>
+                      {permission?.granted && open && active && focused && !code && !manual ? (
+                        <View style={styles.cameraFrame}>
+                          <CameraView
+                            style={StyleSheet.absoluteFill}
+                            facing="back"
+                            barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+                            onBarcodeScanned={online ? ({ data }) => void preview(data) : undefined}
+                          />
+                          <View pointerEvents="none" style={styles.scanTarget} />
+                        </View>
+                      ) : (
+                        !permission?.granted &&
+                        !manual && (
+                          <AppButton
+                            label={
+                              permission?.canAskAgain === false
+                                ? 'Open camera settings'
+                                : 'Allow camera for pickup scanning'
+                            }
+                            onPress={() =>
+                              void (permission?.canAskAgain === false
+                                ? Linking.openSettings()
+                                : requestPermission())
+                            }
+                          />
+                        )
+                      )}
+                    </>
+                  }
                 />
-                {manual && (
-                  <View style={styles.manualArea}>
-                    <CommerceField
-                      label="Pickup code"
-                      value={code}
-                      onChangeText={setCode}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      editable={!busy}
-                    />
-                    <AppButton
-                      label="Check pickup code"
-                      disabled={busy || !online || !code.trim()}
-                      onPress={() => {
-                        captured.current = false;
-                        void preview(code.trim());
-                      }}
-                    />
-                  </View>
-                )}
                 {!!error && !manual && (
                   <AppButton label="Try scanning again" disabled={busy} onPress={reset} />
                 )}
@@ -290,21 +267,21 @@ const styles = StyleSheet.create({
   businessCard: { borderRadius: 16, padding: 16, gap: 4 },
   scanCard: { borderRadius: 20, padding: 16, gap: 12 },
   cameraFrame: {
-    height: 236,
+    aspectRatio: 1,
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: '#07120e',
+    backgroundColor: '#102D25',
     position: 'relative',
   },
   scanTarget: {
     position: 'absolute',
-    width: '58%',
+    width: '68%',
     aspectRatio: 1,
-    left: '21%',
-    top: '14%',
-    borderWidth: 3,
-    borderColor: '#B9F2D1',
-    borderRadius: 18,
+    left: '16%',
+    top: '16%',
+    borderWidth: 2,
+    borderColor: '#89C9A2',
+    borderRadius: 16,
   },
   cameraHint: {
     position: 'absolute',
