@@ -1,11 +1,17 @@
+import { ActionControl, Surface, SectionHeading } from './shared-ui';
+import { surfaceLayout } from '@sds/design-tokens';
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { Pressable, View, type ViewStyle } from 'react-native';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from './themed-text';
 
 // Shared proportions for customer screens; colors come from the original app theme.
-export const CustomerLayout = { gutter: 20, radius: 14, gap: 20 } as const;
+export const CustomerLayout = {
+  gutter: surfaceLayout.gutter,
+  radius: surfaceLayout.radius,
+  gap: surfaceLayout.screenGap,
+} as const;
 
 export function CustomerTabs<T extends string>({
   value,
@@ -57,18 +63,7 @@ export function CustomerTabs<T extends string>({
 }
 
 export function CustomerSurface({ children, style }: { children: ReactNode; style?: ViewStyle }) {
-  const c = useTheme();
-  return (
-    <View
-      style={[
-        styles.surface,
-        { backgroundColor: c.backgroundElement, borderColor: c.divider },
-        style,
-      ]}
-    >
-      {children}
-    </View>
-  );
+  return <Surface style={[{ padding: 16, gap: 16 }, style]}>{children}</Surface>;
 }
 
 export function CustomerAction({
@@ -89,27 +84,22 @@ export function CustomerAction({
   const c = useTheme();
   const names = { back: 'chevron.left', edit: 'pencil', remove: 'trash' } as const;
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityState={{ disabled }}
-      disabled={disabled}
+    <ActionControl
+      compact
+      label={label}
+      accessibilityLabel={accessibilityLabel}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.action,
-        iconOnly && { minWidth: 44, paddingHorizontal: 10 },
-        { backgroundColor: c.backgroundSelected, opacity: disabled ? 0.45 : pressed ? 0.7 : 1 },
-      ]}
-    >
-      {icon && (
-        <SymbolView name={names[icon]} tintColor={c.accent} style={{ width: 16, height: 16 }} />
-      )}
-      {!iconOnly && (
-        <ThemedText type="smallBold" style={{ fontSize: 13, lineHeight: 18 }}>
-          {label}
-        </ThemedText>
-      )}
-    </Pressable>
+      disabled={disabled}
+      iconOnly={iconOnly}
+      color={c.text}
+      icon={
+        icon && (
+          <SymbolView name={names[icon]} tintColor={c.accent} style={{ width: 16, height: 16 }} />
+        )
+      }
+      style={{ backgroundColor: c.backgroundSelected, paddingHorizontal: iconOnly ? 10 : 12 }}
+      labelStyle={{ fontSize: 13, lineHeight: 18, fontWeight: '600' }}
+    />
   );
 }
 
@@ -123,32 +113,11 @@ export function CustomerSectionHeading({
   action?: ReactNode;
 }) {
   return (
-    <View style={styles.heading}>
-      <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-        <ThemedText style={styles.headingText}>{title}</ThemedText>
-        {detail && (
-          <ThemedText type="small" themeColor="textSecondary">
-            {detail}
-          </ThemedText>
-        )}
-      </View>
-      {action}
-    </View>
+    <SectionHeading
+      title={title}
+      description={detail}
+      action={action}
+      titleStyle={{ fontSize: 22, lineHeight: 28, letterSpacing: -0.25 }}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  surface: { padding: 20, borderRadius: CustomerLayout.radius, borderWidth: 1, gap: 16 },
-  action: {
-    minHeight: 44,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  heading: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  headingText: { fontSize: 19, lineHeight: 25, fontWeight: '700', letterSpacing: -0.35 },
-});

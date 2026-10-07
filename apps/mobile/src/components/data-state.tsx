@@ -1,4 +1,5 @@
 import { StyleSheet, View } from 'react-native';
+import { AppIcon } from './app-icon';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { AppButton } from './app-button';
@@ -24,9 +25,9 @@ export function StateNotice({
     <View
       accessibilityLiveRegion="polite"
       accessibilityRole={kind === 'error' ? 'alert' : 'text'}
-      style={[styles.notice, { backgroundColor }]}
+      style={[styles.notice, { backgroundColor, flexDirection: 'row', alignItems: 'flex-start', gap: 10 }]}
     >
-      <ThemedText type="small" style={{ color }}>
+      <AppIcon name={kind === 'error' ? 'circle-alert' : kind === 'success' ? 'circle-check' : 'info'} size={20} tintColor={color} /><ThemedText type="small" style={{ color, flex: 1 }}>
         {message}
       </ThemedText>
     </View>
@@ -46,7 +47,7 @@ export function EmptyState({
 }) {
   const colors = useTheme();
   return (
-    <View style={[styles.empty, { backgroundColor: colors.backgroundElement }]}>
+    <View style={[styles.empty, { backgroundColor: colors.backgroundElement, borderWidth: 1, borderColor: colors.divider }]}>
       <ThemedText type="card">{title}</ThemedText>
       <ThemedText themeColor="textSecondary">{message}</ThemedText>
       {actionLabel && onAction && (
@@ -93,7 +94,7 @@ export function ListLoading({
 }
 const styles = StyleSheet.create({
   notice: { padding: Spacing.three, borderRadius: Radius.small },
-  empty: { padding: Spacing.three, gap: Spacing.two, borderRadius: Radius.medium },
+  empty: { padding: 20, gap: 12, borderRadius: 18 },
   loading: { gap: Spacing.two },
   placeholder: {
     minHeight: 110,

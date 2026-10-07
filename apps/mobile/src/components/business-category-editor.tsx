@@ -1,3 +1,4 @@
+import { AppIcon } from '@/components/app-icon';
 import { useEffect, useState } from 'react';
 import { View, Pressable } from 'react-native';
 import { supabase } from '@/lib/supabase';
@@ -27,10 +28,15 @@ export function BusinessCategoryEditor({
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  useEffect(() => {
-    let active = true;
+  const scope = businessId + ':' + attempt;
+  const [previousScope, setPreviousScope] = useState(scope);
+  if (previousScope !== scope) {
+    setPreviousScope(scope);
     setReady(false);
     setError('');
+  }
+  useEffect(() => {
+    let active = true;
     void Promise.all([
       supabase
         .from('categories')
@@ -130,11 +136,7 @@ export function BusinessCategoryEditor({
                   backgroundColor: chosen ? c.backgroundSelected : c.background,
                 }}
               >
-                <ThemedText>
-                  {chosen ? '✓  ' : '○  '}
-                  {row.name}
-                  {selected[0] === row.id ? ' · Primary' : ''}
-                </ThemedText>
+                <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}><AppIcon name={chosen ? 'circle-check' : 'circle'} size={18} tintColor={c.text} /><ThemedText style={{ flex: 1 }}>{row.name}{selected[0] === row.id ? ' · Primary' : ''}</ThemedText></View>
               </Pressable>
             );
           })}

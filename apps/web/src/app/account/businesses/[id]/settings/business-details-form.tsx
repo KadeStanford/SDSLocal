@@ -1,4 +1,5 @@
 'use client';
+import { ActionButton } from '@/components/shared-ui';
 
 import type { BusinessType, ServiceAreaType } from '@sds/types';
 import { usRegionOptions } from '@sds/validation';
@@ -360,9 +361,9 @@ export function BusinessDetailsForm({
       </div>
       <div className="settings-save-bar">
         <span>Changes update the draft and its private preview.</span>
-        <button className="button" disabled={pending}>
+        <ActionButton disabled={pending} type="submit">
           {pending ? 'Saving…' : 'Save business details'}
-        </button>
+        </ActionButton>
       </div>
     </form>
   );

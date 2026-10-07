@@ -49,8 +49,8 @@ vi.mock('react-native-svg', () => ({
     createElement('svg', props, children),
   Path: (props: object) => createElement('path', props),
 }));
-vi.mock('expo-symbols', async () => ({
-  SymbolView: (await import('../test/visual-symbol')).VisualSymbol,
+vi.mock('@/components/app-icon', async () => ({
+  AppIcon: (await import('../test/visual-symbol')).VisualSymbol,
 }));
 vi.mock('expo-router', () => ({ router: { push: vi.fn() } }));
 vi.mock('expo-image', () => ({ Image: () => null }));
@@ -102,7 +102,7 @@ it('renders the actual alerts control within Home and full event review details 
         expect(body).toContain('Alerts, 3 unread');
         expect(body.indexOf('Parish Pass')).toBeLessThan(body.indexOf('Alerts, 3 unread'));
         expect(body.indexOf('Alerts, 3 unread')).toBeLessThan(
-          body.indexOf('Discover your parish.'),
+          body.indexOf('Explore area:'),
         );
       } else {
         expect(body).toContain(reviews[0]!.event_title);

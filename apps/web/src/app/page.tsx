@@ -1,3 +1,6 @@
+import { PageHeader } from '@/components/page-header';
+import { AppIcon } from '@/components/app-icon';
+
 import Link from 'next/link';
 
 import { createClient } from '@/lib/supabase/server';
@@ -8,15 +11,29 @@ export default async function Home() {
 
   return (
     <main className="home-shell">
-      <nav className="topbar home-nav">
-        <Link className="brand" href="/">
-          Parish Pass
-        </Link>
+      <PageHeader />
+      <nav className="parish-page-links" aria-label="Page links">
         <div className="nav-actions">
-          <Link href="/explore">Explore</Link>
-          <Link href="/events">Events</Link>
-          {data.user && <Link href="/following">Following</Link>}
-          {data.user && <Link href="/rewards">Rewards</Link>}
+          <Link href="/explore">
+            <AppIcon name="compass" size={18} />
+            Explore
+          </Link>
+          <Link href="/events">
+            <AppIcon name="calendar-days" size={18} />
+            Events
+          </Link>
+          {data.user && (
+            <Link href="/following">
+              <AppIcon name="heart" size={18} />
+              Following
+            </Link>
+          )}
+          {data.user && (
+            <Link href="/rewards">
+              <AppIcon name="gift" size={18} />
+              Rewards
+            </Link>
+          )}
           <Link href="#for-businesses">For businesses</Link>
           <Link className="button button-small" href={data.user ? '/account' : '/auth'}>
             {data.user ? 'Your account' : 'Sign in'}
@@ -26,7 +43,7 @@ export default async function Home() {
       <section className="hero">
         <div>
           <p className="eyebrow">Built for local connection</p>
-          <h1>Find what’s good nearby—and keep coming back.</h1>
+          <h1>Good things, close to home.</h1>
           <p className="hero-copy">
             Discover independent businesses, see what’s happening, and keep local rewards in one
             friendly place.
@@ -40,14 +57,32 @@ export default async function Home() {
             </a>
           </div>
         </div>
-        <div className="hero-card" aria-label="Example local business card">
-          <span className="status-pill">Coming to your neighborhood</span>
-          <div className="mock-photo" />
-          <p className="eyebrow">Local favorite</p>
-          <h2>A better front door for local business.</h2>
-          <p>
-            One clear page for hours, events, offerings, and rewards—easy to open from any QR code.
-          </p>
+        <div className="hero-card local-life-card">
+          <p className="eyebrow">Parish Pass</p>
+          <h2>Your local life, together.</h2>
+          <ul className="local-life-links">
+            <li>
+              <AppIcon name="store" size={24} />
+              <div>
+                <strong>Discover a new favorite</strong>
+                <p>Browse independent businesses and their offerings.</p>
+              </div>
+            </li>
+            <li>
+              <AppIcon name="calendar-days" size={24} />
+              <div>
+                <strong>Make a local plan</strong>
+                <p>See upcoming events and keep the details close.</p>
+              </div>
+            </li>
+            <li>
+              <AppIcon name="gift" size={24} />
+              <div>
+                <strong>Keep coming back</strong>
+                <p>Your loyalty cards and followed businesses in one place.</p>
+              </div>
+            </li>
+          </ul>
         </div>
       </section>
       <section className="business-cta" id="for-businesses">

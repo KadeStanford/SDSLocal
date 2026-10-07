@@ -1,5 +1,7 @@
-import { useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useState, type ReactNode, type ComponentProps } from 'react';
+import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { AppIcon as SymbolView } from '@/components/app-icon';
+import { ParishPalette } from './parish-brand';
 import { useTheme } from '@/hooks/use-theme';
 import { HorizontalScrollRow } from './horizontal-scroll-row';
 import { DiscoveryCarousel } from './discovery-carousel';
@@ -29,7 +31,7 @@ export function DiscoveryBusinessFeed({
 }) {
   const colors = useTheme();
   const [rowWidth, setRowWidth] = useState(350);
-  const cardWidth = Math.min(340, Math.max(240, rowWidth - 42));
+  const cardWidth = rowWidth;
   const split = Boolean(children) && businesses.length > 3;
   const renderCard = (
     business: BusinessCardData,
@@ -37,6 +39,7 @@ export function DiscoveryBusinessFeed({
     stretch = false,
   ) => (
     <BusinessCard
+      discovery
       key={business.id}
       business={business}
       isFollowing={followingIds.has(business.id)}
@@ -74,39 +77,34 @@ export function DiscoveryBusinessFeed({
     return (
       <View style={styles.feed} onLayout={(event) => setRowWidth(event.nativeEvent.layout.width)}>
         {plan.filters.length > 1 && (
-          <HorizontalScrollRow contentContainerStyle={{ gap: 8 }}>
-            {[{ id: 'all', title: 'Discover' }, ...plan.filters].map((item) => (
-              <Pressable
-                key={item.id}
-                accessibilityRole="button"
-                accessibilityState={{ selected: (selected?.id ?? 'all') === item.id }}
-                disabled={!onCollectionChange}
-                onPress={() => onCollectionChange?.(item.id)}
-                style={{
-                  minHeight: 44,
-                  paddingHorizontal: 14,
-                  paddingVertical: 12,
-                  borderRadius: 10,
-                  borderWidth: 1,
-                  borderColor: colors.divider,
-                  backgroundColor:
-                    (selected?.id ?? 'all') === item.id
-                      ? colors.backgroundSelected
-                      : colors.backgroundElement,
-                }}
-              >
-                <ThemedText type="smallBold">{labels[item.id] ?? item.title}</ThemedText>
-              </Pressable>
-            ))}
-          </HorizontalScrollRow>
+          <DiscoveryCategoryBand
+            items={[{ id: 'all', title: 'Discover' }, ...plan.filters].map((item) => ({
+              id: item.id,
+              title: labels[item.id] ?? item.title,
+            }))}
+            selected={selected?.id ?? 'all'}
+            width={rowWidth}
+            onChange={onCollectionChange}
+          />
         )}
-        {sections.map((section) => (
+        {sections.map((section, sectionIndex) => (
           <View key={section.id} style={styles.section}>
             <View style={styles.sectionHeading}>
-              <ThemedText accessibilityRole="header" style={[styles.title, { flex: 1 }]}>
+              <ThemedText
+                accessibilityRole="header"
+                style={[
+                  styles.title,
+                  { flex: 1 },
+                  sectionIndex > 0 && { fontSize: 22, lineHeight: 28 },
+                ]}
+              >
                 {section.title}
               </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
+              <ThemedText
+                type="small"
+                themeColor="textSecondary"
+                style={{ fontSize: 13, lineHeight: 18 }}
+              >
                 {section.businessIds.length} {section.businessIds.length === 1 ? 'place' : 'places'}
               </ThemedText>
             </View>
@@ -118,6 +116,8 @@ export function DiscoveryBusinessFeed({
                 total={section.businessIds.length}
                 cardWidth={cardWidth}
                 rowWidth={rowWidth}
+                cardGap={16}
+                showIndicators
               >
                 {section.businessIds.map((id) => {
                   const business = byId.get(id);
@@ -174,8 +174,115 @@ export function DiscoveryBusinessFeed({
 }
 
 const styles = StyleSheet.create({
-  feed: { gap: 28 },
-  section: { gap: 20 },
+  feed: { gap: 24 },
+  section: { gap: 14 },
   sectionHeading: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  title: { fontSize: 19, lineHeight: 25, fontWeight: '700', letterSpacing: -0.4 },
+  title: { fontSize: 25, lineHeight: 31, fontWeight: '700' },
 });
+
+function DiscoveryCategoryBand({
+  items,
+  selected,
+  width,
+  onChange,
+}: {
+  items: readonly { id: string; title: string }[];
+  selected: string;
+  width: number;
+  onChange: ((id: string) => void) | undefined;
+}) {
+  const colors = useTheme();
+  const { fontScale } = useWindowDimensions();
+  const columns = fontScale > 1.15 ? 2 : 4;
+  const categoryWidth = Math.max(50, (width - 26) / columns);
+  const core = ['all', 'lunch', 'services', 'coffee'];
+  // Existing additional collections remain reachable by swiping the same band.
+  const ordered = [
+    ...core.flatMap((id) => items.filter((item) => item.id === id)),
+    ...items.filter((item) => !core.includes(item.id)),
+  ];
+  const symbols: Record<string, ComponentProps<typeof SymbolView>['name']> = {
+    all: { ios: 'safari', android: 'explore', web: 'explore' },
+    lunch: { ios: 'fork.knife', android: 'restaurant', web: 'restaurant' },
+    services: { ios: 'wrench.and.screwdriver', android: 'handyman', web: 'handyman' },
+    coffee: { ios: 'cup.and.saucer', android: 'local_cafe', web: 'local_cafe' },
+    rewards: { ios: 'gift', android: 'card_giftcard', web: 'card_giftcard' },
+  };
+  return (
+    <View
+      style={{
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: colors.divider,
+        backgroundColor: colors.backgroundElement,
+        padding: 12,
+        overflow: 'hidden',
+        marginTop: -8,
+      }}
+    >
+      <HorizontalScrollRow
+        accessibilityLabel={
+          ordered.length > columns
+            ? 'Business categories. Swipe for more categories.'
+            : 'Business categories'
+        }
+        snapToInterval={categoryWidth * columns}
+        decelerationRate="fast"
+        disableIntervalMomentum
+        contentContainerStyle={{
+          paddingRight:
+            ordered.length % columns ? categoryWidth * (columns - (ordered.length % columns)) : 0,
+        }}
+      >
+        {ordered.map((item) => {
+          const active = selected === item.id;
+          return (
+            <Pressable
+              key={item.id}
+              accessibilityRole="button"
+              accessibilityLabel={item.title}
+              accessibilityState={{ selected: active }}
+              disabled={!onChange}
+              onPress={() => onChange?.(item.id)}
+              style={({ pressed }) => ({
+                width: categoryWidth,
+                alignItems: 'center',
+                gap: 6,
+                paddingHorizontal: 2,
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <View
+                style={{
+                  width: 46,
+                  height: 46,
+                  borderRadius: 23,
+                  backgroundColor: active ? ParishPalette.evergreen : colors.backgroundSelected,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <SymbolView
+                  name={symbols[item.id] ?? symbols.all!}
+                  tintColor={active ? '#FFFFFF' : colors.text}
+                  style={{ width: 23, height: 23 }}
+                />
+              </View>
+              <ThemedText
+                style={{
+                  width: '100%',
+                  fontSize: 13,
+                  lineHeight: 18,
+                  fontWeight: '600',
+                  textAlign: 'center',
+                }}
+              >
+                {item.title}
+              </ThemedText>
+            </Pressable>
+          );
+        })}
+      </HorizontalScrollRow>
+    </View>
+  );
+}

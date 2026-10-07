@@ -2,7 +2,7 @@ import type { Ref } from 'react';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { AppTextInput as TextInput, type AppTextInputHandle } from '@/components/app-text-input';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import { useTheme } from '@/hooks/use-theme';
 import { CustomerAction } from './customer-ui';
 import { ThemedText } from './themed-text';

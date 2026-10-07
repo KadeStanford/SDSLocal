@@ -238,7 +238,6 @@ export function ListingBillingProvider({ children }: PropsWithChildren) {
     activeRequestRef.current = request;
 
     // Auth changes must clear the previous account's billing state immediately.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     resetBillingState();
 
     const summaryTask = userId ? refreshFor(request, userId) : Promise.resolve(true);

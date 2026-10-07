@@ -1,8 +1,9 @@
+import { FocusedHeader, FocusedSteps } from '@/components/focused-page-ui';
+import { AppIcon } from '@/components/app-icon';
 import { PublicationRequirements } from '@/components/publication-requirements';
 import { inputPresets } from '@/lib/input-presets';
-import { ParishBusinessBrand } from '@/components/business-screen-header';
-import { BackPill } from '@/components/back-pill';
-import { FlowProgress } from '@/components/flow-layout';
+import { BusinessEditorHeader } from '@/components/business-screen-header';
+import { FlowProgress, FlowSection } from '@/components/flow-layout';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useScreenBottomPadding } from '@/hooks/use-screen-bottom-padding';
 import { businessOnboardingSchema } from '@sds/validation';
@@ -573,18 +574,18 @@ function BusinessSetupWorkspace({
           keyboardDismissMode="interactive"
           keyboardShouldPersistTaps="handled"
         >
-          <ParishBusinessBrand />
-          <BackPill label="Your businesses" onPress={onBack} />
-          <ThemedText type="title">Create a business</ThemedText>
-          <ThemedText themeColor="textSecondary">
-            Create a draft page, then finish its details and submit it.
-          </ThemedText>
-
-          <Pressable accessibilityRole="button" onPress={discardDraft} style={styles.discardButton}>
-            <ThemedText themeColor="textSecondary" type="smallBold">
-              Discard draft
-            </ThemedText>
-          </Pressable>
+          <FocusedHeader
+            title="Bring your business to Parish Pass"
+            subtitle="Build a listing customers can discover. Complete your details, submit for review, then publish after approval."
+            onBack={onBack}
+            backLabel="Back to your businesses"
+            disabled={busy}
+          >
+            <FocusedSteps
+              labels={['Business basics', 'How customers visit', 'Location', 'Check details']}
+              current={step}
+            />
+          </FocusedHeader>
 
           {error && (
             <View style={styles.errorNotice}>
@@ -594,10 +595,40 @@ function BusinessSetupWorkspace({
             </View>
           )}
 
-          <FlowProgress labels={['Identity', 'Business', 'Location', 'Review']} current={step} />
-          {step === 0 && <PublicationRequirements />}
-
-          <View style={styles.formCard}>
+          <View
+            style={[
+              styles.formCard,
+              { backgroundColor: colors.backgroundElement, borderColor: colors.divider },
+            ]}
+          >
+            <View
+              style={{
+                borderBottomWidth: 1,
+                borderBottomColor: colors.divider,
+                paddingBottom: 14,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 12,
+              }}
+            >
+              <ThemedText type="caption" themeColor="textSecondary" style={{ flex: 1 }}>
+                {
+                  ['Listing identity', 'Customer visits', 'Public location', 'Listing overview'][
+                    step
+                  ]
+                }
+              </ThemedText>
+              <Pressable
+                accessibilityRole="button"
+                disabled={busy}
+                onPress={discardDraft}
+                style={styles.discardButton}
+              >
+                <ThemedText themeColor="textSecondary" type="smallBold">
+                  Discard draft
+                </ThemedText>
+              </Pressable>
+            </View>
             {step === 0 && (
               <>
                 <Field
@@ -727,7 +758,7 @@ function BusinessSetupWorkspace({
                                 selected && styles.selectionCheckboxSelected,
                               ]}
                             >
-                              {selected && <ThemedText style={styles.selectionCheck}>✓</ThemedText>}
+                              {selected && <AppIcon name="check" size={18} />}
                             </View>
                             <ThemedText style={styles.selectionLabel}>{category.name}</ThemedText>
                           </Pressable>
@@ -952,9 +983,11 @@ function BusinessSetupWorkspace({
             {step === 3 && (
               <View style={styles.reviewList}>
                 <View style={styles.stepIntro}>
-                  <ThemedText type="subtitle">Ready to create your private business?</ThemedText>
+                  <ThemedText type="subtitle">Prepare your listing for review</ThemedText>
                   <ThemedText themeColor="textSecondary" type="small">
-                    It will stay private until you finish setup and submit it.
+                    First, create your listing draft. Next, add public contact details, hours, a
+                    logo and cover photo in your workspace. When every requirement is complete,
+                    submit it for review. Approval makes it discoverable in the app.
                   </ThemedText>
                 </View>
                 <SummaryRow
@@ -1009,6 +1042,16 @@ function BusinessSetupWorkspace({
               </View>
             )}
 
+            {step === 0 && (
+              <FlowSection
+                title="Before your page goes live"
+                description="Create a private draft now. Complete these requirements before submitting it."
+                collapsible
+              >
+                <PublicationRequirements />
+              </FlowSection>
+            )}
+
             <View style={styles.footerActions}>
               {step > 0 && (
                 <Pressable
@@ -1036,7 +1079,7 @@ function BusinessSetupWorkspace({
                   style={[styles.primaryButton, busy && styles.disabled]}
                 >
                   <ThemedText style={styles.primaryText} type="smallBold">
-                    {busy ? 'Creating business…' : 'Create business'}
+                    {busy ? 'Creating listing draft…' : 'Create listing draft'}
                   </ThemedText>
                   {busy && <ActivityIndicator color="#FFFFFF" size="small" />}
                 </Pressable>
@@ -1160,7 +1203,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: {
     width: '100%',
-    maxWidth: 680,
+    maxWidth: 560,
     alignSelf: 'center',
     padding: Spacing.four,
     paddingBottom: Spacing.three,
@@ -1176,7 +1219,7 @@ const styles = StyleSheet.create({
   formCard: {
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#8A938E',
+    borderColor: '#E2E5DD',
     padding: Spacing.three,
     gap: Spacing.three,
   },
@@ -1210,15 +1253,18 @@ const styles = StyleSheet.create({
   linkText: { color: Brand.primary },
   textButton: { minHeight: 44, justifyContent: 'center' },
   pageAddressBlock: { gap: Spacing.one },
-  cardChoices: { gap: Spacing.two },
+  cardChoices: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   selectionCard: {
-    minHeight: 72,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
+    flexBasis: '47%',
+    flexGrow: 1,
+    minWidth: 125,
+    minHeight: 150,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 12,
     borderWidth: 1.5,
-    borderRadius: 18,
-    padding: Spacing.three,
+    borderRadius: 16,
+    padding: 14,
   },
   radio: {
     width: 24,
@@ -1304,7 +1350,7 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     minHeight: 52,
-    borderRadius: 26,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
@@ -1314,7 +1360,7 @@ const styles = StyleSheet.create({
   },
   secondaryButton: {
     minHeight: 52,
-    borderRadius: 26,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,

@@ -1,4 +1,5 @@
-import { ParishBusinessBrand } from '../business-screen-header';
+import { PageHeader } from '@/components/page-header';
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Linking, Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
@@ -123,19 +124,15 @@ export function PickupScanPanel({
             ]}
             showsVerticalScrollIndicator={false}
           >
-            <ParishBusinessBrand />
+            <PageHeader
+              onBack={() => setOpen(false)}
+              backLabel="Back to scanner"
+              backDisabled={busy}
+            />
             <View style={styles.modalHeader}>
               <View style={styles.modalHeaderCopy}>
                 <ThemedText type="title">Confirm pickup</ThemedText>
               </View>
-              <AppButton
-                label="Close"
-                accessibilityLabel="Close pickup scanner"
-                variant="secondary"
-                disabled={busy}
-                onPress={() => setOpen(false)}
-                style={styles.closeButton}
-              />
             </View>
             <View style={{ gap: 6 }}>
               <ThemedText type="subtitle">{businessName}</ThemedText>

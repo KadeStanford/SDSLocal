@@ -1,7 +1,16 @@
+import {
+  FocusedHeader,
+  FocusedSteps,
+  FocusedBookingTime,
+  FocusedSection,
+} from '@/components/focused-page-ui';
 import { DateField } from '@/components/date-field';
 import { useAuth } from '@/providers/auth-provider';
 import { supabase } from '@/lib/supabase';
 import { FlowSection, FlowIdentity, FlowProgress } from '@/components/flow-layout';
+import { BookingFact, BookingTimeCard } from '@/components/booking-ui';
+import { CustomerBrand } from '@/components/customer-brand';
+import { AppIcon } from '@/components/app-icon';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
@@ -103,6 +112,7 @@ function depositLabel(service: BookableService) {
 
 export default function BookAppointmentScreen() {
   const { session } = useAuth();
+  const scroll = useRef<ScrollView>(null);
   const contactEdited = useRef({ name: false, phone: false, email: false });
   const nameInput = useRef<import('@/components/app-text-input').AppTextInputHandle>(null);
   const phoneInput = useRef<import('@/components/app-text-input').AppTextInputHandle>(null);
@@ -133,11 +143,18 @@ export default function BookAppointmentScreen() {
     let active = true;
     if (!session) return;
     if (!contactEdited.current.email) setCustomerEmail(session.user.email ?? '');
-    void supabase.from('profiles').select('display_name').eq('id', session.user.id).maybeSingle().then(({ data }) => {
-      if (active && !contactEdited.current.name) setCustomerName(data?.display_name ?? '');
-    });
-    return () => { active = false; };
-  }, [session?.user.id]);
+    void supabase
+      .from('profiles')
+      .select('display_name')
+      .eq('id', session.user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (active && !contactEdited.current.name) setCustomerName(data?.display_name ?? '');
+      });
+    return () => {
+      active = false;
+    };
+  }, [session]);
   const [notes, setNotes] = useState('');
   const merchantColors = useMerchantTheme();
   const [stage, setStage] = useState<'service' | 'time' | 'contact'>('service');
@@ -145,6 +162,14 @@ export default function BookAppointmentScreen() {
   const [slotAttempt, setSlotAttempt] = useState(0);
   const [reviewing, setReviewing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const visibleStep = useRef(`${stage}:${reviewing}`);
+  useEffect(() => {
+    const next = `${stage}:${reviewing}`;
+    if (visibleStep.current === next) return;
+    visibleStep.current = next;
+    const frame = requestAnimationFrame(() => scroll.current?.scrollTo({ y: 0, animated: false }));
+    return () => cancelAnimationFrame(frame);
+  }, [stage, reviewing]);
   const bookingPending = useRef(false);
   const [error, setError] = useState('');
   const routeCatalog =
@@ -160,13 +185,15 @@ export default function BookAppointmentScreen() {
   const slots = currentSlotResult?.slots ?? [];
   const loadingSlots = Boolean(slotQueryKey && !currentSlotResult);
 
-  useEffect(() => {
+  const [previousBusinessId, setPreviousBusinessId] = useState(businessId);
+  if (previousBusinessId !== businessId) {
+    setPreviousBusinessId(businessId);
     setStage('service');
     setReviewing(false);
     setSelectedSlot(null);
     setSelectedResourceId(null);
     setError('');
-  }, [businessId]);
+  }
   useEffect(() => {
     if (!businessId) return;
     let active = true;
@@ -284,31 +311,73 @@ export default function BookAppointmentScreen() {
     <ThemedView style={{ flex: 1 }}>
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
         <ScrollView
+          ref={scroll}
           contentContainerStyle={{
-            gap: Spacing.four,
-            padding: Spacing.four,
+            gap: 20,
+            padding: 20,
             paddingBottom: bottomPadding,
           }}
           keyboardShouldPersistTaps="handled"
         >
-          <AppChrome />
-          <ThemedText type="title" style={{ paddingRight: 48 }}>
-            Book an appointment
-          </ThemedText>
-          {catalog && (
-            <>
-              <FlowIdentity name={catalog.business.name} detail={catalog.business.address} />
-              <FlowProgress
-                labels={['Service', 'Time', 'Contact', 'Review']}
-                current={reviewing ? 3 : stage === 'service' ? 0 : stage === 'time' ? 1 : 2}
-              />
-              {stage !== 'service' && selectedService && (
-                <ThemedText type="small" themeColor="textSecondary">
-                  {selectedService.name} · {selectedService.duration_minutes} min ·{' '}
-                  {depositLabel(selectedService)}
-                </ThemedText>
-              )}
-            </>
+          <FocusedHeader
+            title={
+              reviewing
+                ? 'Review your booking'
+                : stage === 'service'
+                  ? 'Choose your service'
+                  : stage === 'time'
+                    ? 'Choose your time'
+                    : 'Your contact details'
+            }
+            subtitle={catalog?.business.name ?? 'Book with a local business'}
+            disabled={saving}
+            backLabel={
+              reviewing
+                ? 'Back to contact details'
+                : stage === 'contact'
+                  ? 'Back to times'
+                  : stage === 'time'
+                    ? 'Back to services'
+                    : 'Back to business'
+            }
+            onBack={() => {
+              if (saving) return;
+              if (reviewing) setReviewing(false);
+              else if (stage === 'contact') setStage('time');
+              else if (stage === 'time') setStage('service');
+              else if (router.canGoBack()) router.back();
+              else router.replace('/explore');
+            }}
+          >
+            <FocusedSteps
+              labels={['Service', 'Time', 'Contact', 'Review']}
+              current={reviewing ? 3 : stage === 'service' ? 0 : stage === 'time' ? 1 : 2}
+            />
+          </FocusedHeader>
+          {catalog?.business.address && (
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+              <AppIcon name="map-pin" size={18} tintColor={theme.textSecondary} />
+              <ThemedText type="small" themeColor="textSecondary" style={{ flex: 1 }}>
+                {catalog.business.address}
+              </ThemedText>
+            </View>
+          )}
+          {stage !== 'service' && selectedService && !reviewing && (
+            <View
+              style={{
+                padding: 16,
+                borderRadius: 16,
+                backgroundColor: theme.backgroundElement,
+                borderWidth: 1,
+                borderColor: theme.divider,
+                gap: 5,
+              }}
+            >
+              <ThemedText type="smallBold">{selectedService.name}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {selectedService.duration_minutes} minutes · {depositLabel(selectedService)}
+              </ThemedText>
+            </View>
           )}
           {(catalogError || currentSlotResult?.error) && (
             <MerchantButton
@@ -345,7 +414,9 @@ export default function BookAppointmentScreen() {
                 {stage === 'service' && (
                   <>
                     <View style={{ gap: Spacing.two }}>
-                      <ThemedText type="subtitle">Choose a service</ThemedText>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        Select the service that fits your visit.
+                      </ThemedText>
                       {catalog.services.map((service) => {
                         const selected = selectedServiceId === service.id;
                         return (
@@ -360,29 +431,86 @@ export default function BookAppointmentScreen() {
                               setSelectedServiceId(service.id);
                             }}
                             style={{
-                              padding: Spacing.three,
-                              borderRadius: Radius.medium,
-                              borderWidth: 1,
+                              padding: 16,
+                              borderRadius: 18,
+                              borderWidth: selected ? 2 : 1,
                               borderColor: selected ? theme.accent : merchantColors.border,
                               backgroundColor: selected
                                 ? theme.backgroundSelected
                                 : merchantColors.surface,
-                              gap: Spacing.one,
+                              gap: 14,
                             }}
                           >
-                            <ThemedText type="smallBold">{service.name}</ThemedText>
+                            <View
+                              style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}
+                            >
+                              <View
+                                style={{
+                                  width: 44,
+                                  height: 44,
+                                  borderRadius: 12,
+                                  backgroundColor: theme.background,
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                }}
+                              >
+                                <AppIcon name="calendar" size={22} />
+                              </View>
+                              <ThemedText
+                                style={{
+                                  flex: 1,
+                                  minWidth: 0,
+                                  fontSize: 19,
+                                  lineHeight: 25,
+                                  fontWeight: '700',
+                                }}
+                              >
+                                {service.name}
+                              </ThemedText>
+                              <AppIcon
+                                name={selected ? 'circle-check' : 'circle'}
+                                size={24}
+                                tintColor={selected ? theme.accent : theme.textSecondary}
+                              />
+                            </View>
                             {service.description ? (
                               <ThemedText themeColor="textSecondary" type="small">
                                 {service.description}
                               </ThemedText>
                             ) : null}
-                            <ThemedText themeColor="textSecondary" type="small">
-                              {service.duration_minutes} min ·{' '}
-                              {service.price_is_fixed
-                                ? money(service.price_minor, service.currency)
-                                : `From ${money(service.price_minor, service.currency)}`}{' '}
-                              · {depositLabel(service)}
-                            </ThemedText>
+                            <View
+                              style={{
+                                flexDirection: 'row',
+                                flexWrap: 'wrap',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                gap: 10,
+                              }}
+                            >
+                              <BookingFact icon="clock">
+                                <ThemedText type="small" themeColor="textSecondary">
+                                  {service.duration_minutes} minutes
+                                </ThemedText>
+                              </BookingFact>
+                              <ThemedText
+                                style={{ fontSize: 22, lineHeight: 28, fontWeight: '700' }}
+                              >
+                                {service.price_is_fixed
+                                  ? money(service.price_minor, service.currency)
+                                  : `From ${money(service.price_minor, service.currency)}`}
+                              </ThemedText>
+                            </View>
+                            <View
+                              style={{
+                                paddingTop: 12,
+                                borderTopWidth: 1,
+                                borderColor: theme.divider,
+                              }}
+                            >
+                              <BookingFact icon="credit-card">
+                                <ThemedText type="smallBold">{depositLabel(service)}</ThemedText>
+                              </BookingFact>
+                            </View>
                           </Pressable>
                         );
                       })}
@@ -431,33 +559,81 @@ export default function BookAppointmentScreen() {
                         </View>
                       </View>
                     ) : null}
-                    <View style={{ gap: Spacing.two }}>
-                      <ThemedText type="subtitle">Choose a time</ThemedText>
-                      <DateField label="Appointment date" required value={date} minimumDate={dateForZone(catalog.settings.timezone)} maximumDate={dateForZone(catalog.settings.timezone, catalog.settings.bookingHorizonDays ?? 60)} onChange={next => { setDate(next); setSelectedSlot(null); }} />
+                    <FocusedSection
+                      title="Choose a time"
+                      description={'Available appointment starts · ' + catalog.settings.timezone}
+                    >
+                      <DateField
+                        label="Appointment date"
+                        required
+                        value={date}
+                        minimumDate={dateForZone(catalog.settings.timezone)}
+                        maximumDate={dateForZone(
+                          catalog.settings.timezone,
+                          catalog.settings.bookingHorizonDays ?? 60,
+                        )}
+                        onChange={(next) => {
+                          setDate(next);
+                          setSelectedSlot(null);
+                        }}
+                      />
                       <View
                         style={{
                           flexDirection: 'row',
                           flexWrap: 'wrap',
                           gap: 8,
-                          justifyContent: 'space-between',
+                          justifyContent: 'center',
                           alignItems: 'center',
                         }}
                       >
-                        <AppButton
-                          label="Earlier day"
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel="Earlier day"
+                          accessibilityState={{
+                            disabled: date <= dateForZone(catalog.settings.timezone),
+                          }}
                           disabled={date <= dateForZone(catalog.settings.timezone)}
-                          variant="secondary"
+                          style={{
+                            minWidth: 44,
+                            minHeight: 44,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: 12,
+                            backgroundColor: theme.backgroundSelected,
+                            opacity: date <= dateForZone(catalog.settings.timezone) ? 0.5 : 1,
+                          }}
                           onPress={() => shiftDate(-1)}
-                        />
-                        <ThemedText type="smallBold">
+                        >
+                          <AppIcon name="chevron-left" size={20} />
+                        </Pressable>
+                        <ThemedText
+                          type="smallBold"
+                          style={{ flex: 1, minWidth: 120, textAlign: 'center' }}
+                        >
                           {date && dateLabel(date, catalog.settings.timezone)}
                         </ThemedText>
-                        <AppButton
-                          label="Later day"
-                          disabled={date >= dateForZone(catalog.settings.timezone, catalog.settings.bookingHorizonDays ?? 60)}
-                          variant="secondary"
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel="Later day"
+                          disabled={
+                            date >=
+                            dateForZone(
+                              catalog.settings.timezone,
+                              catalog.settings.bookingHorizonDays ?? 60,
+                            )
+                          }
+                          style={{
+                            minWidth: 44,
+                            minHeight: 44,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: 12,
+                            backgroundColor: theme.backgroundSelected,
+                          }}
                           onPress={() => shiftDate(1)}
-                        />
+                        >
+                          <AppIcon name="chevron-right" size={20} />
+                        </Pressable>
                       </View>
                       {loadingSlots ? <ThemedText>Checking availability…</ThemedText> : null}
                       {!loadingSlots && slots.length === 0 ? (
@@ -467,18 +643,62 @@ export default function BookAppointmentScreen() {
                       ) : null}
                       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two }}>
                         {slots.map((slot) => (
-                          <ChoiceButton
-                            key={`${slot.startAt}:${slot.resourceId ?? ''}`}
-                            selected={
+                          <Pressable
+                            key={slot.startAt + ':' + (slot.resourceId ?? '')}
+                            accessibilityRole="radio"
+                            aria-checked={
                               selectedSlot?.startAt === slot.startAt &&
                               selectedSlot?.resourceId === slot.resourceId
                             }
-                            label={`${slot.localTime}${slot.resourceName ? ` · ${slot.resourceName}` : ''}`}
+                            accessibilityLabel={
+                              slot.localTime + (slot.resourceName ? ' · ' + slot.resourceName : '')
+                            }
+                            accessibilityState={{
+                              checked:
+                                selectedSlot?.startAt === slot.startAt &&
+                                selectedSlot?.resourceId === slot.resourceId,
+                            }}
                             onPress={() => setSelectedSlot(slot)}
-                          />
+                            style={{
+                              minHeight: 56,
+                              minWidth: 120,
+                              flexGrow: 1,
+                              paddingHorizontal: 14,
+                              paddingVertical: 12,
+                              borderWidth: 2,
+                              borderRadius: 14,
+                              borderColor:
+                                selectedSlot?.startAt === slot.startAt &&
+                                selectedSlot?.resourceId === slot.resourceId
+                                  ? theme.accent
+                                  : theme.border,
+                              backgroundColor:
+                                selectedSlot?.startAt === slot.startAt &&
+                                selectedSlot?.resourceId === slot.resourceId
+                                  ? theme.backgroundSelected
+                                  : theme.backgroundElement,
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              gap: 10,
+                            }}
+                          >
+                            <AppIcon name="clock" size={18} />
+                            <View style={{ flex: 1, gap: 3 }}>
+                              <ThemedText type="smallBold">{slot.localTime}</ThemedText>
+                              {slot.resourceName && (
+                                <ThemedText type="small" themeColor="textSecondary">
+                                  {slot.resourceName}
+                                </ThemedText>
+                              )}
+                            </View>
+                            {selectedSlot?.startAt === slot.startAt &&
+                              selectedSlot?.resourceId === slot.resourceId && (
+                                <AppIcon name="circle-check" size={20} />
+                              )}
+                          </Pressable>
                         ))}
                       </View>
-                    </View>
+                    </FocusedSection>
                     <MerchantButton
                       label="Continue to contact details"
                       disabled={!selectedSlot || loadingSlots || !!currentSlotResult?.error}
@@ -493,7 +713,7 @@ export default function BookAppointmentScreen() {
                 )}
                 {stage === 'contact' && (
                   <>
-                    <FlowSection
+                    <FocusedSection
                       title="Your contact details"
                       description="The business will use these to confirm your visit."
                     >
@@ -503,7 +723,10 @@ export default function BookAppointmentScreen() {
                           autoComplete="name"
                           maxLength={100}
                           ref={nameInput}
-                          onChangeText={value => { contactEdited.current.name = true; setCustomerName(value); }}
+                          onChangeText={(value) => {
+                            contactEdited.current.name = true;
+                            setCustomerName(value);
+                          }}
                           placeholder="Name"
                           placeholderTextColor={colors.textSecondary}
                           style={inputStyle(theme, colors)}
@@ -517,7 +740,10 @@ export default function BookAppointmentScreen() {
                           keyboardType="phone-pad"
                           maxLength={32}
                           ref={phoneInput}
-                          onChangeText={value => { contactEdited.current.phone = true; setCustomerPhone(value); }}
+                          onChangeText={(value) => {
+                            contactEdited.current.phone = true;
+                            setCustomerPhone(value);
+                          }}
                           placeholder="Phone number"
                           placeholderTextColor={colors.textSecondary}
                           style={inputStyle(theme, colors)}
@@ -533,7 +759,10 @@ export default function BookAppointmentScreen() {
                           autoCorrect={false}
                           maxLength={254}
                           ref={emailInput}
-                          onChangeText={value => { contactEdited.current.email = true; setCustomerEmail(value); }}
+                          onChangeText={(value) => {
+                            contactEdited.current.email = true;
+                            setCustomerEmail(value);
+                          }}
                           placeholder="Email address"
                           placeholderTextColor={colors.textSecondary}
                           style={inputStyle(theme, colors)}
@@ -555,14 +784,26 @@ export default function BookAppointmentScreen() {
                           value={notes}
                         />
                       </FormField>
-                    </FlowSection>
+                    </FocusedSection>
                     <MerchantButton
                       label="Review appointment"
                       disabled={!selectedService || !selectedSlot || saving}
                       onPress={() => {
-                        if (customerName.trim().length < 2) { setError('Enter your name using at least 2 characters.'); nameInput.current?.focus(); return; }
-                        if (customerPhone.replace(/\D/g, '').length < 7) { setError('Enter a phone number the business can use to reach you.'); phoneInput.current?.focus(); return; }
-                        if (customerEmail.trim() && !/^\S+@\S+\.\S+$/.test(customerEmail.trim())) { setError('Check your email address, or leave it blank.'); emailInput.current?.focus(); return; }
+                        if (customerName.trim().length < 2) {
+                          setError('Enter your name using at least 2 characters.');
+                          nameInput.current?.focus();
+                          return;
+                        }
+                        if (customerPhone.replace(/\D/g, '').length < 7) {
+                          setError('Enter a phone number the business can use to reach you.');
+                          phoneInput.current?.focus();
+                          return;
+                        }
+                        if (customerEmail.trim() && !/^\S+@\S+\.\S+$/.test(customerEmail.trim())) {
+                          setError('Check your email address, or leave it blank.');
+                          emailInput.current?.focus();
+                          return;
+                        }
                         setError('');
                         setReviewing(true);
                       }}
@@ -583,25 +824,40 @@ export default function BookAppointmentScreen() {
 
           {catalog && selectedService && selectedSlot && reviewing ? (
             <View style={{ gap: Spacing.three }}>
-              <ThemedText type="subtitle">Review your appointment</ThemedText>
-              <FlowSection
-                title={selectedService.name}
-                description="Check the time and payment details before booking."
-              >
-                <ThemedText themeColor="textSecondary">
-                  {dateLabel(date, catalog.settings.timezone)} · {selectedSlot.localTime} ·{' '}
-                  {selectedService.duration_minutes} minutes
-                </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                Check your service, time and contact details. Your booking is created only when you
+                confirm below.
+              </ThemedText>
+              <FocusedSection title={selectedService.name} description="Your appointment">
+                <FocusedBookingTime
+                  startAt={selectedSlot.startAt}
+                  timezone={catalog.settings.timezone}
+                  duration={selectedService.duration_minutes}
+                />
                 {selectedSlot.resourceName ? (
                   <ThemedText themeColor="textSecondary">
                     With {selectedSlot.resourceName}
                   </ThemedText>
                 ) : null}
-                <ThemedText>
-                  {money(selectedService.price_minor, selectedService.currency)}
-                  {selectedService.price_is_fixed ? '' : ' estimated'} ·{' '}
-                  {depositLabel(selectedService)}
-                </ThemedText>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                  }}
+                >
+                  <ThemedText themeColor="textSecondary">
+                    {selectedService.price_is_fixed ? 'Service total' : 'Estimated total'}
+                  </ThemedText>
+                  <ThemedText style={{ fontSize: 24, lineHeight: 30, fontWeight: '700' }}>
+                    {money(selectedService.price_minor, selectedService.currency)}
+                  </ThemedText>
+                </View>
+                <BookingFact icon="credit-card">
+                  <ThemedText type="smallBold">{depositLabel(selectedService)}</ThemedText>
+                </BookingFact>
                 <ThemedText themeColor="textSecondary" type="small">
                   {catalog.settings.cancellationTerms ||
                     `Changes are subject to the business policy. Contact the business at least ${catalog.settings.cancellationCutoffMinutes} minutes before your appointment.`}
@@ -616,7 +872,25 @@ export default function BookAppointmentScreen() {
                     {catalog.settings.publicInstructions}
                   </ThemedText>
                 ) : null}
-              </FlowSection>
+              </FocusedSection>
+              <FocusedSection title="Your contact details">
+                <BookingFact icon="user-round">
+                  <ThemedText>{customerName.trim()}</ThemedText>
+                </BookingFact>
+                <BookingFact icon="phone">
+                  <ThemedText>{customerPhone.trim()}</ThemedText>
+                </BookingFact>
+                {!!customerEmail.trim() && (
+                  <BookingFact icon="mail">
+                    <ThemedText>{customerEmail.trim()}</ThemedText>
+                  </BookingFact>
+                )}
+                {!!notes.trim() && (
+                  <BookingFact icon="message-square">
+                    <ThemedText>{notes.trim()}</ThemedText>
+                  </BookingFact>
+                )}
+              </FocusedSection>
               <AppButton
                 label={
                   selectedService.payment_policy === 'pay_in_person'
@@ -661,7 +935,7 @@ function ChoiceButton({
         justifyContent: 'center',
         paddingHorizontal: Spacing.three,
         paddingVertical: Spacing.two,
-        borderRadius: Radius.pill,
+        borderRadius: 12,
         borderWidth: 1,
         borderColor: selected ? Brand.primary : colors.border,
         backgroundColor: selected ? colors.backgroundSelected : colors.backgroundElement,

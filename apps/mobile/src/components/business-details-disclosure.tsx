@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import { ThemedText } from './themed-text';
 import { useTheme } from '@/hooks/use-theme';
+import { AppIcon } from './app-icon';
 
 /** Supporting information stays available without crowding the primary customer task. */
 export function BusinessDetailsDisclosure({
@@ -48,9 +49,7 @@ export function BusinessDetailsDisclosure({
             </ThemedText>
           )}
         </View>
-        <ThemedText type="smallBold" style={{ color: colors.accent }}>
-          {expanded ? '−' : '+'}
-        </ThemedText>
+        <AppIcon name={expanded ? 'minus' : 'plus'} size={18} tintColor={colors.accent} />
       </Pressable>
       {expanded && (
         <View style={{ paddingHorizontal: 16, paddingBottom: 16, gap: 12 }}>{children}</View>

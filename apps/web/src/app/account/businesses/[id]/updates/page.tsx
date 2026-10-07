@@ -1,4 +1,6 @@
-import Link from 'next/link';
+import { SurfacePanel, ActionButton } from '@/components/shared-ui';
+import { BusinessWorkspaceHeader } from '@/components/business-workspace-header';
+
 import { notFound, redirect } from 'next/navigation';
 
 import { createClient } from '@/lib/supabase/server';
@@ -60,30 +62,20 @@ export default async function BusinessUpdatesPage({
   const updates = (data ?? []) as UpdateRow[];
 
   return (
-    <main className="page-shell narrow-shell">
-      <nav className="topbar">
-        <Link className="brand" href="/account">
-          ← Account
-        </Link>
-        <div className="nav-actions">
-          <Link href={`/account/businesses/${business.id}/settings`}>Business details</Link>
-          <Link href={`/b/${business.slug}`}>View page</Link>
-        </div>
-      </nav>
-
-      <div className="page-heading compact-heading">
-        <p className="eyebrow">Follower updates</p>
-        <h1>{business.name}</h1>
-        <p>
-          Send a useful announcement or special offer to followers who have enabled general updates.
-          New published events already send their own event alert.
-        </p>
-      </div>
+    <main className="page-shell business-workspace">
+      <BusinessWorkspaceHeader
+        id={business.id}
+        name={business.name}
+        slug={business.slug}
+        section="updates"
+        title="Follower updates"
+        description="Send announcements or special offers to followers who have enabled general updates. Published events already send their own event alert."
+      />
 
       {typeof query.saved === 'string' && <p className="notice-success">{query.saved}</p>}
       {typeof query.error === 'string' && <p className="notice-error">{query.error}</p>}
 
-      <section className="panel business-update-compose">
+      <SurfacePanel className="business-update-compose">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Compose</p>
@@ -132,18 +124,18 @@ export default async function BusinessUpdatesPage({
               Expired offers stop being delivered and remain in your history.
             </span>
           </label>
-          <button className="button" disabled={business.status !== 'active'}>
+          <ActionButton disabled={business.status !== 'active'} type="submit">
             Send to followers
-          </button>
+          </ActionButton>
           {business.status !== 'active' && (
             <p className="field-hint">
               Your business must be approved before follower alerts can be sent.
             </p>
           )}
         </form>
-      </section>
+      </SurfacePanel>
 
-      <section className="panel business-update-history">
+      <SurfacePanel className="business-update-history">
         <div className="section-heading">
           <div>
             <p className="eyebrow">History</p>
@@ -170,7 +162,7 @@ export default async function BusinessUpdatesPage({
             <span>Announcements and special offers you send will appear here.</span>
           </div>
         )}
-      </section>
+      </SurfacePanel>
     </main>
   );
 }

@@ -1,9 +1,25 @@
+/** Shared utility header proportions; native and web keep platform-specific controls. */
+export const headerLayout = { height: 48, controlSize: 44, radius: 12, gap: 12 } as const;
+export const controlLayout = {
+  height: 48,
+  radius: 12,
+  gap: 8,
+  paddingHorizontal: 16,
+  paddingVertical: 12,
+} as const;
+export const surfaceLayout = {
+  radius: 18,
+  padding: 18,
+  gap: 16,
+  gutter: 20,
+  screenGap: 20,
+} as const;
 export const color = {
-  ink: '#15221B',
-  canvas: '#F8F7F2',
+  ink: '#102D25',
+  canvas: '#F4F2E9',
   surface: '#FFFFFF',
   brand: '#176B4D',
-  brandStrong: '#0E4C36',
+  brandStrong: '#102D25',
   accent: '#E99B45',
   danger: '#B42318',
   muted: '#66756D',
@@ -18,11 +34,11 @@ export const color = {
  */
 export const themeColors = {
   light: {
-    text: '#14231C',
-    background: '#F6F5F0',
+    text: '#102D25',
+    background: '#F4F2E9',
     backgroundElement: '#FFFFFF',
     surfaceElevated: '#FFFFFF',
-    backgroundSelected: '#DCECE3',
+    backgroundSelected: '#DDECE0',
     textSecondary: '#596860',
     textMuted: '#627168',
     accent: '#176B4D',
@@ -32,9 +48,9 @@ export const themeColors = {
     actionPressed: '#0E4C36',
     onAction: '#FFFFFF',
     destructive: '#B42318',
-    divider: '#DEE4DF',
+    divider: '#E2E5DD',
     inputBorder: '#7B8980',
-    inputSurface: '#EAF0EA',
+    inputSurface: '#FFFFFF',
     infoSurface: '#E8EFF7',
     infoText: '#153B62',
     skeleton: '#DEE4DF',
@@ -86,7 +102,7 @@ export const merchantThemeColors = {
   light: {
     background: themeColors.light.background,
     surface: themeColors.light.backgroundElement,
-    text: '#171A1F',
+    text: '#102D25',
     secondary: '#59616B',
     border: themeColors.light.divider,
     onAction: '#FFFFFF',
@@ -138,9 +154,11 @@ export const typography = {
   secondary: { fontSize: 15, lineHeight: 22, fontWeight: '400' },
   metadata: { fontSize: 14, lineHeight: 20, fontWeight: '400' },
   label: { fontSize: 14, lineHeight: 20, fontWeight: '600' },
-  button: { fontSize: 15, lineHeight: 22, fontWeight: '600' },
+  button: { fontSize: 16, lineHeight: 22, fontWeight: '600' },
   caption: { fontSize: 13, lineHeight: 18, fontWeight: '400' },
   number: { fontSize: 24, lineHeight: 30, fontWeight: '700' },
 } as const;
 
 export const iconSize = { small: 18, normal: 22, large: 28 } as const;
+
+export * from './icons';

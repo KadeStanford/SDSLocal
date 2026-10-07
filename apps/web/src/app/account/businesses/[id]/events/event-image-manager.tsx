@@ -1,4 +1,5 @@
 'use client';
+import { ActionButton } from '@/components/shared-ui';
 
 import { mediaLimits } from '@sds/image-processing-config';
 import { useRouter } from 'next/navigation';
@@ -117,14 +118,14 @@ export function EventImageManager({
           if (file) void upload(file);
         }}
       />
-      <button
-        className="button button-secondary button-small"
+      <ActionButton
+        className="button-secondary button-small"
         type="button"
         disabled={busy}
         onClick={() => inputRef.current?.click()}
       >
         {busy ? 'Processing…' : currentImage ? 'Replace event image' : 'Add event image'}
-      </button>
+      </ActionButton>
       <span className="form-success" aria-live="polite">
         {message}
       </span>

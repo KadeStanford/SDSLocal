@@ -1,4 +1,5 @@
-import { SymbolView } from 'expo-symbols';
+import { PageHeader } from '@/components/page-header';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { AppTextInput as TextInput } from '@/components/app-text-input';
@@ -40,32 +41,41 @@ export function BusinessScreenHeader({
   action,
   label,
   masthead = false,
+  utility,
+  onBack,
+  backDisabled = false,
 }: {
   readonly title: string;
   readonly subtitle: string;
   readonly action?: ReactNode;
   readonly label?: string;
   readonly masthead?: boolean;
+  readonly utility?: ReactNode;
+  readonly onBack?: () => void;
+  readonly backDisabled?: boolean;
 }) {
   return (
-    <View style={[styles.header, masthead && styles.masthead]}>
-      <ParishBusinessBrand inverse={masthead} {...(label ? { label } : {})} />
-      <View style={styles.titleRow}>
+    <View style={styles.header}>
+      <PageHeader onBack={onBack} backDisabled={backDisabled} />
+      {utility}
+      <View style={[styles.header, masthead && styles.masthead]}>
+        <View style={styles.titleRow}>
+          <ThemedText
+            accessibilityRole="header"
+            type="title"
+            style={[styles.title, masthead && { color: ParishPalette.ivory }]}
+          >
+            {title}
+          </ThemedText>
+          {action}
+        </View>
         <ThemedText
-          accessibilityRole="header"
-          type="title"
-          style={[styles.title, masthead && { color: ParishPalette.ivory }]}
+          themeColor="textSecondary"
+          style={[styles.subtitle, masthead && { color: '#BDCEC5' }]}
         >
-          {title}
+          {subtitle}
         </ThemedText>
-        {action}
       </View>
-      <ThemedText
-        themeColor="textSecondary"
-        style={[styles.subtitle, masthead && { color: '#BDCEC5' }]}
-      >
-        {subtitle}
-      </ThemedText>
     </View>
   );
 }
@@ -83,24 +93,12 @@ export function BusinessEditorHeader({
   backLabel?: string;
   disabled?: boolean;
 }) {
-  const c = useTheme();
   return (
     <View style={{ gap: 18 }}>
-      <ParishBusinessBrand />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={backLabel}
-          disabled={disabled}
-          onPress={onBack}
-          style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
-        >
-          <SymbolView name="chevron.left" tintColor={c.text} style={{ width: 18, height: 18 }} />
-        </Pressable>
-        <ThemedText type="title" accessibilityRole="header" style={{ flex: 1 }}>
-          {title}
-        </ThemedText>
-      </View>
+      <PageHeader onBack={onBack} backLabel={backLabel} backDisabled={disabled} />
+      <ThemedText type="title" accessibilityRole="header">
+        {title}
+      </ThemedText>
       <ThemedText type="small" themeColor="textSecondary">
         {subtitle}
       </ThemedText>
@@ -170,7 +168,7 @@ export function BusinessSearch({
         gap: 10,
         minHeight: 48,
         paddingHorizontal: 14,
-        borderWidth: 0,
+        borderWidth: 1,
         borderColor: c.divider,
         borderRadius: 12,
         backgroundColor: c.backgroundElement,
@@ -229,7 +227,7 @@ const styles = StyleSheet.create({
   badge: { paddingVertical: 4 },
   badgeText: { fontSize: 10, lineHeight: 14, letterSpacing: 1.4 },
   titleRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 12 },
-  title: { flexGrow: 1, flexShrink: 1, fontSize: 30, lineHeight: 36, letterSpacing: -0.7 },
+  title: { flexGrow: 1, flexShrink: 1, fontSize: 28, lineHeight: 34, letterSpacing: -0.7 },
   subtitle: { fontSize: 15, lineHeight: 22 },
   tabs: {
     flexDirection: 'row',
@@ -245,6 +243,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderRadius: 999,
+    borderRadius: 12,
   },
 });

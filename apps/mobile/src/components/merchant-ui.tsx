@@ -1,8 +1,8 @@
+import { ActionControl, ModalHeading, SectionHeading } from './shared-ui';
 import { useTheme } from '@/hooks/use-theme';
 import { Brand } from '@/constants/theme';
 import type { ReactNode } from 'react';
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -15,11 +15,12 @@ import { AppTextInput as TextInput } from '@/components/app-text-input';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMerchantTheme } from '@/hooks/use-merchant-theme';
 import { ThemedText } from './themed-text';
+import { AppIcon } from './app-icon';
 
 export const merchantStyles = StyleSheet.create({
   screen: { flex: 1 },
   content: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 20, gap: 20, flexGrow: 1 },
-  list: { borderWidth: 0, borderRadius: 18, overflow: 'hidden' },
+  list: { borderWidth: 1, borderRadius: 18, overflow: 'hidden' },
   input: { minHeight: 50, padding: 14, borderWidth: 1, borderRadius: 14, fontSize: 16 },
   section: { gap: 12 },
 });
@@ -35,23 +36,14 @@ export function MerchantHeading({
 }) {
   const c = useMerchantTheme();
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-      <View style={{ flex: 1, gap: 4 }}>
-        <ThemedText
-          accessibilityRole="header"
-          type="title"
-          style={{ color: c.text, fontSize: 28, lineHeight: 34 }}
-        >
-          {title}
-        </ThemedText>
-        {!!subtitle && (
-          <ThemedText type="small" style={{ color: c.secondary }}>
-            {subtitle}
-          </ThemedText>
-        )}
-      </View>
-      {action}
-    </View>
+    <SectionHeading
+      page
+      title={title}
+      description={subtitle}
+      action={action}
+      titleStyle={{ color: c.text, fontSize: 26, lineHeight: 32 }}
+      descriptionStyle={{ color: c.secondary }}
+    />
   );
 }
 export function MerchantButton({
@@ -63,6 +55,8 @@ export function MerchantButton({
   destructive = false,
   accessibilityLabel,
   brand = true,
+  icon,
+  iconOnly = false,
 }: {
   label: string;
   onPress: () => void;
@@ -72,26 +66,23 @@ export function MerchantButton({
   destructive?: boolean;
   accessibilityLabel?: string;
   brand?: boolean;
+  icon?: ReactNode;
+  iconOnly?: boolean;
 }) {
-  const c = useMerchantTheme();
-  const theme = useTheme();
-  const blocked = disabled || loading;
+  const c = useMerchantTheme(),
+    theme = useTheme();
+  const color = destructive ? c.danger : secondary ? c.text : brand ? Brand.onPrimary : c.onAction;
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityState={{ disabled: blocked, busy: loading }}
-      disabled={blocked}
+    <ActionControl
+      label={label}
+      accessibilityLabel={accessibilityLabel}
       onPress={onPress}
-      style={({ pressed }) => ({
-        minHeight: 48,
-        borderRadius: 14,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        flexDirection: 'row',
-        gap: 8,
-        alignItems: 'center',
-        justifyContent: 'center',
+      disabled={disabled}
+      loading={loading}
+      icon={icon}
+      iconOnly={iconOnly}
+      color={color}
+      style={{
         borderWidth: secondary && !brand ? 1 : 0,
         borderColor: c.border,
         backgroundColor: destructive
@@ -103,23 +94,8 @@ export function MerchantButton({
             : secondary
               ? 'transparent'
               : c.text,
-        opacity: blocked ? 0.45 : pressed ? 0.75 : 1,
-      })}
-    >
-      {loading && (
-        <ActivityIndicator color={secondary ? c.text : brand ? Brand.onPrimary : c.onAction} />
-      )}
-      <ThemedText
-        type="button"
-        style={{
-          color: destructive ? c.danger : secondary ? c.text : brand ? Brand.onPrimary : c.onAction,
-          textAlign: 'center',
-          flexShrink: 1,
-        }}
-      >
-        {label}
-      </ThemedText>
-    </Pressable>
+      }}
+    />
   );
 }
 export function MerchantSearch({
@@ -135,21 +111,36 @@ export function MerchantSearch({
 }) {
   const c = useMerchantTheme();
   return (
-    <TextInput
-      accessibilityLabel={label ?? placeholder}
-      value={value}
-      onChangeText={onChange}
-      placeholder={placeholder}
-      placeholderTextColor={c.secondary}
-      autoCorrect={false}
-      autoCapitalize="none"
-      returnKeyType="search"
-      clearButtonMode="while-editing"
-      style={[
-        merchantStyles.input,
-        { backgroundColor: c.surface, borderColor: c.border, color: c.text },
-      ]}
-    />
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        borderWidth: 1,
+        borderColor: c.border,
+        borderRadius: 14,
+        paddingHorizontal: 14,
+        backgroundColor: c.surface,
+      }}
+    >
+      <AppIcon name="search" size={20} tintColor={c.secondary} />
+      <TextInput
+        variant="inline"
+        accessibilityLabel={label ?? placeholder}
+        value={value}
+        onChangeText={onChange}
+        placeholder={placeholder}
+        placeholderTextColor={c.secondary}
+        autoCorrect={false}
+        autoCapitalize="none"
+        returnKeyType="search"
+        clearButtonMode="while-editing"
+        style={[
+          merchantStyles.input,
+          { backgroundColor: 'transparent', borderWidth: 0, flex: 1, minWidth: 0, color: c.text },
+        ]}
+      />
+    </View>
   );
 }
 export function MerchantFilters<T extends string>({
@@ -178,11 +169,11 @@ export function MerchantFilters<T extends string>({
             minHeight: 44,
             paddingHorizontal: 14,
             paddingVertical: 10,
-            borderRadius: 22,
-            borderWidth: 0,
+            borderRadius: 12,
+            borderWidth: 1,
             borderColor: value === o.value ? (brand ? theme.accent : c.text) : c.border,
             backgroundColor:
-              value === o.value ? (brand ? theme.backgroundSelected : c.text) : 'transparent',
+              value === o.value ? (brand ? theme.backgroundSelected : c.text) : c.surface,
             justifyContent: 'center',
           }}
         >
@@ -215,7 +206,19 @@ export function MerchantStatus({
           ? c.danger
           : c.secondary;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        flexShrink: 1,
+        backgroundColor:
+          tone === 'warning' ? c.attention : tone === 'danger' ? c.dangerSurface : c.background,
+        paddingHorizontal: 9,
+        paddingVertical: 5,
+        borderRadius: 8,
+      }}
+    >
       <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: color }} />
       <ThemedText type="caption" style={{ color, flexShrink: 1 }}>
         {label}
@@ -290,7 +293,7 @@ export function MerchantRow({
           </ThemedText>
         )}
       </View>
-      {!disabled && <ThemedText style={{ color: c.secondary }}>›</ThemedText>}
+      {!disabled && <AppIcon name="chevron-right" size={18} />}
     </Pressable>
   );
 }
@@ -347,30 +350,11 @@ export function MerchantSheet({
             style={{
               paddingHorizontal: 20,
               paddingVertical: 12,
-              flexDirection: 'row',
-              gap: 12,
-              alignItems: 'center',
               borderBottomWidth: 1,
               borderBottomColor: c.border,
             }}
           >
-            <ThemedText accessibilityRole="header" type="card" style={{ flex: 1, color: c.text }}>
-              {title}
-            </ThemedText>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={'Close ' + title}
-              disabled={blocked}
-              onPress={onClose}
-              style={{
-                minHeight: 44,
-                minWidth: 44,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <ThemedText style={{ color: c.secondary, fontSize: 24 }}>×</ThemedText>
-            </Pressable>
+            <ModalHeading title={title} onClose={onClose} blocked={blocked} />
           </View>
           <ScrollView
             keyboardShouldPersistTaps="handled"
@@ -431,15 +415,7 @@ export function MerchantRating({
             opacity: disabled ? 0.5 : 1,
           }}
         >
-          <ThemedText
-            style={{
-              fontSize: 32,
-              lineHeight: 38,
-              color: rating <= value ? c.success : c.secondary,
-            }}
-          >
-            {rating <= value ? '★' : '☆'}
-          </ThemedText>
+          <AppIcon name="star" size={18} fill={rating <= value} />
         </Pressable>
       ))}
     </View>

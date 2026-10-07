@@ -188,6 +188,19 @@ export async function updateOfferingItemAction(formData: FormData) {
   redirect(destination(businessId, 'saved', 'Item saved.'));
 }
 
+/** Bind direction as an action argument: React reserves submitter name for action transport. */
+export async function moveOfferingItemInDirection(direction: 'up' | 'down', formData: FormData) {
+  if (direction !== 'up' && direction !== 'down') throw new Error('Choose a valid move direction.');
+  formData.set('direction', direction);
+  return moveOfferingItemAction(formData);
+}
+
+export async function moveOfferingSectionInDirection(direction: 'up' | 'down', formData: FormData) {
+  if (direction !== 'up' && direction !== 'down') throw new Error('Choose a valid move direction.');
+  formData.set('direction', direction);
+  return moveOfferingSectionAction(formData);
+}
+
 export async function moveOfferingItemAction(formData: FormData) {
   const businessId = String(formData.get('businessId') ?? '');
   const itemId = String(formData.get('itemId') ?? '');

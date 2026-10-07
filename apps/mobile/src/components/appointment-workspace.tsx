@@ -1,3 +1,4 @@
+import { AppIcon } from '@/components/app-icon';
 import { BusinessFeatureGate } from '@/components/business-feature-gate';
 import { BackPill } from '@/components/back-pill';
 import { FlowSection, FlowIdentity } from '@/components/flow-layout';
@@ -184,11 +185,15 @@ export function AppointmentWorkspace({
     scheduleRead = useRef(0),
     pendingWrite = useRef(false);
   useEffect(() => {
+    // Capture the request-version ref object used to invalidate pending reads.
+    const setupReadForCleanup = setupRead;
+    const scheduleReadForCleanup = scheduleRead;
+
     scopeRef.current = businessId;
     return () => {
       scopeRef.current = '';
-      setupRead.current++;
-      scheduleRead.current++;
+      setupReadForCleanup.current++;
+      scheduleReadForCleanup.current++;
     };
   }, [businessId]);
   const theme = useTheme();
@@ -1037,9 +1042,11 @@ export function AppointmentWorkspace({
                                     : 'Unavailable'}
                                 </ThemedText>
                               </View>
-                              <ThemedText themeColor="textSecondary">
-                                {expandedDay === day ? '⌃' : '⌄'}
-                              </ThemedText>
+                              <AppIcon
+                                name={expandedDay === day ? 'chevron-up' : 'chevron-down'}
+                                size={18}
+                                tintColor={colors.textSecondary}
+                              />
                             </Pressable>
                             {expandedDay === day && (
                               <>
@@ -1520,6 +1527,7 @@ export function AppointmentWorkspace({
               paymentStatus: a.paymentStatus,
             }))}
             loading={loadingAppointments}
+            failed={!!error}
             blocked={saving}
             onRefresh={() => void loadAppointments()}
             onSelect={setSelectedAppointmentId}

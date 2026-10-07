@@ -1,6 +1,6 @@
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Colors, Spacing } from '@/constants/theme';
@@ -18,6 +18,7 @@ import {
   pickupDiscoveryEnabled,
 } from '@/lib/pickup-discovery';
 import { storagePublicUrl } from '@/lib/storage-url';
+import { DiscoveryMerchantCard } from './discovery-merchant-card';
 import { BusinessLogo } from './business-logo';
 import { ThemedText } from './themed-text';
 import { PickupNavigationButton } from './pickup-navigation-button';
@@ -89,12 +90,14 @@ export function BusinessCard({
   onPress,
   presentation = 'featured',
   stretch = false,
+  discovery = false,
 }: {
   readonly business: BusinessCardData;
   readonly isFollowing: boolean;
   readonly onPress: () => void;
   readonly presentation?: 'featured' | 'compact';
   readonly stretch?: boolean;
+  readonly discovery?: boolean;
 }) {
   const [failedCover, setFailedCover] = useState<string | null>(null);
   const colors = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
@@ -121,6 +124,17 @@ export function BusinessCard({
     isFollowing ? new Set([business.id]) : new Set(),
     new Date(),
   );
+  if (discovery)
+    return (
+      <DiscoveryMerchantCard
+        business={business}
+        isFollowing={isFollowing}
+        onPress={onPress}
+        coverUrl={coverUrl}
+        pickup={pickup}
+        indicators={indicators}
+      />
+    );
   return (
     <View
       style={[

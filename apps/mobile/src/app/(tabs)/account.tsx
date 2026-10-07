@@ -1,3 +1,5 @@
+import { PageHeader, PageHeaderScope } from '@/components/page-header';
+import { AccountAdminEntry } from '@/components/admin/account-admin-entry';
 import { HelpPolicyLinks } from '@/components/help-policy-links';
 import { PendingEmailConfirmation } from '@/components/pending-email-confirmation';
 import { ChoicePicker } from '@/components/choice-picker';
@@ -5,7 +7,7 @@ import { inputPresets } from '@/lib/input-presets';
 import { FlowSection } from '@/components/flow-layout';
 import { BusinessChimeSetting } from '@/components/business-chime-setting';
 import { EmailCodeVerification } from '@/components/email-code-verification';
-import { CustomerBrand } from '@/components/customer-brand';
+
 import { AccountBrandHeader } from '@/components/account-brand-header';
 import { AccountSettingsRow } from '@/components/account-settings-row';
 import { useMerchantTheme } from '@/hooks/use-merchant-theme';
@@ -150,8 +152,13 @@ export default function AccountScreen({ standalone = false }: { standalone?: boo
   const [googleLinkedThisSession, setGoogleLinkedThisSession] = useState(false);
   const [appleLinkedThisSession, setAppleLinkedThisSession] = useState(false);
   const [appleAuthAvailable, setAppleAuthAvailable] = useState(false);
-  const [pendingEmail, setPendingEmail] = useState(() => globalThis.localStorage.getItem('parish:pending-confirmation-email') ?? '');
-  useEffect(() => { if (session) { setPendingEmail(''); globalThis.localStorage.removeItem('parish:pending-confirmation-email'); } }, [session]);
+  const [pendingEmail, setPendingEmail] = useState(
+    () => globalThis.localStorage.getItem('parish:pending-confirmation-email') ?? '',
+  );
+  if (session && pendingEmail) setPendingEmail('');
+  useEffect(() => {
+    if (session) globalThis.localStorage.removeItem('parish:pending-confirmation-email');
+  }, [session]);
   const [authNotice, setAuthNotice] = useState<AuthNoticeState | null>(null);
   const [authFieldErrors, setAuthFieldErrors] = useState<Record<string, string>>({});
   const [city, setCity] = useState('');
@@ -447,7 +454,10 @@ export default function AccountScreen({ standalone = false }: { standalone?: boo
         if (!data.session) {
           setPendingEmail(input.email);
           globalThis.localStorage.setItem('parish:pending-confirmation-email', input.email);
-          globalThis.localStorage.setItem('parish:confirmation-resend-after', String(Date.now() + 60000));
+          globalThis.localStorage.setItem(
+            'parish:confirmation-resend-after',
+            String(Date.now() + 60000),
+          );
           setAuthNotice({
             kind: 'info',
             message: 'Check your email and use the confirmation link to finish signing up.',
@@ -483,7 +493,7 @@ export default function AccountScreen({ standalone = false }: { standalone?: boo
       const { error } = await supabase
         .from('profiles')
         .update({
-          display_name: input.displayName,
+          display_name: input.displayName || null,
           city: input.city ?? null,
           region_code: input.regionCode ?? null,
           postal_code: input.postalCode ?? null,
@@ -629,171 +639,248 @@ export default function AccountScreen({ standalone = false }: { standalone?: boo
 
   if (loading) {
     return (
-      <ThemedView style={styles.center}>
-        <ActivityIndicator color="#176B4D" />
-      </ThemedView>
+      <PageHeaderScope>
+        {
+          <ThemedView style={styles.container}>
+            <SafeAreaView style={styles.safeArea} edges={['top']}>
+              <View style={styles.content}>
+                <PageHeader />
+                <ActivityIndicator color="#176B4D" />
+              </View>
+            </SafeAreaView>
+          </ThemedView>
+        }
+      </PageHeaderScope>
     );
   }
 
   if (session && accountSection === 'business-new') {
     return (
-      <SwipeBackView
-        enabled
-        onSwipeBack={() => setAccountSection('overview')}
-        underlay={
-          <AccountOverviewUnderlay
-            connectedMethods={connectedMethods}
-            displayName={displayName}
-            email={session.user.email ?? ''}
-            hasBusinessAccess={hasBusinessAccess}
-            location={[city, regionCode].filter(Boolean).join(', ') || 'Location not added'}
-            unreadCount={notifications.unreadCount}
-          />
+      <PageHeaderScope>
+        {
+          <SwipeBackView
+            enabled
+            onSwipeBack={() => setAccountSection('overview')}
+            underlay={
+              <AccountOverviewUnderlay
+                connectedMethods={connectedMethods}
+                displayName={displayName}
+                email={session.user.email ?? ''}
+                hasBusinessAccess={hasBusinessAccess}
+                location={[city, regionCode].filter(Boolean).join(', ') || 'Location not added'}
+                unreadCount={notifications.unreadCount}
+              />
+            }
+          >
+            <NewBusinessWorkspace
+              onBack={() => setAccountSection('overview')}
+              onCreated={async (businessId) => {
+                await refreshBusinessAccess();
+                setAppMode('business');
+                setAccountSection('overview');
+                router.replace({ pathname: '/business', params: { id: businessId } });
+              }}
+            />
+          </SwipeBackView>
         }
-      >
-        <NewBusinessWorkspace
-          onBack={() => setAccountSection('overview')}
-          onCreated={async (businessId) => {
-            await refreshBusinessAccess();
-            setAppMode('business');
-            setAccountSection('overview');
-            router.replace({ pathname: '/business', params: { id: businessId } });
-          }}
-        />
-      </SwipeBackView>
+      </PageHeaderScope>
     );
   }
 
   return (
-    <SwipeBackView
-      enabled={canSwipeBack}
-      underlay={
-        session && accountSection !== 'overview' ? (
-          <AccountOverviewUnderlay
-            connectedMethods={connectedMethods}
-            displayName={displayName}
-            email={session.user.email ?? ''}
-            hasBusinessAccess={hasBusinessAccess}
-            location={[city, regionCode].filter(Boolean).join(', ') || 'Location not added'}
-            unreadCount={notifications.unreadCount}
-          />
-        ) : null
-      }
-      onSwipeBack={() => {
-        if (busy) return;
-        if (session && accountSection !== 'overview') {
-          setAccountSection('overview');
-        } else if (!session && mode !== 'sign-in') {
-          setMode('sign-in');
-          setAuthNotice(null);
-        }
-      }}
-    >
-      <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <ScrollView
-            automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
-            contentInsetAdjustmentBehavior="automatic"
-            contentContainerStyle={[styles.content, { paddingBottom: bottomPadding }]}
-            keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
-            keyboardShouldPersistTaps="handled"
-          >
-            {(mode === 'email-code' || mode === 'recovery') && <CustomerBrand />}
-            {(session || mode === 'sign-in' || mode === 'sign-up') && (
-              <>
-                {session && (
-                  <AppChrome accountScreen showModeSwitch={accountSection === 'overview'} />
-                )}
-                <AccountBrandHeader
-                  disabled={busy}
-                  label={accountSection !== 'overview' ? 'Back to account' : 'Back to business'}
-                  onBack={
-                    session && accountSection !== 'overview'
-                      ? () => setAccountSection('overview')
-                      : session && standalone
-                        ? () => router.back()
-                        : undefined
-                  }
-                />
-                <ThemedText type="title">
-                  {session
-                    ? accountSection === 'overview'
-                      ? 'Account'
-                      : accountSection === 'profile'
-                        ? 'Profile'
-                        : accountSection === 'notifications'
-                          ? 'Notifications'
-                          : accountSection === 'privacy-safety'
-                            ? 'Privacy & Safety'
-                            : accountSection === 'account-data'
-                              ? 'Account & data'
-                              : 'Sign-in methods'
-                    : mode === 'sign-up'
-                      ? 'Create your account'
-                      : 'Welcome back'}
-                </ThemedText>
-                {(!session ||
-                  (accountSection !== 'overview' && accountSection !== 'account-data')) && (
-                  <ThemedText themeColor="textSecondary">
-                    {session
-                      ? accountSection === 'overview'
-                        ? 'Manage your profile, preferences, and activity.'
-                        : accountSection === 'profile'
-                          ? 'Choose how your name and location appear across Parish Pass.'
-                          : accountSection === 'notifications'
-                            ? 'Control the updates you receive from local businesses.'
-                            : accountSection === 'privacy-safety'
-                              ? 'Review and restore businesses you have blocked.'
-                              : 'Manage the ways you can access this account.'
-                      : 'Your favorites, orders and rewards. All together.'}
-                  </ThemedText>
-                )}
-                {secureStorageWarning && (
-                  <AuthNotice notice={{ kind: 'error', message: secureStorageWarning }} />
-                )}
-              </>
-            )}
-
-            {!isSupabaseConfigured && (
-              <StateNotice
-                kind="error"
-                message="Sign-in is temporarily unavailable. Please try again later."
+    <PageHeaderScope>
+      {
+        <SwipeBackView
+          enabled={canSwipeBack}
+          underlay={
+            session && accountSection !== 'overview' ? (
+              <AccountOverviewUnderlay
+                connectedMethods={connectedMethods}
+                displayName={displayName}
+                email={session.user.email ?? ''}
+                hasBusinessAccess={hasBusinessAccess}
+                location={[city, regionCode].filter(Boolean).join(', ') || 'Location not added'}
+                unreadCount={notifications.unreadCount}
               />
-            )}
-
-            {session ? (
-              <View style={styles.form}>
-                {accountSection === 'overview' && (
+            ) : null
+          }
+          onSwipeBack={() => {
+            if (busy) return;
+            if (session && accountSection !== 'overview') {
+              setAccountSection('overview');
+            } else if (!session && mode !== 'sign-in') {
+              setMode('sign-in');
+              setAuthNotice(null);
+            }
+          }}
+        >
+          <ThemedView style={styles.container}>
+            <SafeAreaView style={styles.safeArea} edges={['top']}>
+              <ScrollView
+                automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+                contentInsetAdjustmentBehavior="automatic"
+                contentContainerStyle={[styles.content, { paddingBottom: bottomPadding }]}
+                keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+                keyboardShouldPersistTaps="handled"
+              >
+                {(mode === 'email-code' || mode === 'recovery') && (
+                  <PageHeader
+                    onBack={() => {
+                      setMode('sign-in');
+                      setAuthNotice(null);
+                    }}
+                    backLabel="Back to sign in"
+                    backDisabled={busy}
+                  />
+                )}
+                {(session || mode === 'sign-in' || mode === 'sign-up') && (
                   <>
-                    <View
-                      style={[
-                        styles.profileSummary,
-                        {
-                          backgroundColor: accountColors.surface,
-                          borderColor: accountColors.border,
-                        },
-                      ]}
+                    <AccountBrandHeader
+                      disabled={busy}
+                      label={accountSection !== 'overview' ? 'Back to account' : 'Back to business'}
+                      onBack={
+                        session && accountSection !== 'overview'
+                          ? () => setAccountSection('overview')
+                          : session && standalone
+                            ? () => router.back()
+                            : undefined
+                      }
+                    />
+                    {session && (
+                      <AppChrome accountScreen showModeSwitch={accountSection === 'overview'} />
+                    )}
+                    <ThemedText
+                      accessibilityRole="header"
+                      type="title"
+                      style={{ fontSize: 28, lineHeight: 34 }}
                     >
-                      <View style={[styles.avatar, { backgroundColor: colors.backgroundSelected }]}>
-                        <ThemedText
-                          style={[styles.avatarText, { color: accountColors.text }]}
-                          type="subtitle"
-                        >
-                          {(displayName || session.user.email || 'A').slice(0, 1).toUpperCase()}
-                        </ThemedText>
-                      </View>
-                      <View style={styles.profileCopy}>
-                        <ThemedText type="subtitle">{displayName || 'Your profile'}</ThemedText>
-                        <ThemedText themeColor="textSecondary" type="small">
-                          {session.user.email}
-                          {city ? ' · ' + [city, regionCode].filter(Boolean).join(', ') : ''}
-                        </ThemedText>
-                      </View>
-                    </View>
+                      {session
+                        ? accountSection === 'overview'
+                          ? 'Account'
+                          : accountSection === 'profile'
+                            ? 'Profile'
+                            : accountSection === 'notifications'
+                              ? 'Notifications'
+                              : accountSection === 'privacy-safety'
+                                ? 'Privacy & Safety'
+                                : accountSection === 'account-data'
+                                  ? 'Account & data'
+                                  : 'Sign-in methods'
+                        : mode === 'sign-up'
+                          ? 'Create your account'
+                          : 'Welcome back'}
+                    </ThemedText>
+                    {(!session ||
+                      (accountSection !== 'overview' && accountSection !== 'account-data')) && (
+                      <ThemedText themeColor="textSecondary">
+                        {session
+                          ? accountSection === 'overview'
+                            ? 'Manage your profile, preferences, and activity.'
+                            : accountSection === 'profile'
+                              ? 'Choose how your name and location appear across Parish Pass.'
+                              : accountSection === 'notifications'
+                                ? 'Control the updates you receive from local businesses.'
+                                : accountSection === 'privacy-safety'
+                                  ? 'Review and restore businesses you have blocked.'
+                                  : 'Manage the ways you can access this account.'
+                          : 'Your favorites, orders and rewards. All together.'}
+                      </ThemedText>
+                    )}
+                    {secureStorageWarning && (
+                      <AuthNotice notice={{ kind: 'error', message: secureStorageWarning }} />
+                    )}
+                  </>
+                )}
 
-                    {appMode === 'business' && (
+                {!isSupabaseConfigured && (
+                  <StateNotice
+                    kind="error"
+                    message="Sign-in is temporarily unavailable. Please try again later."
+                  />
+                )}
+
+                {session ? (
+                  <View style={styles.form}>
+                    {accountSection === 'overview' && (
                       <>
-                        <ThemedText type="smallBold">Business workspace</ThemedText>
+                        <View
+                          style={[
+                            styles.profileSummary,
+                            {
+                              backgroundColor: accountColors.surface,
+                              borderColor: accountColors.border,
+                            },
+                          ]}
+                        >
+                          <View
+                            style={[styles.avatar, { backgroundColor: colors.backgroundSelected }]}
+                          >
+                            <ThemedText
+                              style={[styles.avatarText, { color: accountColors.text }]}
+                              type="subtitle"
+                            >
+                              {(displayName || session.user.email || 'A').slice(0, 1).toUpperCase()}
+                            </ThemedText>
+                          </View>
+                          <View style={styles.profileCopy}>
+                            <ThemedText type="card" style={{ fontSize: 20, lineHeight: 26 }}>
+                              {displayName || 'Your profile'}
+                            </ThemedText>
+                            <ThemedText themeColor="textSecondary" type="small">
+                              {session.user.email}
+                              {city ? ' · ' + [city, regionCode].filter(Boolean).join(', ') : ''}
+                            </ThemedText>
+                            <Pressable
+                              accessibilityRole="button"
+                              accessibilityLabel="Edit profile"
+                              onPress={() => setAccountSection('profile')}
+                              style={{
+                                minHeight: 44,
+                                justifyContent: 'center',
+                                alignSelf: 'flex-start',
+                              }}
+                            >
+                              <ThemedText type="smallBold" themeColor="accent">
+                                Edit profile
+                              </ThemedText>
+                            </Pressable>
+                          </View>
+                        </View>
+
+                        <ThemedText accessibilityRole="header" type="subtitle">
+                          Your activity
+                        </ThemedText>
+                        <View style={styles.activityGrid}>
+                          <AccountSettingsRow
+                            variant="tile"
+                            label="My appointments"
+                            detail="Upcoming, past, reschedule and cancellation"
+                            onPress={() => router.push('/my-appointments' as never)}
+                          />
+                          <AccountSettingsRow
+                            variant="tile"
+                            label="Following"
+                            detail="Businesses you follow"
+                            onPress={() =>
+                              router.push({
+                                pathname: '/rewards',
+                                params: { view: 'following' },
+                              } as never)
+                            }
+                          />
+                          <AccountSettingsRow
+                            variant="tile"
+                            label="My service requests"
+                            detail="Check quote and consultation request status"
+                            onPress={() => router.push('/my-service-requests' as never)}
+                          />
+                          <AccountSettingsRow
+                            variant="tile"
+                            label="My attended events"
+                            detail="Review events after the business checks you in"
+                            onPress={() => router.push('/my-event-reviews' as never)}
+                          />
+                        </View>
                         <View
                           style={[
                             styles.settingsGroup,
@@ -804,659 +891,676 @@ export default function AccountScreen({ standalone = false }: { standalone?: boo
                           ]}
                         >
                           <AccountSettingsRow
-                            label={hasBusinessAccess ? 'Your businesses' : 'Create a business'}
-                            detail={
-                              hasBusinessAccess
-                                ? 'Manage business pages, offerings, events, and staff'
-                                : 'Set up a business profile for customers to discover'
-                            }
-                            onPress={() => {
-                              if (hasBusinessAccess) {
-                                setAppMode('business');
-                                router.replace('/businesses');
-                              } else {
-                                setAccountSection('business-new');
-                              }
-                            }}
-                          />
-                          <AccountSettingsRow
-                            label="Orders & requests"
-                            detail="Paid pickups and customers awaiting a reply"
-                            onPress={() => router.push('/pickup-orders' as never)}
+                            label="Business subscription"
+                            detail="View plans, restore purchases, or manage cancellation"
+                            onPress={() => router.push('/listing-plans' as never)}
                           />
                         </View>
+
+                        {appMode === 'business' && (
+                          <>
+                            <ThemedText type="smallBold">Business workspace</ThemedText>
+                            <View
+                              style={[
+                                styles.settingsGroup,
+                                {
+                                  backgroundColor: accountColors.surface,
+                                  borderColor: accountColors.border,
+                                },
+                              ]}
+                            >
+                              <AccountSettingsRow
+                                label={hasBusinessAccess ? 'Your businesses' : 'Create a business'}
+                                detail={
+                                  hasBusinessAccess
+                                    ? 'Manage business pages, offerings, events, and staff'
+                                    : 'Set up a business profile for customers to discover'
+                                }
+                                onPress={() => {
+                                  if (hasBusinessAccess) {
+                                    setAppMode('business');
+                                    router.replace('/businesses');
+                                  } else {
+                                    setAccountSection('business-new');
+                                  }
+                                }}
+                              />
+                              <AccountSettingsRow
+                                label="Orders & requests"
+                                detail="Paid pickups and customers awaiting a reply"
+                                onPress={() => router.push('/pickup-orders' as never)}
+                              />
+                            </View>
+                          </>
+                        )}
+                        <ThemedText accessibilityRole="header" type="subtitle">
+                          Preferences & security
+                        </ThemedText>
+                        <View
+                          style={[
+                            styles.settingsGroup,
+                            {
+                              backgroundColor: accountColors.surface,
+                              borderColor: accountColors.border,
+                            },
+                          ]}
+                        >
+                          <AccountAdminEntry />
+                          <AccountSettingsRow
+                            label="Profile"
+                            detail="Name, city, and location"
+                            onPress={() => setAccountSection('profile')}
+                          />
+                          <AccountSettingsRow
+                            label="Notifications"
+                            detail={
+                              notifications.unreadCount > 0
+                                ? `${notifications.unreadCount} unread · preferences and alerts`
+                                : 'Preferences and alerts'
+                            }
+                            onPress={() => setAccountSection('notifications')}
+                          />
+                          <AccountSettingsRow
+                            label="Privacy & Safety"
+                            detail="Review blocked businesses"
+                            onPress={() => setAccountSection('privacy-safety')}
+                          />
+                          <AccountSettingsRow
+                            label="Sign-in methods"
+                            detail={
+                              connectedMethods
+                                ? `${connectedMethods} connected`
+                                : 'Add a sign-in method'
+                            }
+                            onPress={() => setAccountSection('sign-in-methods')}
+                          />
+                          <AccountSettingsRow
+                            label="Account & data"
+                            detail="Account deletion and saved data"
+                            onPress={() => setAccountSection('account-data')}
+                          />
+                        </View>
+
+                        {appMode !== 'business' && (
+                          <View
+                            style={[
+                              styles.settingsGroup,
+                              {
+                                backgroundColor: accountColors.surface,
+                                borderColor: accountColors.border,
+                              },
+                            ]}
+                          >
+                            <AccountSettingsRow
+                              label={hasBusinessAccess ? 'Your businesses' : 'Create a business'}
+                              detail={
+                                hasBusinessAccess
+                                  ? 'Manage business pages, offerings, events, and staff'
+                                  : 'Set up a business profile for customers to discover'
+                              }
+                              onPress={() => {
+                                if (hasBusinessAccess) {
+                                  setAppMode('business');
+                                  router.replace('/businesses');
+                                } else {
+                                  setAccountSection('business-new');
+                                }
+                              }}
+                            />
+                          </View>
+                        )}
+                        <HelpPolicyLinks />
+                        <Pressable
+                          disabled={busy}
+                          onPress={() =>
+                            void (async () => {
+                              setGoogleLinkedThisSession(false);
+                              setAppleLinkedThisSession(false);
+                              await notifications.deactivate().catch(() => undefined);
+                              await nearbyAlerts
+                                .clearForAccount(session.user.id)
+                                .catch(() => undefined);
+                              clearBusinessOnboardingDraft(session.user.id);
+                              globalThis.localStorage.removeItem('sds-local:post-auth-destination');
+                              await clearBiometricSignInRefreshToken();
+                              await supabase.auth.signOut();
+                            })()
+                          }
+                          style={styles.signOutButton}
+                        >
+                          <ThemedText style={styles.signOutText} type="smallBold">
+                            Sign out
+                          </ThemedText>
+                        </Pressable>
                       </>
                     )}
-                    <ThemedText type="smallBold">Account settings</ThemedText>
-                    <View
-                      style={[
-                        styles.settingsGroup,
-                        {
-                          backgroundColor: accountColors.surface,
-                          borderColor: accountColors.border,
-                        },
-                      ]}
-                    >
-                      <AccountSettingsRow
-                        label="Profile"
-                        detail="Name, city, and location"
-                        onPress={() => setAccountSection('profile')}
-                      />
-                      <AccountSettingsRow
-                        label="Notifications"
-                        detail={
-                          notifications.unreadCount > 0
-                            ? `${notifications.unreadCount} unread · preferences and alerts`
-                            : 'Preferences and alerts'
-                        }
-                        onPress={() => setAccountSection('notifications')}
-                      />
-                      <AccountSettingsRow
-                        label="Privacy & Safety"
-                        detail="Review blocked businesses"
-                        onPress={() => setAccountSection('privacy-safety')}
-                      />
-                      <AccountSettingsRow
-                        label="Sign-in methods"
-                        detail={
-                          connectedMethods
-                            ? `${connectedMethods} connected`
-                            : 'Add a sign-in method'
-                        }
-                        onPress={() => setAccountSection('sign-in-methods')}
-                      />
-                      <AccountSettingsRow
-                        label="Account & data"
-                        detail="Account deletion and saved data"
-                        onPress={() => setAccountSection('account-data')}
-                      />
-                    </View>
 
-                    <HelpPolicyLinks />
-                    <ThemedText type="smallBold">Your customer activity</ThemedText>
-                    <View
-                      style={[
-                        styles.settingsGroup,
-                        {
-                          backgroundColor: accountColors.surface,
-                          borderColor: accountColors.border,
-                        },
-                      ]}
-                    >
-                      <AccountSettingsRow label="My appointments" detail="Upcoming, past, reschedule and cancellation" onPress={() => router.push('/my-appointments' as never)} />
-                      <AccountSettingsRow label="Following" detail="Businesses you follow" onPress={() => router.push({ pathname: '/rewards', params: { view: 'following' } } as never)} />
-                      <AccountSettingsRow
-                        label="My service requests"
-                        detail="Check quote and consultation request status"
-                        onPress={() => router.push('/my-service-requests' as never)}
-                      />
-                      <AccountSettingsRow
-                        label="My attended events"
-                        detail="Review events after the business checks you in"
-                        onPress={() => router.push('/my-event-reviews' as never)}
-                      />
-                    </View>
-                    <View
-                      style={[
-                        styles.settingsGroup,
-                        {
-                          backgroundColor: accountColors.surface,
-                          borderColor: accountColors.border,
-                        },
-                      ]}
-                    >
-                      <AccountSettingsRow
-                        label="Business subscription"
-                        detail="View plans, restore purchases, or manage cancellation"
-                        onPress={() => router.push('/listing-plans' as never)}
-                      />
-                    </View>
-                    {appMode !== 'business' && (
+                    {accountSection === 'profile' && (
                       <View
                         style={[
-                          styles.settingsGroup,
+                          styles.editorCard,
                           {
                             backgroundColor: accountColors.surface,
                             borderColor: accountColors.border,
                           },
                         ]}
                       >
-                        <AccountSettingsRow
-                          label={hasBusinessAccess ? 'Your businesses' : 'Create a business'}
-                          detail={
-                            hasBusinessAccess
-                              ? 'Manage business pages, offerings, events, and staff'
-                              : 'Set up a business profile for customers to discover'
-                          }
-                          onPress={() => {
-                            if (hasBusinessAccess) {
-                              setAppMode('business');
-                              router.replace('/businesses');
-                            } else {
-                              setAccountSection('business-new');
+                        <Field
+                          label="Display name (optional)"
+                          {...inputPresets.name}
+                          value={displayName}
+                          onChangeText={setDisplayName}
+                          colors={colors}
+                          inputRef={displayNameInput}
+                          blurOnSubmit={false}
+                          returnKeyType="next"
+                          onSubmitEditing={() => cityInput.current?.focus()}
+                        />
+                        <FlowSection
+                          title="Your area"
+                          description="Used to personalize nearby places."
+                        >
+                          <Field
+                            label="City"
+                            {...inputPresets.city}
+                            value={city}
+                            onChangeText={setCity}
+                            colors={colors}
+                            inputRef={cityInput}
+                            blurOnSubmit={false}
+                            returnKeyType="next"
+                            onSubmitEditing={() => postalCodeInput.current?.focus()}
+                          />
+                          <ChoicePicker
+                            label="State / region"
+                            businessStyle
+                            value={regionCode}
+                            onChange={setRegionCode}
+                            searchable
+                            searchPlaceholder="Search state or abbreviation"
+                            options={[
+                              { value: '', label: 'No state selected' },
+                              ...usRegionOptions.map(([value, name]) => ({
+                                value,
+                                label: `${name} (${value})`,
+                              })),
+                            ]}
+                          />
+                          <Field
+                            label="Postal code"
+                            {...inputPresets.postal}
+                            value={postalCode}
+                            onChangeText={setPostalCode}
+                            colors={colors}
+                            inputRef={postalCodeInput}
+                            returnKeyType="done"
+                            onSubmitEditing={() => void saveProfile()}
+                          />
+                        </FlowSection>
+                        <PrimaryButton
+                          loading={busy}
+                          label={busy ? 'Saving…' : 'Save profile'}
+                          disabled={busy}
+                          onPress={() => void saveProfile()}
+                        />
+                      </View>
+                    )}
+
+                    {accountSection === 'account-data' && <AccountDataPanel />}
+
+                    {accountSection === 'notifications' && (
+                      <>
+                        <BusinessChimeSetting />
+                        <NotificationSettings />
+                      </>
+                    )}
+
+                    {accountSection === 'privacy-safety' && (
+                      <>
+                        <HelpPolicyLinks />
+                        <BlockedBusinessesPanel />
+                      </>
+                    )}
+
+                    {accountSection === 'sign-in-methods' && (
+                      <View
+                        style={[
+                          styles.editorCard,
+                          {
+                            backgroundColor: accountColors.surface,
+                            borderColor: accountColors.border,
+                          },
+                        ]}
+                      >
+                        {authNotice && <AuthNotice notice={authNotice} />}
+                        <View style={styles.methodRow}>
+                          <View style={styles.profileCopy}>
+                            <ThemedText type="smallBold">Email</ThemedText>
+                            <ThemedText themeColor="textSecondary" type="small">
+                              {session.user.email ?? 'No email connected'}
+                            </ThemedText>
+                          </View>
+                          {emailLinked ? (
+                            <ThemedText
+                              style={[
+                                styles.connectedText,
+                                {
+                                  color: accountColors.success,
+                                  backgroundColor: accountColors.background,
+                                },
+                              ]}
+                              type="smallBold"
+                            >
+                              Connected
+                            </ThemedText>
+                          ) : (
+                            <ThemedText themeColor="textSecondary" type="smallBold">
+                              Not connected
+                            </ThemedText>
+                          )}
+                        </View>
+                        <View style={styles.methodRow}>
+                          <View style={styles.profileCopy}>
+                            <ThemedText type="smallBold">Google</ThemedText>
+                            <ThemedText themeColor="textSecondary" type="small">
+                              {googleLinked
+                                ? 'Connected to this account'
+                                : isGoogleAuthEnabled
+                                  ? 'Connect for faster sign-in'
+                                  : 'Google sign-in is unavailable'}
+                            </ThemedText>
+                          </View>
+                          {googleLinked ? (
+                            <ThemedText
+                              style={[
+                                styles.connectedText,
+                                {
+                                  color: accountColors.success,
+                                  backgroundColor: accountColors.background,
+                                },
+                              ]}
+                              type="smallBold"
+                            >
+                              Connected
+                            </ThemedText>
+                          ) : isGoogleAuthEnabled ? (
+                            <Pressable
+                              disabled={busy}
+                              onPress={() => void connectGoogle()}
+                              style={[styles.connectButton, busy && styles.disabled]}
+                            >
+                              <ThemedText type="smallBold">Connect</ThemedText>
+                            </Pressable>
+                          ) : null}
+                        </View>
+                        <View style={styles.methodRow}>
+                          <View style={styles.profileCopy}>
+                            <ThemedText type="smallBold">Apple</ThemedText>
+                            <ThemedText themeColor="textSecondary" type="small">
+                              {appleLinked
+                                ? 'Connected to this account'
+                                : appleAuthAvailable
+                                  ? 'Available on this iPhone or iPad'
+                                  : 'Available on supported Apple devices'}
+                            </ThemedText>
+                          </View>
+                          {appleLinked && (
+                            <ThemedText
+                              style={[
+                                styles.connectedText,
+                                {
+                                  color: accountColors.success,
+                                  backgroundColor: accountColors.background,
+                                },
+                              ]}
+                              type="smallBold"
+                            >
+                              Connected
+                            </ThemedText>
+                          )}
+                          {!appleLinked && appleAuthAvailable && (
+                            <Pressable
+                              disabled={busy || !isSupabaseConfigured}
+                              onPress={() => void connectApple()}
+                              style={[styles.connectButton, busy && styles.disabled]}
+                            >
+                              <ThemedText type="smallBold">Connect</ThemedText>
+                            </Pressable>
+                          )}
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                ) : pendingEmail ? (
+                  <PendingEmailConfirmation
+                    email={pendingEmail}
+                    onChangeEmail={() => {
+                      setPendingEmail('');
+                      globalThis.localStorage.removeItem('parish:pending-confirmation-email');
+                      setMode('sign-in');
+                      setAuthNotice(null);
+                    }}
+                  />
+                ) : (
+                  <>
+                    <View
+                      style={[
+                        styles.form,
+                        styles.authForm,
+                        { borderColor: colors.divider, backgroundColor: colors.background },
+                      ]}
+                    >
+                      {(mode === 'sign-in' || mode === 'sign-up') && (
+                        <View
+                          style={[styles.modeRow, { backgroundColor: colors.backgroundElement }]}
+                        >
+                          <AuthModeButton
+                            disabled={busy}
+                            active={mode === 'sign-in'}
+                            label="Sign in"
+                            onPress={() => {
+                              setMode('sign-in');
+                              setAuthNotice(null);
+                            }}
+                          />
+                          <AuthModeButton
+                            disabled={busy}
+                            active={mode === 'sign-up'}
+                            label="Create account"
+                            onPress={() => {
+                              setMode('sign-up');
+                              setAuthNotice(null);
+                            }}
+                          />
+                        </View>
+                      )}
+                      {(mode === 'sign-in' || mode === 'sign-up') &&
+                        (isGoogleAuthEnabled || appleAuthAvailable) && (
+                          <>
+                            {isGoogleAuthEnabled && (
+                              <Pressable
+                                accessibilityRole="button"
+                                accessibilityLabel={
+                                  mode === 'sign-up' ? 'Sign up with Google' : 'Sign in with Google'
+                                }
+                                disabled={busy || !isSupabaseConfigured}
+                                onPress={() => void continueWithGoogle()}
+                                style={[styles.googleButton, busy && styles.disabled]}
+                              >
+                                <GoogleMark />
+                                <ThemedText style={styles.googleButtonText} type="smallBold">
+                                  {mode === 'sign-up'
+                                    ? 'Sign up with Google'
+                                    : 'Sign in with Google'}
+                                </ThemedText>
+                              </Pressable>
+                            )}
+                            {appleAuthAvailable && (
+                              <AppleAuthentication.AppleAuthenticationButton
+                                buttonStyle={
+                                  AppleAuthentication.AppleAuthenticationButtonStyle.WHITE_OUTLINE
+                                }
+                                buttonType={
+                                  mode === 'sign-up'
+                                    ? AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP
+                                    : AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
+                                }
+                                cornerRadius={12}
+                                onPress={() => {
+                                  if (!busy && isSupabaseConfigured) void continueWithApple();
+                                }}
+                                style={[styles.appleButton, busy && styles.disabled]}
+                              />
+                            )}
+                            <View style={styles.orRow}>
+                              <View style={styles.orLine} />
+                              <ThemedText themeColor="textSecondary" type="small">
+                                or use email
+                              </ThemedText>
+                              <View style={styles.orLine} />
+                            </View>
+                          </>
+                        )}
+                      {mode === 'recovery' && (
+                        <View style={styles.recoveryHeading}>
+                          <BackPill
+                            label="Back to sign in"
+                            disabled={busy}
+                            onPress={() => {
+                              setMode('sign-in');
+                              setAuthNotice(null);
+                            }}
+                          />
+                          <ThemedText type="subtitle">Reset your password</ThemedText>
+                          <ThemedText themeColor="textSecondary">
+                            Enter the 6-digit code from your email and choose a new password.
+                          </ThemedText>
+                        </View>
+                      )}
+                      {authNotice && <AuthNotice notice={authNotice} />}
+                      {mode === 'sign-up' && (
+                        <Field
+                          label="Display name (optional)"
+                          {...inputPresets.name}
+                          value={displayName}
+                          onChangeText={setDisplayName}
+                          colors={colors}
+                          inputRef={displayNameInput}
+                          blurOnSubmit={false}
+                          returnKeyType="next"
+                          onSubmitEditing={() => emailInput.current?.focus()}
+                          error={authFieldErrors.displayName}
+                        />
+                      )}
+                      {mode !== 'email-code' && (
+                        <Field
+                          label="Email"
+                          value={email}
+                          onChangeText={setEmail}
+                          colors={colors}
+                          inputRef={emailInput}
+                          {...inputPresets.email}
+                          autoCapitalize="none"
+                          blurOnSubmit={false}
+                          returnKeyType="next"
+                          onSubmitEditing={() => {
+                            if (mode === 'sign-up') passwordInput.current?.focus();
+                            else if (mode === 'recovery') recoveryCodeInput.current?.focus();
+                            else passwordInput.current?.focus();
+                          }}
+                          error={authFieldErrors.email}
+                        />
+                      )}
+                      {mode === 'email-code' && (
+                        <EmailCodeVerification
+                          onResend={() => void requestEmailCode()}
+                          email={email}
+                          value={emailCode}
+                          onChange={changeEmailCode}
+                          inputRef={emailCodeInput}
+                          disabled={busy}
+                          onSubmit={() => {
+                            if (emailCode.length === 6 && !busy) void verifyEmailCode();
+                          }}
+                          onChangeEmail={() => {
+                            setMode('sign-in');
+                            setEmailCode('');
+                            setAuthNotice(null);
+                            setTimeout(() => emailInput.current?.focus(), 0);
+                          }}
+                        />
+                      )}
+                      {mode === 'recovery' && (
+                        <Field
+                          label="6-digit reset code"
+                          value={recoveryCode}
+                          onChangeText={changeRecoveryCode}
+                          colors={colors}
+                          inputRef={recoveryCodeInput}
+                          keyboardType="number-pad"
+                          maxLength={6}
+                          autoComplete="one-time-code"
+                          textContentType="oneTimeCode"
+                          blurOnSubmit={false}
+                          returnKeyType="next"
+                          onSubmitEditing={() => passwordInput.current?.focus()}
+                        />
+                      )}
+                      {mode !== 'email-code' && (
+                        <View style={styles.passwordGroup}>
+                          <Field
+                            label={
+                              mode === 'recovery'
+                                ? 'New password'
+                                : mode === 'sign-up'
+                                  ? 'Password'
+                                  : 'Password'
                             }
+                            value={password}
+                            onChangeText={setPassword}
+                            colors={colors}
+                            inputRef={passwordInput}
+                            secureTextEntry
+                            autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'}
+                            textContentType={mode === 'sign-in' ? 'password' : 'newPassword'}
+                            blurOnSubmit={mode !== 'recovery'}
+                            returnKeyType={mode === 'recovery' ? 'next' : 'done'}
+                            onSubmitEditing={() => {
+                              if (mode === 'recovery') passwordConfirmationInput.current?.focus();
+                              else void submitAuth();
+                            }}
+                            error={authFieldErrors.password}
+                          />
+                          {(mode === 'sign-up' || mode === 'recovery') && (
+                            <ThemedText themeColor="textSecondary" type="small">
+                              10–72 characters with uppercase, lowercase, and a number.
+                            </ThemedText>
+                          )}
+                        </View>
+                      )}
+                      {mode === 'recovery' && (
+                        <Field
+                          label="Confirm new password"
+                          value={passwordConfirmation}
+                          onChangeText={setPasswordConfirmation}
+                          colors={colors}
+                          inputRef={passwordConfirmationInput}
+                          secureTextEntry
+                          autoComplete="new-password"
+                          textContentType="newPassword"
+                          returnKeyType="done"
+                          onSubmitEditing={() => void resetPassword()}
+                        />
+                      )}
+                      {(mode === 'sign-in' || mode === 'sign-up') && (
+                        <RememberSessionToggle
+                          value={rememberSession}
+                          disabled={busy}
+                          onChange={(nextValue) => {
+                            setRememberSession(nextValue);
+                            setRememberSessionPreference(nextValue);
+                          }}
+                        />
+                      )}
+                      {mode === 'recovery' ? (
+                        <>
+                          <PrimaryButton
+                            loading={busy}
+                            label={busy ? 'Updating…' : 'Update password'}
+                            disabled={busy || !isSupabaseConfigured}
+                            onPress={() => void resetPassword()}
+                          />
+                        </>
+                      ) : mode === 'email-code' ? (
+                        <>
+                          <PrimaryButton
+                            loading={busy}
+                            label={busy ? 'Verifying…' : 'Verify and sign in'}
+                            disabled={busy || !isSupabaseConfigured || emailCode.length !== 6}
+                            onPress={() => void verifyEmailCode()}
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <PrimaryButton
+                            loading={busy}
+                            label={
+                              busy
+                                ? 'Please wait…'
+                                : mode === 'sign-in'
+                                  ? 'Sign in'
+                                  : 'Create account'
+                            }
+                            disabled={busy || !isSupabaseConfigured}
+                            onPress={() => void submitAuth()}
+                          />
+                          {mode === 'sign-in' && (
+                            <View style={styles.inlineActions}>
+                              <AppButton
+                                label="Use email code"
+                                accessibilityLabel="Email me a sign-in code"
+                                style={{ flex: 1 }}
+                                variant="secondary"
+                                disabled={busy || !isSupabaseConfigured}
+                                onPress={() => void requestEmailCode()}
+                              />
+                              <AppButton
+                                label="Reset password"
+                                accessibilityLabel="Forgot password?"
+                                style={{ flex: 1 }}
+                                variant="secondary"
+                                disabled={busy || !isSupabaseConfigured}
+                                onPress={() => void requestPasswordReset()}
+                              />
+                            </View>
+                          )}
+                          {mode === 'sign-up' && email.trim().length > 0 && (
+                            <AppButton
+                              label="Create account with email code"
+                              variant="secondary"
+                              disabled={busy || !isSupabaseConfigured}
+                              onPress={() => void requestEmailCode()}
+                            />
+                          )}
+                        </>
+                      )}
+                    </View>
+                    {(mode === 'sign-in' || mode === 'sign-up') && (
+                      <View style={[styles.welcomeCard, { borderTopColor: colors.divider }]}>
+                        <AppButton
+                          label="Browse as guest"
+                          accessibilityLabel="Continue browsing"
+                          style={{ flex: 1 }}
+                          variant="secondary"
+                          disabled={busy}
+                          onPress={() => router.replace('/explore')}
+                        />
+                        <AppButton
+                          label="List a business"
+                          accessibilityLabel="List your business"
+                          style={{ flex: 1 }}
+                          variant="secondary"
+                          disabled={busy}
+                          onPress={() => {
+                            savePendingAuthIntent({ kind: 'create_business' });
+                            setMode('sign-up');
+                            setAuthNotice({
+                              kind: 'info',
+                              message:
+                                'Create an account, then we’ll return you to business setup.',
+                            });
                           }}
                         />
                       </View>
                     )}
-                    <Pressable
-                      disabled={busy}
-                      onPress={() =>
-                        void (async () => {
-                          setGoogleLinkedThisSession(false);
-                          setAppleLinkedThisSession(false);
-                          await notifications.deactivate().catch(() => undefined);
-                          await nearbyAlerts
-                            .clearForAccount(session.user.id)
-                            .catch(() => undefined);
-                          clearBusinessOnboardingDraft(session.user.id);
-                          globalThis.localStorage.removeItem('sds-local:post-auth-destination');
-                          await clearBiometricSignInRefreshToken();
-                          await supabase.auth.signOut();
-                        })()
-                      }
-                      style={styles.signOutButton}
-                    >
-                      <ThemedText style={styles.signOutText} type="smallBold">
-                        Sign out
-                      </ThemedText>
-                    </Pressable>
                   </>
                 )}
-
-                {accountSection === 'profile' && (
-                  <View
-                    style={[
-                      styles.editorCard,
-                      { backgroundColor: accountColors.surface, borderColor: accountColors.border },
-                    ]}
-                  >
-                    <Field
-                      label="Display name (optional)"
-                      {...inputPresets.name}
-                      value={displayName}
-                      onChangeText={setDisplayName}
-                      colors={colors}
-                      inputRef={displayNameInput}
-                      blurOnSubmit={false}
-                      returnKeyType="next"
-                      onSubmitEditing={() => cityInput.current?.focus()}
-                    />
-                    <FlowSection title="Your area" description="Used to personalize nearby places.">
-                      <Field
-                        label="City"
-                        {...inputPresets.city}
-                        value={city}
-                        onChangeText={setCity}
-                        colors={colors}
-                        inputRef={cityInput}
-                        blurOnSubmit={false}
-                        returnKeyType="next"
-                        onSubmitEditing={() => postalCodeInput.current?.focus()}
-                      />
-                      <ChoicePicker
-                        label="State / region"
-                        businessStyle
-                        value={regionCode}
-                        onChange={setRegionCode}
-                        searchable
-                        searchPlaceholder="Search state or abbreviation"
-                        options={[
-                          { value: '', label: 'No state selected' },
-                          ...usRegionOptions.map(([value, name]) => ({
-                            value,
-                            label: `${name} (${value})`,
-                          })),
-                        ]}
-                      />
-                      <Field
-                        label="Postal code"
-                        {...inputPresets.postal}
-                        value={postalCode}
-                        onChangeText={setPostalCode}
-                        colors={colors}
-                        inputRef={postalCodeInput}
-                        returnKeyType="done"
-                        onSubmitEditing={() => void saveProfile()}
-                      />
-                    </FlowSection>
-                    <PrimaryButton
-                      loading={busy}
-                      label={busy ? 'Saving…' : 'Save profile'}
-                      disabled={busy}
-                      onPress={() => void saveProfile()}
-                    />
-                  </View>
-                )}
-
-                {accountSection === 'account-data' && <AccountDataPanel />}
-
-                {accountSection === 'notifications' && (
-                  <>
-                    <BusinessChimeSetting />
-                    <NotificationSettings />
-                  </>
-                )}
-
-                {accountSection === 'privacy-safety' && <><HelpPolicyLinks /><BlockedBusinessesPanel /></>}
-
-                {accountSection === 'sign-in-methods' && (
-                  <View
-                    style={[
-                      styles.editorCard,
-                      { backgroundColor: accountColors.surface, borderColor: accountColors.border },
-                    ]}
-                  >
-                    {authNotice && <AuthNotice notice={authNotice} />}
-                    <View style={styles.methodRow}>
-                      <View style={styles.profileCopy}>
-                        <ThemedText type="smallBold">Email</ThemedText>
-                        <ThemedText themeColor="textSecondary" type="small">
-                          {session.user.email ?? 'No email connected'}
-                        </ThemedText>
-                      </View>
-                      {emailLinked ? (
-                        <ThemedText
-                          style={[
-                            styles.connectedText,
-                            {
-                              color: accountColors.success,
-                              backgroundColor: accountColors.background,
-                            },
-                          ]}
-                          type="smallBold"
-                        >
-                          Connected
-                        </ThemedText>
-                      ) : (
-                        <ThemedText themeColor="textSecondary" type="smallBold">
-                          Not connected
-                        </ThemedText>
-                      )}
-                    </View>
-                    <View style={styles.methodRow}>
-                      <View style={styles.profileCopy}>
-                        <ThemedText type="smallBold">Google</ThemedText>
-                        <ThemedText themeColor="textSecondary" type="small">
-                          {googleLinked
-                            ? 'Connected to this account'
-                            : isGoogleAuthEnabled
-                              ? 'Connect for faster sign-in'
-                              : 'Google sign-in is unavailable'}
-                        </ThemedText>
-                      </View>
-                      {googleLinked ? (
-                        <ThemedText
-                          style={[
-                            styles.connectedText,
-                            {
-                              color: accountColors.success,
-                              backgroundColor: accountColors.background,
-                            },
-                          ]}
-                          type="smallBold"
-                        >
-                          Connected
-                        </ThemedText>
-                      ) : isGoogleAuthEnabled ? (
-                        <Pressable
-                          disabled={busy}
-                          onPress={() => void connectGoogle()}
-                          style={[styles.connectButton, busy && styles.disabled]}
-                        >
-                          <ThemedText type="smallBold">Connect</ThemedText>
-                        </Pressable>
-                      ) : null}
-                    </View>
-                    <View style={styles.methodRow}>
-                      <View style={styles.profileCopy}>
-                        <ThemedText type="smallBold">Apple</ThemedText>
-                        <ThemedText themeColor="textSecondary" type="small">
-                          {appleLinked
-                            ? 'Connected to this account'
-                            : appleAuthAvailable
-                              ? 'Available on this iPhone or iPad'
-                              : 'Available on supported Apple devices'}
-                        </ThemedText>
-                      </View>
-                      {appleLinked && (
-                        <ThemedText
-                          style={[
-                            styles.connectedText,
-                            {
-                              color: accountColors.success,
-                              backgroundColor: accountColors.background,
-                            },
-                          ]}
-                          type="smallBold"
-                        >
-                          Connected
-                        </ThemedText>
-                      )}
-                      {!appleLinked && appleAuthAvailable && (
-                        <Pressable
-                          disabled={busy || !isSupabaseConfigured}
-                          onPress={() => void connectApple()}
-                          style={[styles.connectButton, busy && styles.disabled]}
-                        >
-                          <ThemedText type="smallBold">Connect</ThemedText>
-                        </Pressable>
-                      )}
-                    </View>
-                  </View>
-                )}
-              </View>
-            ) : pendingEmail ? (
-              <PendingEmailConfirmation email={pendingEmail} onChangeEmail={() => { setPendingEmail(''); globalThis.localStorage.removeItem('parish:pending-confirmation-email'); setMode('sign-in'); setAuthNotice(null); }} />
-            ) : (
-              <>
-                <View
-                  style={[
-                    styles.form,
-                    styles.authForm,
-                    { borderColor: colors.divider, backgroundColor: colors.background },
-                  ]}
-                >
-                  {(mode === 'sign-in' || mode === 'sign-up') && (
-                    <View style={[styles.modeRow, { backgroundColor: colors.backgroundElement }]}>
-                      <AuthModeButton
-                        disabled={busy}
-                        active={mode === 'sign-in'}
-                        label="Sign in"
-                        onPress={() => {
-                          setMode('sign-in');
-                          setAuthNotice(null);
-                        }}
-                      />
-                      <AuthModeButton
-                        disabled={busy}
-                        active={mode === 'sign-up'}
-                        label="Create account"
-                        onPress={() => {
-                          setMode('sign-up');
-                          setAuthNotice(null);
-                        }}
-                      />
-                    </View>
-                  )}
-                  {(mode === 'sign-in' || mode === 'sign-up') &&
-                    (isGoogleAuthEnabled || appleAuthAvailable) && (
-                      <>
-                        {isGoogleAuthEnabled && (
-                          <Pressable
-                            accessibilityRole="button"
-                            accessibilityLabel={
-                              mode === 'sign-up' ? 'Sign up with Google' : 'Sign in with Google'
-                            }
-                            disabled={busy || !isSupabaseConfigured}
-                            onPress={() => void continueWithGoogle()}
-                            style={[styles.googleButton, busy && styles.disabled]}
-                          >
-                            <GoogleMark />
-                            <ThemedText style={styles.googleButtonText} type="smallBold">
-                              {mode === 'sign-up' ? 'Sign up with Google' : 'Sign in with Google'}
-                            </ThemedText>
-                          </Pressable>
-                        )}
-                        {appleAuthAvailable && (
-                          <AppleAuthentication.AppleAuthenticationButton
-                            buttonStyle={
-                              AppleAuthentication.AppleAuthenticationButtonStyle.WHITE_OUTLINE
-                            }
-                            buttonType={
-                              mode === 'sign-up'
-                                ? AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP
-                                : AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
-                            }
-                            cornerRadius={12}
-                            onPress={() => {
-                              if (!busy && isSupabaseConfigured) void continueWithApple();
-                            }}
-                            style={[styles.appleButton, busy && styles.disabled]}
-                          />
-                        )}
-                        <View style={styles.orRow}>
-                          <View style={styles.orLine} />
-                          <ThemedText themeColor="textSecondary" type="small">
-                            or use email
-                          </ThemedText>
-                          <View style={styles.orLine} />
-                        </View>
-                      </>
-                    )}
-                  {mode === 'recovery' && (
-                    <View style={styles.recoveryHeading}>
-                      <BackPill
-                        label="Back to sign in"
-                        disabled={busy}
-                        onPress={() => {
-                          setMode('sign-in');
-                          setAuthNotice(null);
-                        }}
-                      />
-                      <ThemedText type="subtitle">Reset your password</ThemedText>
-                      <ThemedText themeColor="textSecondary">
-                        Enter the 6-digit code from your email and choose a new password.
-                      </ThemedText>
-                    </View>
-                  )}
-                  {authNotice && <AuthNotice notice={authNotice} />}
-                  {mode === 'sign-up' && (
-                    <Field
-                      label="Display name (optional)"
-                      {...inputPresets.name}
-                      value={displayName}
-                      onChangeText={setDisplayName}
-                      colors={colors}
-                      inputRef={displayNameInput}
-                      blurOnSubmit={false}
-                      returnKeyType="next"
-                      onSubmitEditing={() => emailInput.current?.focus()}
-                      error={authFieldErrors.displayName}
-                    />
-                  )}
-                  {mode !== 'email-code' && (
-                    <Field
-                      label="Email"
-                      value={email}
-                      onChangeText={setEmail}
-                      colors={colors}
-                      inputRef={emailInput}
-                      {...inputPresets.email}
-                      autoCapitalize="none"
-                      blurOnSubmit={false}
-                      returnKeyType="next"
-                      onSubmitEditing={() => {
-                        if (mode === 'sign-up') passwordInput.current?.focus();
-                        else if (mode === 'recovery') recoveryCodeInput.current?.focus();
-                        else passwordInput.current?.focus();
-                      }}
-                      error={authFieldErrors.email}
-                    />
-                  )}
-                  {mode === 'email-code' && (
-                    <EmailCodeVerification
-                      onResend={() => void requestEmailCode()}
-                      email={email}
-                      value={emailCode}
-                      onChange={changeEmailCode}
-                      inputRef={emailCodeInput}
-                      disabled={busy}
-                      onSubmit={() => {
-                        if (emailCode.length === 6 && !busy) void verifyEmailCode();
-                      }}
-                      onChangeEmail={() => {
-                        setMode('sign-in');
-                        setEmailCode('');
-                        setAuthNotice(null);
-                        setTimeout(() => emailInput.current?.focus(), 0);
-                      }}
-                    />
-                  )}
-                  {mode === 'recovery' && (
-                    <Field
-                      label="6-digit reset code"
-                      value={recoveryCode}
-                      onChangeText={changeRecoveryCode}
-                      colors={colors}
-                      inputRef={recoveryCodeInput}
-                      keyboardType="number-pad"
-                      maxLength={6}
-                      autoComplete="one-time-code"
-                      textContentType="oneTimeCode"
-                      blurOnSubmit={false}
-                      returnKeyType="next"
-                      onSubmitEditing={() => passwordInput.current?.focus()}
-                    />
-                  )}
-                  {mode !== 'email-code' && (
-                    <View style={styles.passwordGroup}>
-                      <Field
-                        label={
-                          mode === 'recovery'
-                            ? 'New password'
-                            : mode === 'sign-up'
-                              ? 'Password'
-                              : 'Password'
-                        }
-                        value={password}
-                        onChangeText={setPassword}
-                        colors={colors}
-                        inputRef={passwordInput}
-                        secureTextEntry
-                        autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'}
-                        textContentType={mode === 'sign-in' ? 'password' : 'newPassword'}
-                        blurOnSubmit={mode !== 'recovery'}
-                        returnKeyType={mode === 'recovery' ? 'next' : 'done'}
-                        onSubmitEditing={() => {
-                          if (mode === 'recovery') passwordConfirmationInput.current?.focus();
-                          else void submitAuth();
-                        }}
-                        error={authFieldErrors.password}
-                      />
-                      {(mode === 'sign-up' || mode === 'recovery') && (
-                        <ThemedText themeColor="textSecondary" type="small">
-                          10–72 characters with uppercase, lowercase, and a number.
-                        </ThemedText>
-                      )}
-                    </View>
-                  )}
-                  {mode === 'recovery' && (
-                    <Field
-                      label="Confirm new password"
-                      value={passwordConfirmation}
-                      onChangeText={setPasswordConfirmation}
-                      colors={colors}
-                      inputRef={passwordConfirmationInput}
-                      secureTextEntry
-                      autoComplete="new-password"
-                      textContentType="newPassword"
-                      returnKeyType="done"
-                      onSubmitEditing={() => void resetPassword()}
-                    />
-                  )}
-                  {(mode === 'sign-in' || mode === 'sign-up') && (
-                    <RememberSessionToggle
-                      value={rememberSession}
-                      disabled={busy}
-                      onChange={(nextValue) => {
-                        setRememberSession(nextValue);
-                        setRememberSessionPreference(nextValue);
-                      }}
-                    />
-                  )}
-                  {mode === 'recovery' ? (
-                    <>
-                      <PrimaryButton
-                        loading={busy}
-                        label={busy ? 'Updating…' : 'Update password'}
-                        disabled={busy || !isSupabaseConfigured}
-                        onPress={() => void resetPassword()}
-                      />
-                    </>
-                  ) : mode === 'email-code' ? (
-                    <>
-                      <PrimaryButton
-                        loading={busy}
-                        label={busy ? 'Verifying…' : 'Verify and sign in'}
-                        disabled={busy || !isSupabaseConfigured || emailCode.length !== 6}
-                        onPress={() => void verifyEmailCode()}
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <PrimaryButton
-                        loading={busy}
-                        label={
-                          busy ? 'Please wait…' : mode === 'sign-in' ? 'Sign in' : 'Create account'
-                        }
-                        disabled={busy || !isSupabaseConfigured}
-                        onPress={() => void submitAuth()}
-                      />
-                      {mode === 'sign-in' && (
-                        <View style={styles.inlineActions}>
-                          <AppButton
-                            label="Use email code"
-                            accessibilityLabel="Email me a sign-in code"
-                            style={{ flex: 1 }}
-                            variant="secondary"
-                            disabled={busy || !isSupabaseConfigured}
-                            onPress={() => void requestEmailCode()}
-                          />
-                          <AppButton
-                            label="Reset password"
-                            accessibilityLabel="Forgot password?"
-                            style={{ flex: 1 }}
-                            variant="secondary"
-                            disabled={busy || !isSupabaseConfigured}
-                            onPress={() => void requestPasswordReset()}
-                          />
-                        </View>
-                      )}
-                      {mode === 'sign-up' && email.trim().length > 0 && (
-                        <AppButton
-                          label="Create account with email code"
-                          variant="secondary"
-                          disabled={busy || !isSupabaseConfigured}
-                          onPress={() => void requestEmailCode()}
-                        />
-                      )}
-                    </>
-                  )}
-                </View>
-                {(mode === 'sign-in' || mode === 'sign-up') && (
-                  <View style={[styles.welcomeCard, { borderTopColor: colors.divider }]}>
-                    <AppButton
-                      label="Browse as guest"
-                      accessibilityLabel="Continue browsing"
-                      style={{ flex: 1 }}
-                      variant="secondary"
-                      disabled={busy}
-                      onPress={() => router.replace('/explore')}
-                    />
-                    <AppButton
-                      label="List a business"
-                      accessibilityLabel="List your business"
-                      style={{ flex: 1 }}
-                      variant="secondary"
-                      disabled={busy}
-                      onPress={() => {
-                        savePendingAuthIntent({ kind: 'create_business' });
-                        setMode('sign-up');
-                        setAuthNotice({
-                          kind: 'info',
-                          message: 'Create an account, then we’ll return you to business setup.',
-                        });
-                      }}
-                    />
-                  </View>
-                )}
-              </>
-            )}
-          </ScrollView>
-        </SafeAreaView>
-      </ThemedView>
-    </SwipeBackView>
+              </ScrollView>
+            </SafeAreaView>
+          </ThemedView>
+        </SwipeBackView>
+      }
+    </PageHeaderScope>
   );
 }
 
@@ -1498,7 +1602,7 @@ function AccountOverviewUnderlay({
           scrollEnabled={false}
         >
           <AppChrome accountScreen />
-          <CustomerBrand />
+          <PageHeader />
           <ThemedText type="title">Account</ThemedText>
           <View style={styles.form}>
             <View
@@ -1588,17 +1692,27 @@ function AccountOverviewUnderlay({
               />
             </View>
             <HelpPolicyLinks />
-                    <ThemedText type="smallBold">Your customer activity</ThemedText>
+            <ThemedText type="smallBold">Your customer activity</ThemedText>
             <View
               style={[
                 styles.settingsGroup,
                 { backgroundColor: accountColors.surface, borderColor: accountColors.border },
               ]}
             >
-              <AccountSettingsRow label="My appointments" detail="Upcoming, past, reschedule and cancellation" onPress={() => router.push('/my-appointments' as never)} />
-              <AccountSettingsRow label="Following" detail="Businesses you follow" onPress={() => router.push({ pathname: '/rewards', params: { view: 'following' } } as never)} />
               <AccountSettingsRow
-                        label="My service requests"
+                label="My appointments"
+                detail="Upcoming, past, reschedule and cancellation"
+                onPress={() => router.push('/my-appointments' as never)}
+              />
+              <AccountSettingsRow
+                label="Following"
+                detail="Businesses you follow"
+                onPress={() =>
+                  router.push({ pathname: '/rewards', params: { view: 'following' } } as never)
+                }
+              />
+              <AccountSettingsRow
+                label="My service requests"
                 detail="Check quote and consultation request status"
                 onPress={() => undefined}
               />
@@ -1713,14 +1827,14 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: {
-    padding: Spacing.four,
+    padding: 20,
     paddingBottom: Spacing.three,
-    gap: Spacing.two,
+    gap: 16,
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
   },
-  form: { marginTop: Spacing.four, gap: Spacing.three },
+  form: { marginTop: 4, gap: 20 },
   authForm: {
     padding: 0,
     borderRadius: 0,
@@ -1759,18 +1873,19 @@ const styles = StyleSheet.create({
   authNoticeInfo: { backgroundColor: '#E7F0EA', borderColor: '#8EB49F' },
   authNoticeErrorText: { color: '#761F1F' },
   authNoticeInfoText: { color: '#164E38' },
+  activityGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   profileSummary: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
+    alignItems: 'flex-start',
+    gap: 16,
     padding: 20,
-    borderRadius: 12,
+    borderRadius: 20,
     borderWidth: 1,
   },
   avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 12,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#176B4D',
@@ -1779,7 +1894,7 @@ const styles = StyleSheet.create({
   profileCopy: { flex: 1, minWidth: 0, gap: 2 },
   settingsGroup: {
     overflow: 'hidden',
-    borderRadius: 12,
+    borderRadius: 18,
     borderWidth: 1,
     backgroundColor: 'rgba(120,140,128,0.10)',
   },
@@ -1796,7 +1911,7 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.65 },
   editorCard: {
     gap: Spacing.three,
-    borderRadius: 12,
+    borderRadius: 18,
     padding: Spacing.three,
     backgroundColor: 'rgba(120,140,128,0.10)',
   },

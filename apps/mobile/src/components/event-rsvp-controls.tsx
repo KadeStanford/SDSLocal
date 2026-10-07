@@ -1,3 +1,4 @@
+import { AppIcon } from '@/components/app-icon';
 import { useTheme } from '@/hooks/use-theme';
 import { Pressable, View } from 'react-native';
 import { AppButton } from '@/components/app-button';
@@ -75,7 +76,7 @@ export function EventRsvpControls({
             opacity: partySize <= 1 ? 0.45 : 1,
           }}
         >
-          <ThemedText type="title">−</ThemedText>
+          <AppIcon name="minus" size={18} />
         </Pressable>
         <ThemedText
           accessibilityLiveRegion="polite"
@@ -99,7 +100,7 @@ export function EventRsvpControls({
             opacity: partySize >= 10 ? 0.45 : 1,
           }}
         >
-          <ThemedText type="title">+</ThemedText>
+          <AppIcon name="plus" size={18} />
         </Pressable>
       </View>
       {summary?.my_status === 'waitlisted' && (

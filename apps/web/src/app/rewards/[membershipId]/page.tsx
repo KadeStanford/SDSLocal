@@ -1,3 +1,6 @@
+import { SurfacePanel } from '@/components/shared-ui';
+import { PageHeader } from '@/components/page-header';
+
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
@@ -50,16 +53,21 @@ export default async function RewardCardPage({
       .order('created_at', { ascending: false })
       .limit(30),
   ]);
-  if (membershipResult.error) return <main className="page-shell"><h1>Rewards couldn’t load</h1><p>Please retry from your wallet.</p><Link href="/rewards">Back to rewards</Link></main>;
+  if (membershipResult.error)
+    return (
+      <main className="page-shell">
+        <h1>Rewards couldn’t load</h1>
+        <p>Please retry from your wallet.</p>
+        <Link href="/rewards">Back to rewards</Link>
+      </main>
+    );
   if (!membershipResult.data) notFound();
   const membership = membershipResult.data as MembershipDetail;
 
   return (
     <main className="page-shell narrow-shell">
-      <nav className="topbar">
-        <Link className="brand" href="/rewards">
-          ← Rewards
-        </Link>
+      <PageHeader backHref="/rewards" backLabel="Back" />
+      <nav className="parish-page-links" aria-label="Page links">
         <Link href={`/b/${membership.business_slug}`}>View business</Link>
       </nav>
       {typeof query.error === 'string' && <p className="notice-error">{query.error}</p>}
@@ -71,28 +79,40 @@ export default async function RewardCardPage({
           <p className="eyebrow">{membership.business_name}</p>
           <h1>{membership.program_name}</h1>
           <p>{membership.reward_description}</p>
-          {membership.program_type === 'points' ? <p>{membership.available_points} points available · {membership.points_required} points per reward</p> : <div
-            className="stamp-progress"
-            aria-label={`${membership.progress_stamps} of ${membership.stamps_required} visits`}
-          >
-            {Array.from({ length: membership.stamps_required }, (_, index) => (
-              <span
-                className={index < membership.progress_stamps ? 'stamp-earned' : ''}
-                key={index}
-                aria-hidden="true"
-              />
-            ))}
-          </div>}
+          {membership.program_type === 'points' ? (
+            <p>
+              {membership.available_points} points available · {membership.points_required} points
+              per reward
+            </p>
+          ) : (
+            <div
+              className="stamp-progress"
+              aria-label={`${membership.progress_stamps} of ${membership.stamps_required} visits`}
+            >
+              {Array.from({ length: membership.stamps_required }, (_, index) => (
+                <span
+                  className={index < membership.progress_stamps ? 'stamp-earned' : ''}
+                  key={index}
+                  aria-hidden="true"
+                />
+              ))}
+            </div>
+          )}
           <strong>
             {membership.rewards_ready
               ? `${membership.rewards_ready} reward ready`
-              : membership.program_type === 'points' ? `${membership.progress_points} / ${membership.points_required} points toward your next reward` : `${membership.progress_stamps} / ${membership.stamps_required} visits`}
+              : membership.program_type === 'points'
+                ? `${membership.progress_points} / ${membership.points_required} points toward your next reward`
+                : `${membership.progress_stamps} / ${membership.stamps_required} visits`}
           </strong>
           {membership.terms && <p className="field-hint">{membership.terms}</p>}
         </div>
-        <RewardsCode membershipId={membership.membership_id} />
+        <RewardsCode
+          key={`${authData.user.id}:${membership.membership_id}`}
+          membershipId={membership.membership_id}
+        />
       </section>
-      <section className="panel">
+      <SurfacePanel>
         <h2>Recent activity</h2>
         <div className="loyalty-history">
           {((transactions ?? []) as Transaction[]).map((transaction) => (
@@ -102,17 +122,23 @@ export default async function RewardCardPage({
                   ? `+${transaction.amount} visit${transaction.amount === 1 ? '' : 's'}`
                   : transaction.transaction_type === 'redemption'
                     ? 'Reward redeemed'
-                    : transaction.transaction_type === 'points_earned' ? `+${transaction.points_amount} points` : 'Visit adjustment'}
+                    : transaction.transaction_type === 'points_earned'
+                      ? `+${transaction.points_amount} points`
+                      : 'Visit adjustment'}
               </span>
               <time>{new Date(transaction.created_at).toLocaleString()}</time>
             </div>
           ))}
-          {historyError && <p className="notice-error">Activity couldn’t load. Refresh to retry.</p>}
+          {historyError && (
+            <p className="notice-error">Activity couldn’t load. Refresh to retry.</p>
+          )}
           {!historyError && !transactions?.length && (
-            <p className="muted">Your rewards activity will appear here after staff scan your card.</p>
+            <p className="muted">
+              Your rewards activity will appear here after staff scan your card.
+            </p>
           )}
         </div>
-      </section>
+      </SurfacePanel>
       <form action={leaveRewardsAction.bind(null, membershipId)} className="leave-rewards-form">
         <button className="text-button">Leave this rewards program</button>
       </form>

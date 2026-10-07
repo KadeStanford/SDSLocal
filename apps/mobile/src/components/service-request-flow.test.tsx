@@ -10,6 +10,7 @@ const h = vi.hoisted(() => ({
   key: 0,
   rpc: vi.fn(),
   replace: vi.fn(),
+  back: vi.fn(),
   dispatch: vi.fn(),
   prevent: undefined as undefined | ((event: any) => void),
 }));
@@ -54,7 +55,7 @@ vi.mock('react', async () => {
 });
 vi.mock('expo-crypto', () => ({ randomUUID: () => `retry-${++h.key}` }));
 vi.mock('expo-router', () => ({
-  router: { replace: h.replace, push: vi.fn() },
+  router: { replace: h.replace, push: vi.fn(), back: h.back },
   useLocalSearchParams: () => ({ businessId: h.businessId }),
 }));
 vi.mock('expo-router/react-navigation', () => ({
@@ -71,6 +72,7 @@ vi.mock('react-native', () => ({
 }));
 vi.mock('react-native-safe-area-context', () => ({ SafeAreaView: 'SafeAreaView' }));
 vi.mock('@/components/app-chrome', () => ({ AppChrome: 'AppChrome' }));
+vi.mock('@/components/page-header', () => ({ PageHeader: 'PageHeader' }));
 vi.mock('@/components/customer-brand', () => ({ CustomerBrand: 'CustomerBrand' }));
 vi.mock('@/components/customer-ui', () => ({ CustomerAction: 'CustomerAction' }));
 vi.mock('@/components/request-form-ui', () => ({ RequestBusinessHeader: 'RequestBusinessHeader' }));
@@ -173,6 +175,7 @@ beforeEach(() => {
   h.key = 0;
   h.rpc.mockReset();
   h.replace.mockReset();
+  h.back.mockReset();
   h.dispatch.mockReset();
 });
 it('serializes duplicate taps and retries an uncertain submission with exactly the frozen reviewed payload', async () => {
@@ -272,4 +275,17 @@ it('ignores a late confirmation after the business/account context unmounts', as
     message: '',
     offeringId: null,
   });
+});
+it('keeps the single shared Back disabled while a request response is pending', async () => {
+  h.rpc.mockImplementation(() => new Promise(() => {}));
+  await reviewed();
+  const header = find('PageHeader');
+  expect(header.onBack).toBeTypeOf('function');
+  expect(header.backDisabled).toBe(false);
+  header.onBack();
+  expect(h.back).toHaveBeenCalledOnce();
+  find('ServiceRequestReview').onSend();
+  render();
+  expect(find('PageHeader').backDisabled).toBe(true);
+  expect(h.rpc).toHaveBeenCalledOnce();
 });

@@ -1,6 +1,7 @@
-import { CustomerBrand } from '@/components/customer-brand';
+import { PageHeader } from '@/components/page-header';
+
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppChrome } from '@/components/app-chrome';
@@ -34,7 +35,12 @@ export default function MyServiceRequestsScreen() {
   const { session } = useAuth();
   const owner = session?.user.id ?? null;
   const ownerRef = useRef(owner);
-  ownerRef.current = owner;
+  useLayoutEffect(() => {
+    ownerRef.current = owner;
+    return () => {
+      ownerRef.current = null;
+    };
+  }, [owner]);
   const generation = useRef(0);
   const mutation = useRef(false);
   const openedLink = useRef<string | null>(null);
@@ -51,16 +57,21 @@ export default function MyServiceRequestsScreen() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'active' | 'history'>('all');
-  const requests = snapshot?.owner === owner ? snapshot.requests : [];
+  const requests = useMemo(
+    () => (snapshot?.owner === owner ? snapshot.requests : []),
+    [snapshot, owner],
+  );
   const selected = requests.find((request) => request.id === selectedId);
   const visible = filterCustomerRequests(requests, filter, query);
-  useEffect(() => {
+  const [previousOwner, setPreviousOwner] = useState(owner);
+  if (previousOwner !== owner) {
+    setPreviousOwner(owner);
     setSelectedId(null);
     setNotice(null);
     setError(null);
     setQuery('');
     setFilter('all');
-  }, [owner]);
+  }
   const load = useCallback(async () => {
     const version = ++generation.current;
     if (!owner) {
@@ -109,7 +120,7 @@ export default function MyServiceRequestsScreen() {
       openedLink.current = link;
       setSelectedId(requestId!);
     }
-  }, [requestId, snapshot, owner]);
+  }, [requestId, requests, owner]);
 
   async function cancel(request: CustomerRequest, requestOwner: string) {
     if (mutation.current || ownerRef.current !== requestOwner || !canCancelCustomerRequest(request))
@@ -177,7 +188,10 @@ export default function MyServiceRequestsScreen() {
           }
         >
           <AppChrome />
-          <CustomerBrand />
+          <PageHeader
+            onBack={() => (router.canGoBack() ? router.back() : router.replace('/account'))}
+            backLabel="Back to account"
+          />
           <MerchantHeading
             title="Service requests"
             subtitle="Track your quotes and consultations."

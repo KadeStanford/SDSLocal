@@ -1,3 +1,4 @@
+import { AppIcon } from '@/components/app-icon';
 import { StyleSheet, View } from 'react-native';
 import { brandColor, readableTextColor } from '@/lib/color-contrast';
 import type { IdentityPhoto } from '@/lib/business-identity';
@@ -36,9 +37,7 @@ export function BusinessBrandHeader({
         )}
       </View>
       {trailing && (
-        <ThemedText accessible={false} type="subtitle" style={{ color: foreground }}>
-          ›
-        </ThemedText>
+        <AppIcon name="chevron-right" size={18} />
       )}
     </View>
   );

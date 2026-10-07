@@ -1,5 +1,5 @@
 import { withBusinessTheme } from '@/components/business-theme';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import { BusinessScreenHeader, BusinessTabs } from '@/components/business-screen-header';
 import { usePullRefresh } from '@/hooks/use-pull-refresh';
 import { PickupOrderCard } from '@/components/pickup/business-order-components';
@@ -82,7 +82,7 @@ function PickupInbox({ businessId }: { businessId: string | null }) {
         automaticallyAdjustContentInsets
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{
-          padding: 24,
+          padding: 20,
           paddingBottom: bottom,
           gap: 16,
           maxWidth: 760,
@@ -180,7 +180,7 @@ function PickupInbox({ businessId }: { businessId: string | null }) {
         {data && !data.connected && (
           <StateNotice message="Payments need attention. You can manage existing pickups here; ask an owner to check Ordering & payments." />
         )}
-        {!!workspace.error && <StateNotice message={workspace.error} />}{' '}
+        {!!workspace.error && <StateNotice message={workspace.error} />}
         {!!state.error && (
           <>
             <StateNotice message={state.error} kind="error" />

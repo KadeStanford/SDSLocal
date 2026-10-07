@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import type { ReactElement } from 'react';
+import { beforeEach, expect, it, vi } from 'vitest';
 import BusinessReviewsScreen from '@/app/business-reviews';
 vi.mock('@/components/app-text-input', () => ({ AppTextInput: 'TextInput' }));
+vi.mock('@/components/app-icon', () => ({ AppIcon: 'AppIcon' }));
 const h = vi.hoisted(() => ({
   slots: [] as any[],
   index: 0,
@@ -47,6 +47,17 @@ vi.mock('react', async () => {
           prior?.cleanup?.();
           slot.cleanup = effect();
         });
+      }
+    },
+    useLayoutEffect: (effect: () => any, deps: unknown[]) => {
+      const i = h.index++;
+      if (!same(h.slots[i]?.deps, deps)) {
+        const prior = h.slots[i];
+        const slot = { deps, cleanup: undefined as any };
+        h.slots[i] = slot;
+        // Commit effects run before queued asynchronous responses in this harness.
+        prior?.cleanup?.();
+        slot.cleanup = effect();
       }
     },
   };
@@ -96,6 +107,7 @@ vi.mock('@/components/merchant-ui', () => ({
   merchantStyles: { input: {} },
 }));
 vi.mock('@/hooks/use-merchant-theme', () => ({ useMerchantTheme: () => ({}) }));
+vi.mock('@/hooks/use-theme', () => ({ useTheme: () => ({}) }));
 vi.mock('@/hooks/use-screen-bottom-padding', () => ({ useScreenBottomPadding: () => 80 }));
 vi.mock('@/hooks/use-pull-refresh', () => ({
   usePullRefresh: (load: any) => ({ refreshing: false, onRefresh: load }),
@@ -222,3 +234,36 @@ it('does not clear a draft or show success for a mismatched save confirmation', 
   expect(find('TextInput').value).toBe('Thanks!');
   expect(find('MerchantSheet').visible).toBe(true);
 });
+it.each(['account', 'business'])(
+  'ignores a late reply confirmation after changing %s',
+  async (scope) => {
+    await draft();
+    let finish!: (value: unknown) => void;
+    h.rpc.mockImplementation((name: string) =>
+      name === 'reply_to_business_review'
+        ? new Promise((resolve) => {
+            finish = resolve;
+          })
+        : Promise.resolve({ data: { reviews: [] }, error: null }),
+    );
+    footer().onPress();
+    if (scope === 'account') h.owner = 'other-owner';
+    else h.businessId = 'other-business';
+    render();
+    render();
+    finish({
+      data: {
+        id: 'review',
+        source: 'order',
+        merchantResponse: 'Thanks!',
+        respondedAt: '2026-10-06T04:00:00Z',
+      },
+      error: null,
+    });
+    await settle();
+    expect(find('MerchantSheet').visible).toBe(false);
+    expect(
+      nodes(tree).some((node) => node.type === 'StateNotice' && node.props.kind === 'success'),
+    ).toBe(false);
+  },
+);

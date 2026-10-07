@@ -1,5 +1,5 @@
 import { Pressable, View } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import { useTheme } from '@/hooks/use-theme';
 import { AppTextInput } from './app-text-input';
 import { MerchantSheet } from './merchant-ui';

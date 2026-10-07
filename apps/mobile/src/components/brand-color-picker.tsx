@@ -1,3 +1,4 @@
+import { AppIcon } from '@/components/app-icon';
 import { useId, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { AppTextInput as TextInput } from '@/components/app-text-input';
@@ -111,7 +112,7 @@ export function BrandColorEditor({
                   borderColor: c.border,
                 }}
               >
-                {color === s && <ThemedText style={{ color: colorText(s) }}>✓</ThemedText>}
+                {color === s && <AppIcon name="check" size={18} />}
               </View>
             </Pressable>
           ))}
@@ -337,7 +338,7 @@ export function BrandColorPicker({
             Tap to choose a color
           </ThemedText>
         </View>
-        <ThemedText themeColor="textSecondary">›</ThemedText>
+        <AppIcon name="chevron-right" size={18} />
       </Pressable>
       <MerchantSheet
         visible={draft !== null}

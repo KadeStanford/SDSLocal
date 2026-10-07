@@ -1,0 +1,1088 @@
+{
+  "schemaVersion": 1,
+  "observedAtUtc": "2026-10-06T03:58:16.136Z",
+  "product": "Parish Pass",
+  "target": "normal preview OTA",
+  "parityEstablished": false,
+  "staging": {
+    "project": "@kadestanford/sds-local",
+    "projectId": "2406d47e-390c-4a39-932c-325b2ec5ab99",
+    "channel": {
+      "name": "preview",
+      "paused": false,
+      "updatedAt": "2026-09-18T20:02:21.618Z",
+      "branches": [
+        {
+          "name": "preview",
+          "id": "01a0b61c-e265-7799-9e61-802bc219a400",
+          "latestUpdates": [
+            {
+              "id": "01a0f73c-a4db-763d-a595-0821a37120c8",
+              "group": "2217fdae-1e17-48ad-9ff7-2a895a867b46",
+              "platform": "android",
+              "message": "Business plan prompts and access refresh; preserve existing order, appointment and reward recovery; clearer password reset",
+              "createdAt": "2026-10-01T11:32:21.851Z",
+              "runtimeVersion": "0.1.0",
+              "gitCommitHash": "79af5590270e826aae8e4219ec6e670fe57dadb5",
+              "appEnv": "staging",
+              "testerBuild": false,
+              "sdkVersion": "57.0.0",
+              "associatedDomains": [],
+              "intentFilters": []
+            },
+            {
+              "id": "01a0f73c-a4db-7e34-a1aa-14cc60c7a89b",
+              "group": "2217fdae-1e17-48ad-9ff7-2a895a867b46",
+              "platform": "ios",
+              "message": "Business plan prompts and access refresh; preserve existing order, appointment and reward recovery; clearer password reset",
+              "createdAt": "2026-10-01T11:32:21.851Z",
+              "runtimeVersion": "0.1.0",
+              "gitCommitHash": "79af5590270e826aae8e4219ec6e670fe57dadb5",
+              "appEnv": "staging",
+              "testerBuild": false,
+              "sdkVersion": "57.0.0",
+              "associatedDomains": [],
+              "intentFilters": []
+            }
+          ]
+        }
+      ]
+    },
+    "publishedManifests": [
+      {
+        "id": "01a0f73c-a4db-7e34-a1aa-14cc60c7a89b",
+        "createdAt": "2026-10-01T11:32:21.851Z",
+        "runtimeVersion": "0.1.0",
+        "platform": "ios",
+        "name": "Parish Pass",
+        "slug": "sds-local",
+        "appEnvironment": "staging",
+        "testerBuild": false,
+        "sdkVersion": "57.0.0",
+        "iconPath": "./assets/branding/parish-pass/native-icon-light.png",
+        "backgroundColor": "#102D25",
+        "iosAssociatedDomains": [],
+        "androidIntentFilters": [],
+        "launchAssetHash": "MOcEHFFWO8ch8Ag2xNojoQByBZXFksjcCN9_yVGjGjs",
+        "launchAssetKey": "e02e915c5984a93d805c0c1d17225610",
+        "assets": 24,
+        "limit": "Public published manifest inspected; embedded asset secrets and user data not exported; source not reconstructed."
+      },
+      {
+        "id": "01a0f73c-a4db-763d-a595-0821a37120c8",
+        "createdAt": "2026-10-01T11:32:21.851Z",
+        "runtimeVersion": "0.1.0",
+        "platform": "android",
+        "name": "Parish Pass",
+        "slug": "sds-local",
+        "appEnvironment": "staging",
+        "testerBuild": false,
+        "sdkVersion": "57.0.0",
+        "iconPath": "./assets/branding/parish-pass/native-icon-light.png",
+        "backgroundColor": "#102D25",
+        "iosAssociatedDomains": [],
+        "androidIntentFilters": [],
+        "launchAssetHash": "Pft_7lHNv8goMN2J8i574QUThsy7c79fo63ikacI2sc",
+        "launchAssetKey": "ac1d91d64cb2c8b2fcd139747ad4cb1a",
+        "assets": 28,
+        "limit": "Public published manifest inspected; embedded asset secrets and user data not exported; source not reconstructed."
+      }
+    ],
+    "nativeBuilds": [
+      {
+        "id": "a25a9563-166c-498d-a1d3-752ab822fdcd",
+        "status": "FINISHED",
+        "platform": "ANDROID",
+        "channel": "preview",
+        "distribution": "STORE",
+        "buildProfile": "preview-store",
+        "appVersion": "0.1.0",
+        "buildNumber": "3",
+        "runtimeVersion": "0.1.0",
+        "gitCommitHash": "30ee952f6d3083812236fbb49b6d349e502fa405",
+        "gitCommitMessage": "Record invitation Preview release and remaining utility review",
+        "createdAt": "2026-09-29T02:21:50.908Z",
+        "completedAt": "2026-09-29T02:38:51.419Z",
+        "message": "Parish Pass Google Play subscription sandbox; staging preview channel",
+        "fingerprint": "d1895dc66af49f1a436efd460f645c5c431cd02a",
+        "dashboard": "https://expo.dev/accounts/kadestanford/projects/sds-local/builds/a25a9563-166c-498d-a1d3-752ab822fdcd"
+      },
+      {
+        "id": "0e325e04-a6f4-4117-937e-a373c6015126",
+        "status": "FINISHED",
+        "platform": "ANDROID",
+        "channel": "preview",
+        "distribution": "INTERNAL",
+        "buildProfile": "preview",
+        "appVersion": "0.1.0",
+        "buildNumber": "1",
+        "runtimeVersion": "0.1.0",
+        "createdAt": "2026-09-28T23:48:40.580Z",
+        "completedAt": "2026-09-29T00:13:45.380Z",
+        "message": "Parish Pass native splash and adaptive icon; source 5085e21",
+        "fingerprint": "8360b1202f744b78bd4903b43ef904019295e188",
+        "dashboard": "https://expo.dev/accounts/kadestanford/projects/sds-local/builds/0e325e04-a6f4-4117-937e-a373c6015126"
+      },
+      {
+        "id": "474ce2f8-42ba-4ad9-baf9-40837048090c",
+        "status": "FINISHED",
+        "platform": "IOS",
+        "channel": "preview",
+        "distribution": "INTERNAL",
+        "buildProfile": "preview",
+        "appVersion": "0.1.0",
+        "buildNumber": "1",
+        "runtimeVersion": "0.1.0",
+        "createdAt": "2026-09-28T23:48:36.284Z",
+        "completedAt": "2026-09-28T23:57:56.040Z",
+        "message": "Parish Pass native splash and light/dark icons; source 5085e21",
+        "fingerprint": "39827d3edbbb9b8de21411b616ed4c797ef562bc",
+        "dashboard": "https://expo.dev/accounts/kadestanford/projects/sds-local/builds/474ce2f8-42ba-4ad9-baf9-40837048090c"
+      },
+      {
+        "id": "5b5e62e9-e12f-4618-a403-2e08ae08e133",
+        "status": "FINISHED",
+        "platform": "IOS",
+        "channel": "preview",
+        "distribution": "INTERNAL",
+        "buildProfile": "preview",
+        "appVersion": "0.1.0",
+        "buildNumber": "1",
+        "runtimeVersion": "0.1.0",
+        "gitCommitHash": "869d504e78ca23fc7adfda311cc286dead5a9f8a",
+        "gitCommitMessage": "fix(mobile): load Stripe Connect onboarding WebView",
+        "createdAt": "2026-09-27T00:42:04.361Z",
+        "completedAt": "2026-09-27T00:51:30.841Z",
+        "message": "fix: include Stripe Connect WebView for onboarding",
+        "fingerprint": "d07fa5a989037d74a875bc775987ab0b91564f53",
+        "dashboard": "https://expo.dev/accounts/kadestanford/projects/sds-local/builds/5b5e62e9-e12f-4618-a403-2e08ae08e133"
+      },
+      {
+        "id": "ddcab566-7139-4840-8068-3f31925eb496",
+        "status": "FINISHED",
+        "platform": "IOS",
+        "channel": "preview",
+        "distribution": "INTERNAL",
+        "buildProfile": "preview",
+        "appVersion": "0.1.0",
+        "buildNumber": "1",
+        "runtimeVersion": "0.1.0",
+        "gitCommitHash": "66285464262a65d17b7535beb30920470c7f9510",
+        "gitCommitMessage": "Complete native business management controls",
+        "createdAt": "2026-09-18T20:03:17.350Z",
+        "completedAt": "2026-09-18T20:12:52.411Z",
+        "fingerprint": "6d3fd28aa85ffd417a688e40c051d875b15bfc13",
+        "dashboard": "https://expo.dev/accounts/kadestanford/projects/sds-local/builds/ddcab566-7139-4840-8068-3f31925eb496"
+      }
+    ],
+    "backend": {
+      "url": "https://lgddhdexvwclfrnzjtly.supabase.co",
+      "ref": "lgddhdexvwclfrnzjtly",
+      "latestMigration": {
+        "version": "20261001103316",
+        "name": "20261001000100_existing_obligation_recovery",
+        "insertedAtUtc": "2026-10-01T10:33:16Z"
+      },
+      "historyRows": 164,
+      "historyLimits": "History-name comparison; manual equivalent SQL or function definitions were not verified. Dashboard renumbers versions on execution, so local filenames and deployed version numbers cannot be compared directly.",
+      "functions": [
+        "business-media-upload-intent",
+        "delete-account",
+        "finalize-business-image",
+        "loyalty-token",
+        "loyalty-transact",
+        "media-cleanup",
+        "notification-dispatch",
+        "revenuecat-webhook",
+        "square-commerce",
+        "square-maintenance",
+        "square-oauth-callback",
+        "square-webhook",
+        "stripe-checkout-return",
+        "stripe-oauth-callback",
+        "stripe-webhook"
+      ],
+      "auth": {
+        "emailConfirmationRequired": true,
+        "signupAllowed": true,
+        "googleEnabled": true,
+        "appleEnabled": true
+      },
+      "anonymousAdminRpcDenied": true,
+      "rls": {
+        "verified": "Anonymous reads of public business/category/catalog contracts; anonymous admin lookup denied",
+        "unverified": "Actual table policies and customer/owner/staff/admin permission matrix; management API token returned401"
+      },
+      "featureFlags": {
+        "status": "unverified",
+        "reason": "No sanitized deployed platform_settings values or provider enrollment/enablement state retrieved; no equality asserted"
+      }
+    }
+  },
+  "source": {
+    "github": {
+      "inspectedAtUtc": "2026-10-06T03:20:22.168Z",
+      "repository": "KadeStanford/SDSLocal",
+      "remote": {
+        "branch": "main",
+        "sha": "99711716ceebf4f62bc9c4ba73ecc25994ccc07e",
+        "commitDateUtc": "2026-09-22T00:30:40Z",
+        "subject": "Publish SDSLocal",
+        "method": "Authorized GitHub REST read; commit timestamp, not independently observed push timestamp"
+      },
+      "local": {
+        "checkout": "F:\\BusinessApp",
+        "branch": "main",
+        "sha": "79af5590270e826aae8e4219ec6e670fe57dadb5",
+        "commitDateUtc": "2026-09-29T02:39:37.000Z",
+        "subject": "Record verified review reply release and subscription coordination",
+        "statusEntries": 410,
+        "trackedChanges": 184,
+        "untrackedEntries": 226
+      },
+      "localCommitsNotOnRemoteMain": [
+        {
+          "sha": "79af5590270e826aae8e4219ec6e670fe57dadb5",
+          "date": "2026-09-28T21:39:37-05:00",
+          "dateUtc": "2026-09-29T02:39:37.000Z",
+          "subject": "Record verified review reply release and subscription coordination"
+        },
+        {
+          "sha": "b5ed6e9c0df233d65cc33c8cdaa2d981d2eb8682",
+          "date": "2026-09-28T21:33:43-05:00",
+          "dateUtc": "2026-09-29T02:33:43.000Z",
+          "subject": "Fix owner review replies and refine Privacy settings"
+        },
+        {
+          "sha": "30ee952f6d3083812236fbb49b6d349e502fa405",
+          "date": "2026-09-28T21:14:46-05:00",
+          "dateUtc": "2026-09-29T02:14:46.000Z",
+          "subject": "Record invitation Preview release and remaining utility review"
+        },
+        {
+          "sha": "d03c89bf25c9ac07f52cdfd2a52f58edb69dc3a9",
+          "date": "2026-09-28T21:12:24-05:00",
+          "dateUtc": "2026-09-29T02:12:24.000Z",
+          "subject": "Refine staff invitation and sign-in recovery"
+        },
+        {
+          "sha": "8ab485b24a6e1482ef8a71715a0a946eccdcc7aa",
+          "date": "2026-09-28T21:04:38-05:00",
+          "dateUtc": "2026-09-29T02:04:38.000Z",
+          "subject": "Record verified ratings and attendees staging release"
+        },
+        {
+          "sha": "9e10ae57a96e6a28b7b9ee7c620c3adf86310632",
+          "date": "2026-09-28T20:57:05-05:00",
+          "dateUtc": "2026-09-29T01:57:05.000Z",
+          "subject": "Refine event attendee inbox and protect roster exports"
+        },
+        {
+          "sha": "78dfda6faea7bd6630fb285818620e038abce160",
+          "date": "2026-09-28T20:48:58-05:00",
+          "dateUtc": "2026-09-29T01:48:58.000Z",
+          "subject": "Show business star ratings and seed requested staging review samples"
+        },
+        {
+          "sha": "3780e560c17ede0dddecbbd1cdf9234406d7912c",
+          "date": "2026-09-28T20:36:46-05:00",
+          "dateUtc": "2026-09-29T01:36:46.000Z",
+          "subject": "Refine authentication hierarchy and guarded navigation"
+        },
+        {
+          "sha": "19ac07af281613ea5539bba450d630ac546e9db3",
+          "date": "2026-09-28T20:30:27-05:00",
+          "dateUtc": "2026-09-29T01:30:27.000Z",
+          "subject": "Record verified Staff Scan staging OTA"
+        },
+        {
+          "sha": "165af7197d74f7a41c94df212d9440f394fd0f43",
+          "date": "2026-09-28T20:27:52-05:00",
+          "dateUtc": "2026-09-29T01:27:52.000Z",
+          "subject": "Unify Staff Scan controls and reconcile redesign progress"
+        },
+        {
+          "sha": "15e32bfc71c23eb6f5be890979409b3ca8548068",
+          "date": "2026-09-28T20:20:32-05:00",
+          "dateUtc": "2026-09-29T01:20:32.000Z",
+          "subject": "Record verified customer fixes staging OTA publication"
+        },
+        {
+          "sha": "acdc9d77670f26391e88f0551e7b51d451b7db83",
+          "date": "2026-09-28T20:13:04-05:00",
+          "dateUtc": "2026-09-29T01:13:04.000Z",
+          "subject": "Guard event sheet reminder and RSVP mutations across navigation"
+        },
+        {
+          "sha": "eede06db08d374aa780f9e8257f8609116a10b7e",
+          "date": "2026-09-28T20:11:34-05:00",
+          "dateUtc": "2026-09-29T01:11:34.000Z",
+          "subject": "Fix staging RSVP and owner reviews; streamline customer and business screens"
+        },
+        {
+          "sha": "89ee447089ce6654cd22e78c9ed8ce4b93091af5",
+          "date": "2026-09-28T19:36:14-05:00",
+          "dateUtc": "2026-09-29T00:36:14.000Z",
+          "subject": "Record public page and order guidance staging verification"
+        },
+        {
+          "sha": "5f8dd6e53e5df6e12e2578ab871391b59cd424d0",
+          "date": "2026-09-28T19:33:02-05:00",
+          "dateUtc": "2026-09-29T00:33:02.000Z",
+          "subject": "Prioritize public business actions and clarify order stage guidance"
+        },
+        {
+          "sha": "22f1d531cae680ae06ae737749374406b7468097",
+          "date": "2026-09-28T19:28:54-05:00",
+          "dateUtc": "2026-09-29T00:28:54.000Z",
+          "subject": "Document verified customer workflow staging release"
+        },
+        {
+          "sha": "a05a9bfa3fed17e469f22466e38b2546e89103ad",
+          "date": "2026-09-28T19:22:04-05:00",
+          "dateUtc": "2026-09-29T00:22:04.000Z",
+          "subject": "Redesign service request review and clarify rewards wallet progress"
+        },
+        {
+          "sha": "c5fe4c292824d5df240f4d7009aaf5baa27ea973",
+          "date": "2026-09-28T19:10:55-05:00",
+          "dateUtc": "2026-09-29T00:10:55.000Z",
+          "subject": "Record native Parish Pass builds and verified iOS package"
+        },
+        {
+          "sha": "e3824789a9beba73a72a1b5241ffea467eaca1da",
+          "date": "2026-09-28T19:07:58-05:00",
+          "dateUtc": "2026-09-29T00:07:58.000Z",
+          "subject": "Record calendar alignment correction and verified staging release"
+        },
+        {
+          "sha": "bf601de1206d769a88c8e38699392bb3f32495e9",
+          "date": "2026-09-28T19:04:41-05:00",
+          "dateUtc": "2026-09-29T00:04:41.000Z",
+          "subject": "Fix native calendar week alignment and simplify month styling"
+        },
+        {
+          "sha": "5ef54cafa2fb82d81bd49fc1d5a7c29e227a7a9e",
+          "date": "2026-09-28T18:57:20-05:00",
+          "dateUtc": "2026-09-28T23:57:20.000Z",
+          "subject": "Record verified customer screen staging OTA and remaining redesign scope"
+        },
+        {
+          "sha": "3f01fe7d149aee1a3a0b64f45589d2fc4f138cc8",
+          "date": "2026-09-28T18:53:02-05:00",
+          "dateUtc": "2026-09-28T23:53:02.000Z",
+          "subject": "Redesign customer request history, calendar and focused rewards codes"
+        },
+        {
+          "sha": "b134675c78a76c0197dbd43f1ce33a135e24c0bb",
+          "date": "2026-09-28T18:48:59-05:00",
+          "dateUtc": "2026-09-28T23:48:59.000Z",
+          "subject": "Apply Parish Pass native splash and platform app icons"
+        },
+        {
+          "sha": "3d0f9c953c4dfb854b45a3c63b0fb821e592e9f1",
+          "date": "2026-09-28T18:39:45-05:00",
+          "dateUtc": "2026-09-28T23:39:45.000Z",
+          "subject": "Record animated splash staging release and brand coordination"
+        },
+        {
+          "sha": "586e4eb3f8c598d6b46576db0c318ddaf9baa957",
+          "date": "2026-09-28T18:38:19-05:00",
+          "dateUtc": "2026-09-28T23:38:19.000Z",
+          "subject": "Add animated Parish Pass startup and shared scalable emblem"
+        },
+        {
+          "sha": "7e8245fa69d93748a47d1c70bb97cd772afd970a",
+          "date": "2026-09-28T18:35:43-05:00",
+          "dateUtc": "2026-09-28T23:35:43.000Z",
+          "subject": "Record combined staging OTA and Account alerts regression fix"
+        },
+        {
+          "sha": "5fa0a5eda43176d5760ac4f164c2b2c4e362473c",
+          "date": "2026-09-28T18:29:25-05:00",
+          "dateUtc": "2026-09-28T23:29:25.000Z",
+          "subject": "Guard Preview releases against stale account, alerts and home source"
+        },
+        {
+          "sha": "02442954a7ca9a5ba7013809a89c1e80a576f710",
+          "date": "2026-09-28T18:26:53-05:00",
+          "dateUtc": "2026-09-28T23:26:53.000Z",
+          "subject": "Retain selected Parish Pass icons and startup branding"
+        },
+        {
+          "sha": "ac733d7de9662d4cca4491839e3e805446ffe8f0",
+          "date": "2026-09-28T18:23:57-05:00",
+          "dateUtc": "2026-09-28T23:23:57.000Z",
+          "subject": "Preserve combined Parish Pass home, account and order workflows"
+        },
+        {
+          "sha": "e4c6a60038b9fcdf6a7ece3759b01e968924d831",
+          "date": "2026-09-28T18:19:54-05:00",
+          "dateUtc": "2026-09-28T23:19:54.000Z",
+          "subject": "Keep listing plan regression tests outside app routes"
+        },
+        {
+          "sha": "f22c9cc2601ae5ec85ba2621d0b317dd04c7f74c",
+          "date": "2026-09-28T18:16:58-05:00",
+          "dateUtc": "2026-09-28T23:16:58.000Z",
+          "subject": "Redesign account, alerts, payment setup and merchant content tools"
+        },
+        {
+          "sha": "456062ffb30bda1882571c78773511b7e9b1f07a",
+          "date": "2026-09-28T17:42:19-05:00",
+          "dateUtc": "2026-09-28T22:42:19.000Z",
+          "subject": "Record verified Preview UI redesign release"
+        },
+        {
+          "sha": "da28fc3ae811545fc073470dacb9716aed9d1cfb",
+          "date": "2026-09-28T17:38:36-05:00",
+          "dateUtc": "2026-09-28T22:38:36.000Z",
+          "subject": "Redesign merchant workflows and appointment booking; fix RSVP card layout"
+        },
+        {
+          "sha": "37522bb2236931bffe7daf25694b2d6dd0c5bd38",
+          "date": "2026-09-28T16:47:56-05:00",
+          "dateUtc": "2026-09-28T21:47:56.000Z",
+          "subject": "Record shared dark background Preview update"
+        },
+        {
+          "sha": "dc3879a69ac2cbc2f324c1129226ce6b60a4f809",
+          "date": "2026-09-28T16:40:24-05:00",
+          "dateUtc": "2026-09-28T21:40:24.000Z",
+          "subject": "Use shared dark background for merchant business screen"
+        },
+        {
+          "sha": "c10fe341c3c714765b7c12f53336449ae9878a6d",
+          "date": "2026-09-28T16:32:41-05:00",
+          "dateUtc": "2026-09-28T21:32:41.000Z",
+          "subject": "Record verified merchant interface Preview release"
+        },
+        {
+          "sha": "e399030074ba47118b1520391f4af7764656f6c9",
+          "date": "2026-09-28T16:23:56-05:00",
+          "dateUtc": "2026-09-28T21:23:56.000Z",
+          "subject": "Redesign merchant business list and simplify order actions"
+        },
+        {
+          "sha": "133fc699dc1e66ebc5a77e36b38682b8a66cbe96",
+          "date": "2026-09-28T15:44:41-05:00",
+          "dateUtc": "2026-09-28T20:44:41.000Z",
+          "subject": "Fix order confirmation and replies, add item refunds and simplify business screens"
+        },
+        {
+          "sha": "b02e07eabf8c623d5e027dffea12f62d1f4dc588",
+          "date": "2026-09-28T15:05:17-05:00",
+          "dateUtc": "2026-09-28T20:05:17.000Z",
+          "subject": "Record verified Supabase and Expo staging payment release"
+        },
+        {
+          "sha": "b3f47c37406d89de2fd90a58c6d7a7e6f48cb36d",
+          "date": "2026-09-28T14:59:55-05:00",
+          "dateUtc": "2026-09-28T19:59:55.000Z",
+          "subject": "Fix payment lifecycle settlement and staging recovery"
+        }
+      ]
+    },
+    "dependencyFiles": [
+      {
+        "path": "pnpm-lock.yaml",
+        "sha256": "aa742670753c730b5da63dc9703832cfada1372f80d4822ba59827d4bcae6234"
+      },
+      {
+        "path": "package.json",
+        "sha256": "63dba69f971766ab7883d8daae9a5ab429c83fab8a2d1c04188a6ba38027daad"
+      },
+      {
+        "path": "apps/mobile/package.json",
+        "sha256": "96971bbb17e2e7dadc4f66bfc77baffa47b6d97fe2e575d2d120f87d64c6cd7f"
+      },
+      {
+        "path": "apps/web/package.json",
+        "sha256": "07d4e75631143a7a0dad6e46adce035829db436a29b5b0b8703dd2081fdce7f8"
+      }
+    ],
+    "declaredDependencies": {
+      "package.json": {
+        "sha256": "63dba69f971766ab7883d8daae9a5ab429c83fab8a2d1c04188a6ba38027daad",
+        "devDependencies": {
+          "@types/node": "22.20.2",
+          "eas-cli": "24.4.2",
+          "prettier": "^3.6.2",
+          "rimraf": "^6.1.2",
+          "supabase": "^2.72.7",
+          "turbo": "^2.10.13",
+          "typescript": "~6.0.3",
+          "vitest": "^4.0.18"
+        },
+        "packageManager": "pnpm@11.19.0",
+        "engines": {
+          "node": ">=24 <25",
+          "pnpm": ">=11 <12"
+        }
+      },
+      "apps/mobile/package.json": {
+        "sha256": "96971bbb17e2e7dadc4f66bfc77baffa47b6d97fe2e575d2d120f87d64c6cd7f",
+        "dependencies": {
+          "@expo/ui": "~57.0.18",
+          "@react-native-community/netinfo": "12.0.1",
+          "@react-native-google-signin/google-signin": "^16.1.5",
+          "@sds/api-client": "workspace:*",
+          "@sds/business-logic": "workspace:*",
+          "@sds/design-tokens": "workspace:*",
+          "@sds/image-processing-config": "workspace:*",
+          "@sds/types": "workspace:*",
+          "@sds/validation": "workspace:*",
+          "@stripe/stripe-react-native": "0.64.0",
+          "@supabase/supabase-js": "^2.116.0",
+          "expo": "~57.0.23",
+          "expo-apple-authentication": "~57.0.2",
+          "expo-audio": "~57.0.5",
+          "expo-calendar": "~57.0.3",
+          "expo-camera": "^57.0.5",
+          "expo-clipboard": "~57.0.2",
+          "expo-constants": "~57.0.18",
+          "expo-contacts": "~57.0.5",
+          "expo-crypto": "^57.0.3",
+          "expo-dev-client": "~57.0.19",
+          "expo-device": "~57.0.2",
+          "expo-document-picker": "~57.0.2",
+          "expo-file-system": "~57.0.7",
+          "expo-font": "~57.0.4",
+          "expo-glass-effect": "~57.0.3",
+          "expo-haptics": "~57.0.3",
+          "expo-image": "~57.0.5",
+          "expo-image-manipulator": "~57.0.18",
+          "expo-image-picker": "~57.0.18",
+          "expo-linking": "~57.0.10",
+          "expo-local-authentication": "~57.0.3",
+          "expo-location": "~57.0.18",
+          "expo-maps": "~57.0.3",
+          "expo-media-library": "~57.0.5",
+          "expo-notifications": "57.0.19",
+          "expo-print": "~57.0.2",
+          "expo-router": "~57.0.21",
+          "expo-secure-store": "~57.0.4",
+          "expo-sharing": "~57.0.20",
+          "expo-splash-screen": "~57.0.9",
+          "expo-sqlite": "~57.0.3",
+          "expo-status-bar": "~57.0.1",
+          "expo-store-review": "~57.0.3",
+          "expo-symbols": "~57.0.3",
+          "expo-system-ui": "~57.0.4",
+          "expo-task-manager": "~57.0.18",
+          "expo-updates": "~57.0.22",
+          "expo-video": "~57.0.4",
+          "expo-web-browser": "~57.0.3",
+          "react": "19.2.3",
+          "react-dom": "19.2.3",
+          "react-native": "0.86.3",
+          "react-native-gesture-handler": "~2.32.0",
+          "react-native-purchases": "^10.10.0",
+          "react-native-qrcode-svg": "^6.3.24",
+          "react-native-reanimated": "4.5.1",
+          "react-native-safe-area-context": "~5.7.0",
+          "react-native-screens": "~4.26.0",
+          "react-native-svg": "^15.15.4",
+          "react-native-url-polyfill": "^4.0.0",
+          "react-native-web": "~0.21.0",
+          "react-native-webview": "13.16.1",
+          "react-native-worklets": "0.10.1"
+        },
+        "devDependencies": {
+          "@types/node": "22.20.2",
+          "@types/react": "~19.2.2",
+          "eslint": "^9.39.5",
+          "eslint-config-expo": "~57.0.2",
+          "rimraf": "^6.1.2",
+          "typescript": "~6.0.3"
+        }
+      },
+      "apps/web/package.json": {
+        "sha256": "07d4e75631143a7a0dad6e46adce035829db436a29b5b0b8703dd2081fdce7f8",
+        "dependencies": {
+          "@sds/api-client": "workspace:*",
+          "@sds/business-logic": "workspace:*",
+          "@sds/design-tokens": "workspace:*",
+          "@sds/image-processing-config": "workspace:*",
+          "@sds/types": "workspace:*",
+          "@sds/validation": "workspace:*",
+          "@supabase/ssr": "^0.12.7",
+          "@supabase/supabase-js": "^2.116.0",
+          "next": "16.3.5",
+          "qrcode": "^1.5.4",
+          "react": "19.2.8",
+          "react-dom": "19.2.8"
+        },
+        "devDependencies": {
+          "@tailwindcss/postcss": "^4",
+          "@types/node": "^20",
+          "@types/qrcode": "^1.5.6",
+          "@types/react": "19.2.18",
+          "@types/react-dom": "19.2.7",
+          "eslint": "^9",
+          "eslint-config-next": "16.3.5",
+          "rimraf": "^6.1.2",
+          "tailwindcss": "^4",
+          "typescript": "^5"
+        }
+      }
+    },
+    "stagingDependencyLimits": "Published manifest proves SDK57/runtime0.1.0 only. Exact native/OTA installed dependency tree not independently recovered.",
+    "localMigrations": [
+      {
+        "file": "20260915000100_initial_schema.sql",
+        "sha256": "33a5761d703e7d90109926ddb1246026d1cfe8026b7b6a7d9edc8a2a7f9a385a"
+      },
+      {
+        "file": "20260915000200_identity_and_onboarding.sql",
+        "sha256": "36cee1a243f6a412dcdb0fdffd577dbbdb63c46cd6379f6d898ea1c05c3c7bb5"
+      },
+      {
+        "file": "20260915000300_business_media.sql",
+        "sha256": "22e88518b4dc797d1afcdfa9d7031d144a2ef3625eb4dfe18bc4bcf55d7fe475"
+      },
+      {
+        "file": "20260915000400_media_function_lint.sql",
+        "sha256": "b4e004651b793cef12e234d6de6f6081ed41b13d58c5ca5203e11efde440a2ad"
+      },
+      {
+        "file": "20260915000500_apply_media_function_lint_fix.sql",
+        "sha256": "b4e004651b793cef12e234d6de6f6081ed41b13d58c5ca5203e11efde440a2ad"
+      },
+      {
+        "file": "20260915000600_structured_service_areas.sql",
+        "sha256": "c93867764d1f50af3715acad25afca1fc45715a75d68190ce43b890443fa53e9"
+      },
+      {
+        "file": "20260915000700_business_details_editor.sql",
+        "sha256": "5008f8bad69fcbf4d560e83a693351c3e532d6a8352937d5e008cea7836877ef"
+      },
+      {
+        "file": "20260915000800_controlled_business_appearance.sql",
+        "sha256": "e8da95c241dce0b53240c40e88942f26715ec09d38b85d0aa60831899d414316"
+      },
+      {
+        "file": "20260915000900_review_and_offering_management.sql",
+        "sha256": "51d3a202d22bacbf1bd5b2b04c8058148ed2b61861e05782e5d6ca1120f881b4"
+      },
+      {
+        "file": "20260915001000_offering_item_media.sql",
+        "sha256": "1d50d02a371e1d4c576192b2c38b1c9094e3aa751628119aa34469767c29028c"
+      },
+      {
+        "file": "20260915001100_allow_trusted_moderation_updates.sql",
+        "sha256": "a8ff459849efa3acf8644722c42b5a4d5313ae027cfb70706ff675eb0e1bb9ea"
+      },
+      {
+        "file": "20260915001200_moderator_auth_audit_access.sql",
+        "sha256": "64de17b4fdc3e9b769bfebf0606691a9efc736f94d5ff6f4768f75489fba9898"
+      },
+      {
+        "file": "20260915001300_private_moderation_audit_helper.sql",
+        "sha256": "b71ed1f1ef4676836260ec399ba19eebfd5b7e93871dee5b1ab905a0a307e87a"
+      },
+      {
+        "file": "20260915001400_isolate_moderation_trigger_from_auth_schema.sql",
+        "sha256": "5b6ef23e15f96d70175e218b26e0dd5137345a620ab21d99730acd7a05a2cd5b"
+      },
+      {
+        "file": "20260915001500_phase_3_events.sql",
+        "sha256": "5885efccd0702446363d80c4af0092bec1df6419626fc39f6a7c689b42228c6a"
+      },
+      {
+        "file": "20260915001600_scheduled_events_and_discovery.sql",
+        "sha256": "59842ea6b04f622a919b3703dc86b529e37874351ef307a99adf017298a81028"
+      },
+      {
+        "file": "20260916001700_secure_loyalty.sql",
+        "sha256": "f1d4c2a88d7e33e2ae2c4aae434e813d497dc601e44d271f113a7f6628a052d9"
+      },
+      {
+        "file": "20260916001800_notifications.sql",
+        "sha256": "27fa78b6768fed92c05b4dd1b7994547ca55e3ee592a1d30a87fa0f69a51c648"
+      },
+      {
+        "file": "20260916001900_event_media_and_recurring_reminders.sql",
+        "sha256": "f291569fe3e6ba289054400c096a857e15098d8683b74b0ddd987aa975baf086"
+      },
+      {
+        "file": "20260916002000_business_follower_updates.sql",
+        "sha256": "0da8668e729fd4e35dc57fa9f30f36086f15bb8cef75ae1badd386752413799c"
+      },
+      {
+        "file": "20260916002100_notification_dispatch_observability.sql",
+        "sha256": "74e93d6f402284d2974f883f6bfc1cf72a276f00dcdd3db7c22114623900c09c"
+      },
+      {
+        "file": "20260916002200_media_cleanup_claims.sql",
+        "sha256": "18a9bfe2b9b523d0454e2e3e2b912a6a2fab331443cf5d490d453d95a3867898"
+      },
+      {
+        "file": "20260916002300_notification_inbox.sql",
+        "sha256": "2fc0a658207845f4852acaa572c744aa73e36557187738196467b9b7e6a7a607"
+      },
+      {
+        "file": "20260916002350_expand_business_and_loyalty_enums.sql",
+        "sha256": "c2d9f1bf66e9d6e8b24a774652d7e307b4c05fc8f493f8009f8566e597a9fa44"
+      },
+      {
+        "file": "20260916002400_mobile_businesses_and_points_loyalty.sql",
+        "sha256": "6594765e11ab27bf457ff69435d10a57ee559fda275225e5e0e714042bddc9ec"
+      },
+      {
+        "file": "20260916002500_scan_analytics.sql",
+        "sha256": "75ab0d5e8471c6f60f71906feb4aa1236eb87c427057dcc3a487bea2ae511f40"
+      },
+      {
+        "file": "20260917000100_staff_invitations.sql",
+        "sha256": "ae653b02fe41aca6c070f9d01a5ead69e61b4a2f186978fc51d1b85cad7ab8a9"
+      },
+      {
+        "file": "20260917000200_staff_invitation_ambiguity_fix.sql",
+        "sha256": "5849821f8f154d3d331729996596e9723b8d7aaf230429bdc93e92ad41d2daeb"
+      },
+      {
+        "file": "20260917000300_staff_invite_output_cast_fix.sql",
+        "sha256": "e2da024376cc0dfc40360e867d7fb4f3cbfbe7d1693ac16f1fe1fbe8b12a0b32"
+      },
+      {
+        "file": "20260917000400_staff_invites_phone.sql",
+        "sha256": "4f4a47dbc839d5ed843db01c88649681d5638fe1577951c640d184355f5d6fcc"
+      },
+      {
+        "file": "20260917000500_staff_invite_accept_output_cast.sql",
+        "sha256": "8d811235f0f0207b90d87875e528a3eb4541f065c091689a52b79010bb40d33e"
+      },
+      {
+        "file": "20260918000100_platform_admin_console.sql",
+        "sha256": "a43aca397bb37c3d7244e29d2e9119922df6210ce17968ac17da7494e8c4386a"
+      },
+      {
+        "file": "20260918000200_grant_postgrest_api_access.sql",
+        "sha256": "d10e410253aa78c4e082d2acd593c51fc94a3c76a0158b85fe5aa0ac57f735a0"
+      },
+      {
+        "file": "20260918000300_expand_business_categories.sql",
+        "sha256": "95c371f4e8cc86e1fd2c5ccaa2e814f1975468b839dca252571644e4829886c4"
+      },
+      {
+        "file": "20260919000100_grant_customer_safety_api_access.sql",
+        "sha256": "924c935bb752ca2d71dff6c22f8a4f138a6a6860841dd55d3d1d9d96e277ddf1"
+      },
+      {
+        "file": "20260919000200_account_deletion.sql",
+        "sha256": "41db51804c74bf1c2ec57db87be1e98fc0689cecd9815ddf274e636b6c9f55f9"
+      },
+      {
+        "file": "20260919000300_nearby_mobile_business_alerts.sql",
+        "sha256": "a700c4e1e0b1ab5cdaffeb65463027e200fc03fa6e89282f046be53dd42d7e63"
+      },
+      {
+        "file": "20260919000400_nearby_alert_radius_slider.sql",
+        "sha256": "eb29ce336fdb49a86d31a02d0d7ca1f9865bfcd94961e7a9949de481e12ba70e"
+      },
+      {
+        "file": "20260919000500_resumable_business_onboarding.sql",
+        "sha256": "2202888c366ccf64905942be605a501de5998dede38e10b380187aba2d9fdc6a"
+      },
+      {
+        "file": "20260919000600_loyalty_edge_service_grants.sql",
+        "sha256": "10989debeb74a5b162fe6301049a4a59056c3a8a6a369f8f7e9a843d326b80d7"
+      },
+      {
+        "file": "20260920000100_business_listing_billing.sql",
+        "sha256": "e728f7fc4adc964f2380168567f82a84b09046dc4d1e1249f9f6991fe7a9633d"
+      },
+      {
+        "file": "20260920000200_billing_moderation_role.sql",
+        "sha256": "d78e7c2001bd1e912dda86a5328cb3f84702ae175093393c11f784aa39b8d09d"
+      },
+      {
+        "file": "20260920000300_lock_down_billing_tables.sql",
+        "sha256": "b8f86ebe075f20d2936f92b0dbb6ac3299d7050946908a59308553fec47af36a"
+      },
+      {
+        "file": "20260920000400_google_billing_product_ids.sql",
+        "sha256": "dd8686b0c7513255d782ba0515343eee3d3c652e0b5c10474cab0d9cce793e11"
+      },
+      {
+        "file": "20260920000500_listing_billing_rollout_flag.sql",
+        "sha256": "a9d79cfdf1641c540ced0321114ef381e827c995409a43c9960626215e834202"
+      },
+      {
+        "file": "20260920000600_square_commerce.sql",
+        "sha256": "d74eab9afe06bd930a76d28e0ad5e532b88b970aa843cca2063f3cc2084d8b09"
+      },
+      {
+        "file": "20260920000700_square_platform_settings_grant.sql",
+        "sha256": "8be07c37e4575ae574ea92d154f8816b5e25056f104bff9d2ad9e6757bdbbfb3"
+      },
+      {
+        "file": "20260920000800_public_pickup_capabilities.sql",
+        "sha256": "ec214b0f04f6bb5fd87b49e46a2c187e3d0c4477776c58ee238e78819dd8543b"
+      },
+      {
+        "file": "20260920000900_square_pickup_stops_service_grant.sql",
+        "sha256": "3affe5d343c4c524cfd054e27772719791aed165f11af11b7e75412869e85ee7"
+      },
+      {
+        "file": "20260920001000_pickup_order_workspace.sql",
+        "sha256": "09b813716a738e9547264554063b46e053d579a1704372c9a310952a7ec5c304"
+      },
+      {
+        "file": "20260920001100_automatic_pickup_timezone.sql",
+        "sha256": "3547607777914b19c149f5f1bef4fcbbd7ed9618c759bd992979e661408a04ad"
+      },
+      {
+        "file": "20260920001200_pickup_order_notifications.sql",
+        "sha256": "939d00d3b897c871078384584efbd34e0d1b3bca343ff706b1bd1e3b02bdf18a"
+      },
+      {
+        "file": "20260920001300_pickup_confirmation.sql",
+        "sha256": "5ea6e3176720a54f374838baea54a84e9dba1ec60c5e991be4c2f63e381f37a4"
+      },
+      {
+        "file": "20260920001400_checkout_rewards.sql",
+        "sha256": "66e33099bc19a5ba978b48c94354e22ddfcd272466018e4d14e0239ac51f7cbe"
+      },
+      {
+        "file": "20260920001500_notification_delivery_state_rpc.sql",
+        "sha256": "a8e870167831f71cc25759d910f1ef946ce395d70a4fa82c407045f2c810fe06"
+      },
+      {
+        "file": "20260920001600_business_push_recipient_routing.sql",
+        "sha256": "8bb87d9445ec667046a46e5432fbe5de8f17300fa97f3ff6ba0c91e12a1eac55"
+      },
+      {
+        "file": "20260920001700_business_order_alert_copy.sql",
+        "sha256": "e97dd992baa7d4f9a69c1b13f95edf3b0a02da1094fd65c01b60f47b526cfb84"
+      },
+      {
+        "file": "20260921000100_stripe_pickup_ordering.sql",
+        "sha256": "7c519aa1ff782714363da5917f57ca48076ba541b18568e02c65c99bdcd16644"
+      },
+      {
+        "file": "20260921000200_stripe_reserve_provider.sql",
+        "sha256": "b5aa8fc9fd75c84a32eb1cd8a64be779cda390f370538124add6de60ea58f81e"
+      },
+      {
+        "file": "20260921000300_provider_pickup_capabilities.sql",
+        "sha256": "c44744eeca58d10834423f6236ed81d21fafe2f3b60ef7dc84c7421533ef0193"
+      },
+      {
+        "file": "20260921000400_stripe_test_business.sql",
+        "sha256": "29b5c2bd1dd06e9496bfe76901339384b663b316a2e4fea699870fb0c866765d"
+      },
+      {
+        "file": "20260921000500_stripe_test_rollout_fixture.sql",
+        "sha256": "64ddcd0ae94e1a1118bb7b7bffb4eaaadc81685b6cdab1bb689e38c507a6695a"
+      },
+      {
+        "file": "20260921000600_stripe_service_role_catalog_grants.sql",
+        "sha256": "2bb317e1250c4424f0b31b1cf9477241a6b0e68326f8d63973a893209ae1913b"
+      },
+      {
+        "file": "20260921000700_assign_stripe_test_business_owner.sql",
+        "sha256": "0ba489f908c6e30106f10a0bae098619bc2e892c4fe0f0af280aa14a9440259c"
+      },
+      {
+        "file": "20260921000800_enable_stripe_fixture_pickup.sql",
+        "sha256": "5a10f7a19d92d8d873eeacd4dc7a4bd84bb85696c96dbb7d357f1281451f48d0"
+      },
+      {
+        "file": "20260921000900_ordering_provider_separation.sql",
+        "sha256": "4bd74c260216786b26bbee0fb5a44b0e08a6189f90ceb6b907be155c49c1f1d2"
+      },
+      {
+        "file": "20260921001000_pickup_rpc_row_security.sql",
+        "sha256": "ab8e2c74aab6b8e29cd0435d607cee3bde2c8d457fc06ae45240022326931aab"
+      },
+      {
+        "file": "20260921001100_prevalidate_business_media_uploads.sql",
+        "sha256": "37a1459b7a43e65a9e88ad5056b7fa815f7f81a9cfe5d0c313bf272125e43e56"
+      },
+      {
+        "file": "20260926000100_bounded_media_staging.sql",
+        "sha256": "25b350c6bfc271b335525e843250fb74e2fbb4c5658789202e10e3fd892a646b"
+      },
+      {
+        "file": "20260927000100_local_growth_features.sql",
+        "sha256": "e1bfa28dbff5c618bdabc65aa3587fed1c1ee582554036ecfdac22481ab835fb"
+      },
+      {
+        "file": "20260927000200_customer_order_requests.sql",
+        "sha256": "795762291725520e05d962b4b4bf348437ff890e8783b4806013270f554df1d1"
+      },
+      {
+        "file": "20260927000300_verified_order_reviews.sql",
+        "sha256": "dca68bfa0b0a546e3d9e0b7cb8d9d6fc8f5669c7bb0221b8fd4b0fbdbeeca2fb"
+      },
+      {
+        "file": "20260927000400_square_sandbox_appointments.sql",
+        "sha256": "94da7dfb3bcf5fa96c0db7df03f88935981766435174571126d2dd6d84f2ec30"
+      },
+      {
+        "file": "20260927000500_event_rsvp_groups.sql",
+        "sha256": "f78c324c6fe3da00197d2635a21f2b36e7550b4edba69f3f5c8975aca167eead"
+      },
+      {
+        "file": "20260927000600_verified_event_reviews.sql",
+        "sha256": "2c2370e2b0950f507bd590db00ed5ae67633c3d42d07e30b5442ba27a3161b2e"
+      },
+      {
+        "file": "20260928000100_payment_lifecycle_settlement.sql",
+        "sha256": "6b3e61d4c8d18c5a6ab72b0e9057c4eac2a3eef06f22bf7f0d2cc1267ce8dabe"
+      },
+      {
+        "file": "20260928000200_stripe_webhook_recovery.sql",
+        "sha256": "3a8d1a12ae38cf3207a847ee7a600ea6854def7ee4aaebf3165267494add352d"
+      },
+      {
+        "file": "20260928000300_item_refunds_and_request_queue.sql",
+        "sha256": "f6c8e2fd7ab0c87b4bf698a2711890e78089e4f408163592ecafea37fb1354f1"
+      },
+      {
+        "file": "20260928000400_close_cancelled_order_requests.sql",
+        "sha256": "bb95f20fe3fe12a384b6766e5b9961242627c9193032b3374d7c68e520452128"
+      },
+      {
+        "file": "20260928050000_appointment_booking_rollout.sql",
+        "sha256": "d518b86af8f5cf5e6d2027811efa83d845d38c386485ddb8e239331cf98660ab"
+      },
+      {
+        "file": "20260928060000_fix_appointment_setup_scope.sql",
+        "sha256": "9c63b0eb9019962ee4f87dc8eb00547f33ae3dec4439f1054cdc17c792cd3d7e"
+      },
+      {
+        "file": "20260928070000_appointment_connection_capability.sql",
+        "sha256": "82f97cd97bb79d8d2a605eb905361f5714ebe15bce4b7a97ae67c1cd0882f5d2"
+      },
+      {
+        "file": "20260929000100_fix_rsvp_result_type.sql",
+        "sha256": "5625eba9e44ec1a6ffda110b62e9d96890b2e39ee8834f2c97682fc96d33cc70"
+      },
+      {
+        "file": "20260929000200_feature_subscription_catalog.sql",
+        "sha256": "760cff89a0ae5fd9f2d5466a3d6e9c5a9a50ecfc318ec2a4b24e562db1d4319b"
+      },
+      {
+        "file": "20260929000300_business_creation_subscription_gate.sql",
+        "sha256": "b04c5d6c1f9578b6a258c83138d9906947d55810d0f7afc1e7062b6677ffc141"
+      },
+      {
+        "file": "20260929000350_owner_review_inbox.sql",
+        "sha256": "818646973fa96657d90cad2f1bc117aa652e860bec4fc9921691f6c3b90c0225"
+      },
+      {
+        "file": "20260929000400_public_review_summaries.sql",
+        "sha256": "7362435c5e083df36a666265056ecff2931e82027fd8f3099bba5fbc105dde36"
+      },
+      {
+        "file": "20260929000500_owner_review_replies.sql",
+        "sha256": "c688227e830beef6e22578c793e857a6d25d29d3c0c57792ac6965bab3b814f0"
+      },
+      {
+        "file": "20260929000600_listing_subscription_event_ordering.sql",
+        "sha256": "b1e69a0c37723305fbd10150b6043904982fe6082ec5d0424ddddb51d985a706"
+      },
+      {
+        "file": "20260929000700_sandbox_subscription_rollout.sql",
+        "sha256": "6c04575cc978e6336baadd0b9c9a91fcb7793d4c6ec262d779f805efde8a054f"
+      },
+      {
+        "file": "20260929000800_attended_event_read_grants.sql",
+        "sha256": "f78da86bed05a4eba6dac4f7bccad1d4e8bac44d6e9418330c69bd0292ce1db1"
+      },
+      {
+        "file": "20260929000900_storage_preflight_content_length.sql",
+        "sha256": "214a0d911b05aaed6d5536c8a0e78d9d1caf687302a606c0984d10c1e05cbb79"
+      },
+      {
+        "file": "20260929001000_automatic_checkout_reward_item.sql",
+        "sha256": "3ff394383c3eaaf7d34c5c7c1f011b6acda7ce5e50b0ae5cda7b33092626aa3b"
+      },
+      {
+        "file": "20260929001100_explicit_checkout_rewards.sql",
+        "sha256": "b3dab11b9c284c441010ac55dd5e5ed34b23fb3a90e6ceef1b233ff1fb06add8"
+      },
+      {
+        "file": "20260929001200_service_request_forms.sql",
+        "sha256": "865da042a695bbe68eb9ed38db0272eb75ccc5cc236c3e357d96fb23514a929b"
+      },
+      {
+        "file": "20260929001300_pickup_short_codes.sql",
+        "sha256": "4f0ae31e5aece9e61e7b0eec6fca5a619bfa2b3368b4816ecfd2f917b68e6f74"
+      },
+      {
+        "file": "20260929001400_public_review_initials.sql",
+        "sha256": "e36573836cbd07f5302b2c33ad9a847a909887eb13733876ee326aca4a32fef3"
+      },
+      {
+        "file": "20260930000100_request_contact_input_types.sql",
+        "sha256": "cc2c79229897e7b49eb62df6977af02e9081d905b8f34ac635f17c99400be415"
+      },
+      {
+        "file": "20260930000200_business_feature_enforcement.sql",
+        "sha256": "005fb774ec99fc432148257ae8cd4fb07c694fe2f020574d48b3478d8e99853e"
+      },
+      {
+        "file": "20260930000300_private_rpc_execute_grants.sql",
+        "sha256": "bd0a057bc1baae5003f8b34d586da51bc418709b509e6ca946720bd3485c5977"
+      },
+      {
+        "file": "20260930000400_moderation_report_result_types.sql",
+        "sha256": "0d35aba56b1d6a895d31f1f30e7bdb91867e5069f37dca94ba44c6f1104e7a73"
+      },
+      {
+        "file": "20261001000100_existing_obligation_recovery.sql",
+        "sha256": "f1133e506777c993b3c2203d0c501984c7745eb8fe84e8e6fd1b27cc0beca281"
+      },
+      {
+        "file": "20261001000200_workspace_category_recovery.sql",
+        "sha256": "d8f4dfd6d1e824a21a4758abc2d7e793377adf5a37580cd705139e33df3b4cd7"
+      },
+      {
+        "file": "20261001000300_customer_appointment_history.sql",
+        "sha256": "f5acad609f98ac5e9e06af7ce72d061b317a44e52dd50da754adb21abada6d85"
+      }
+    ],
+    "unappliedReceiptNames": [
+      "20261001000200_workspace_category_recovery",
+      "20261001000300_customer_appointment_history"
+    ],
+    "dirtyInventory": "dirty-inventory.json",
+    "preparationComparison": "source-checkpoint-comparison.json"
+  },
+  "localAlignment": {
+    "scope": "Isolated task-2 audit snapshot only; original F checkout preserved",
+    "applied": [
+      {
+        "path": "supabase/config.toml",
+        "key": "auth.email.enable_confirmations",
+        "before": false,
+        "after": true,
+        "basis": "Live staging requires email confirmation",
+        "verification": "Confirmation-required signup and local mail delivery exercised in passing real browser test; no hosted delivery."
+      }
+    ],
+    "intentionalDifferences": [
+      "Synthetic disposable accounts/business data only; never copy real customer data",
+      "Local loopback/LAN URLs and local Inbucket email delivery; keep secrets isolated",
+      "Local database/project ID and offline fixtures",
+      "Prepared tests/report scripts and separate admin workspace changes are pending integration"
+    ],
+    "unknowns": [
+      "Exact dirty uploaded OTA source",
+      "Complete deployed schema/function definitions and RLS policies",
+      "Deployed feature flags/provider enrollment",
+      "Installed user normal-preview native binary/update identity"
+    ],
+    "blockedAlignment": "Exact deployed source identity is unproven; old export directories are September19, not a current OTA archive. Catalog/definition alignment blocked by existing administrative credentials401. User approved only verified category/history migrations, pending that live check."
+  },
+  "adminHandoff": {
+    "task": "01a10f2e-827d-7276-968d-186540d7b0c7",
+    "workspace": "task-4/parish-pass-admin",
+    "status": "Pending integration; not part of deployed preview or this test run",
+    "instructions": "Preserve synthetic data and local hostnames. New admin/deletion migrations remain unapproved for staging. Category/history-only staging approval requires catalog/dependency checks; current admin access401."
+  }
+}

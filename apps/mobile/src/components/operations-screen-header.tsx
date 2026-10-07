@@ -1,11 +1,13 @@
+import { PageHeader } from '@/components/page-header';
+import { AppChrome } from './app-chrome';
 import { useState, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
-import { router } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import { useTheme } from '@/hooks/use-theme';
-import { ParishBusinessBrand } from './business-screen-header';
+
 import { ThemedText } from './themed-text';
-import { AlertsButton } from './alerts-button';
+
 import { MerchantSheet } from './merchant-ui';
 export function OperationsScreenHeader({
   title,
@@ -66,24 +68,8 @@ export function OperationsScreenHeader({
   );
   return (
     <View style={{ gap: 20 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <View style={{ flex: 1 }}>
-          <ParishBusinessBrand />
-        </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Account"
-          onPress={() => router.push('/business-account' as never)}
-          style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
-        >
-          <SymbolView
-            name="person.crop.circle"
-            tintColor={c.text}
-            style={{ width: 23, height: 23 }}
-          />
-        </Pressable>
-        <AlertsButton />
-      </View>
+      <PageHeader />
+      <AppChrome inline showModeSwitch={false} />
       <View style={{ gap: 7 }}>
         <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
           <ThemedText type="title" style={{ flex: 1, fontSize: 28, lineHeight: 34 }}>

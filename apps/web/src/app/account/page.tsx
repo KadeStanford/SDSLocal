@@ -1,3 +1,7 @@
+import { SurfacePanel } from '@/components/shared-ui';
+import { PageHeader } from '@/components/page-header';
+import { AppIcon } from '@/components/app-icon';
+
 import type { OwnedBusinessSummary } from '@sds/types';
 import { getBusinessStatusLabel, getOfferingTerminology } from '@sds/business-logic';
 import type { BusinessType } from '@sds/types';
@@ -75,18 +79,36 @@ export default async function AccountPage({ searchParams }: PageProps<'/account'
   });
 
   return (
-    <main className="page-shell">
-      <nav className="topbar">
-        <Link className="brand" href="/">
-          Parish Pass
-        </Link>
+    <main className="page-shell account-page">
+      <PageHeader />
+      <nav className="parish-page-links" aria-label="Page links">
         <div className="nav-actions">
-          <Link href="/explore">Explore</Link>
-          <Link href="/events">Events</Link>
-          <Link href="/following">Following</Link>
-          <Link href="/rewards">Rewards</Link>
-          <Link href="/account/notifications">Notifications</Link>
-          {isAdmin === true && <Link href="/admin">Admin console</Link>}
+          <Link href="/explore">
+            <AppIcon name="compass" size={18} />
+            Explore
+          </Link>
+          <Link href="/events">
+            <AppIcon name="calendar-days" size={18} />
+            Events
+          </Link>
+          <Link href="/following">
+            <AppIcon name="heart" size={18} />
+            Following
+          </Link>
+          <Link href="/rewards">
+            <AppIcon name="gift" size={18} />
+            Rewards
+          </Link>
+          <Link href="/account/moderation">
+            <AppIcon name="bell" size={18} />
+            Account updates
+          </Link>
+          {isAdmin === true && (
+            <Link href="/admin">
+              <AppIcon name="shield-check" size={18} />
+              Admin console
+            </Link>
+          )}
           <form action={signOutAction}>
             <button className="text-button">Sign out</button>
           </form>
@@ -95,7 +117,8 @@ export default async function AccountPage({ searchParams }: PageProps<'/account'
 
       <div className="page-heading compact-heading">
         <p className="eyebrow">Account</p>
-        <h1>Hi, {profile.display_name ?? authData.user.email}.</h1>
+        <h1>Your account</h1>
+        <p>Manage your local activity and business workspaces.</p>
       </div>
 
       {typeof query.staffInviteAccepted === 'string' && (
@@ -105,45 +128,95 @@ export default async function AccountPage({ searchParams }: PageProps<'/account'
         </p>
       )}
 
-      <div className="account-grid">
-        <section className="panel">
-          <h2>Your profile</h2>
-          <p className="muted">Used for your customer account and business memberships.</p>
-          <ProfileForm profile={profile} />
-          <Link
-            className="button button-secondary account-notification-link"
-            href="/account/notifications"
-          >
-            Notification preferences
+      <SurfacePanel className="account-identity panel" aria-label="Account identity">
+        <div className="account-avatar" aria-hidden="true">
+          {(profile.display_name || authData.user.email || 'A').slice(0, 1).toUpperCase()}
+        </div>
+        <div>
+          <h2>{profile.display_name || 'Your profile'}</h2>
+          <p className="muted">{authData.user.email}</p>
+          <p className="muted">
+            {[profile.city, profile.region_code].filter(Boolean).join(', ') || 'Location not added'}
+          </p>
+        </div>
+        <Link href="#profile" className="button button-secondary">
+          Edit profile <AppIcon name="chevron-right" size={18} />
+        </Link>
+      </SurfacePanel>
+      <section className="account-activity" aria-label="Your local activity">
+        {(
+          [
+            {
+              href: '/explore',
+              icon: 'compass',
+              label: 'Explore businesses',
+              detail: 'Find your next local place',
+            },
+            {
+              href: '/events',
+              icon: 'calendar-days',
+              label: 'Discover events',
+              detail: 'See what is happening nearby',
+            },
+            {
+              href: '/following',
+              icon: 'heart',
+              label: 'Following',
+              detail: 'Return to the businesses you follow',
+            },
+            {
+              href: '/rewards',
+              icon: 'gift',
+              label: 'Rewards wallet',
+              detail: 'Your progress and available rewards',
+            },
+          ] as const
+        ).map((item) => (
+          <Link href={item.href} key={item.href} className="account-activity-card">
+            <AppIcon name={item.icon} size={24} />
+            <strong>{item.label}</strong>
+            <span>{item.detail}</span>
           </Link>
-        </section>
-
-        <section className="panel">
-          <div className="section-heading">
-            <div>
-              <h2>Your businesses</h2>
-              <p className="muted">Create and manage local business pages.</p>
+        ))}
+      </section>
+      <div className="account-grid">
+        <div className="account-business-stack">
+          <SurfacePanel>
+            <div className="section-heading">
+              <div>
+                <h2>Your businesses</h2>
+                <p className="muted">Create and manage local business pages.</p>
+              </div>
+              <Link className="button" href="/account/businesses/new">
+                Add business
+              </Link>
             </div>
-            <Link className="button" href="/account/businesses/new">
-              Add business
-            </Link>
-          </div>
-          {businesses.length ? (
-            <ul className="business-list">
-              {businesses.map((business) => (
-                <li key={business.id}>
-                  <div>
-                    <strong>{business.name}</strong>
-                    <span>
-                      {business.role} · {getBusinessStatusLabel(business.status)}
-                    </span>
-                  </div>
-                  <details className="business-menu">
-                    <summary>Manage</summary>
-                    <div>
-                      <Link href={`/account/businesses/${business.id}/settings#readiness`}>
-                        Review &amp; submit
-                      </Link>
+            {businesses.length ? (
+              <ul className="account-workspaces">
+                {businesses.map((business) => (
+                  <li key={business.id}>
+                    <div className="account-workspace-identity">
+                      <div className="workspace-initial" aria-hidden="true">
+                        {business.name.slice(0, 1).toUpperCase()}
+                      </div>
+                      <div>
+                        <h3>{business.name}</h3>
+                        <div className="event-card-meta">
+                          <span>{getBusinessStatusLabel(business.status)}</span>
+                          <span>{business.role}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <Link
+                      className="button"
+                      href={`/account/businesses/${business.id}/settings#readiness`}
+                    >
+                      Review &amp; submit <AppIcon name="chevron-right" size={18} />
+                    </Link>
+                    <nav
+                      aria-label={business.name + ' workspace'}
+                      className="account-workspace-tools"
+                    >
                       <Link href={`/account/businesses/${business.id}/settings`}>
                         Business details
                       </Link>
@@ -157,18 +230,40 @@ export default async function AccountPage({ searchParams }: PageProps<'/account'
                       <Link href={`/account/businesses/${business.id}/loyalty`}>Rewards</Link>
                       <Link href={`/account/businesses/${business.id}/media`}>Photos</Link>
                       <Link href={`/b/${business.slug}`}>View public page</Link>
-                    </div>
-                  </details>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="empty-state">
-              <strong>No business profile yet</strong>
-              <span>Start with the basics; you can add photos and polish the page next.</span>
-            </div>
-          )}
-        </section>
+                    </nav>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="empty-state">
+                <strong>No business profile yet</strong>
+                <span>Start with the basics; you can add photos and polish the page next.</span>
+              </div>
+            )}
+          </SurfacePanel>
+          <SurfacePanel>
+            <AppIcon name="bell" size={24} />
+            <h2>Your account updates</h2>
+            <p className="muted">
+              Review listing and review outcomes, their public reason, and the next step available
+              to you.
+            </p>
+            <Link className="button button-secondary" href="/account/moderation">
+              View account updates <AppIcon name="chevron-right" size={18} />
+            </Link>
+          </SurfacePanel>
+        </div>
+        <SurfacePanel className="account-profile-editor" id="profile">
+          <h2>Your profile</h2>
+          <p className="muted">Used for your customer account and business memberships.</p>
+          <ProfileForm profile={profile} />
+          <Link
+            className="button button-secondary account-notification-link"
+            href="/account/notifications"
+          >
+            Notification preferences
+          </Link>
+        </SurfacePanel>
       </div>
     </main>
   );

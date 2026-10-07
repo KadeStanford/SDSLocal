@@ -105,7 +105,7 @@ vi.mock('react-native', async () => {
 });
 vi.mock('@/hooks/use-color-scheme', () => ({ useColorScheme: () => h.scheme }));
 vi.mock('expo-image', () => ({ Image: () => null }));
-vi.mock('expo-symbols', () => ({ SymbolView: () => null }));
+vi.mock('@/components/app-icon', () => ({ AppIcon: ({ name }: { name: string }) => createElement('span', { 'data-icon': name }) }));
 vi.mock('@/lib/storage-url', () => ({
   storagePublicUrl: (path: string) => `https://example.test/${path}`,
 }));
@@ -135,7 +135,7 @@ it.each(['light', 'dark'] as const)(
     const html = renderToStaticMarkup(
       <BusinessRating summary={{ reviewCount: 3, averageRating: 4.7 }} />,
     );
-    expect(html).toContain('★');
+    expect(html).toContain('data-icon="star"');
     expect(html).toContain('4.7');
     expect(html).toContain('3 reviews');
     expect(html).toContain('4.7 out of 5 stars, 3 reviews');

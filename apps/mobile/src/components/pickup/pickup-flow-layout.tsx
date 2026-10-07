@@ -1,5 +1,6 @@
+import { PageHeader } from '@/components/page-header';
 import { CustomerAction } from '../customer-ui';
-import { CustomerBrand } from '../customer-brand';
+
 import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -52,7 +53,7 @@ export function PickupFlowLayout({
               paddingBottom: Math.max(insets.bottom, 16),
               borderTopWidth: 1,
               borderTopColor: c.divider,
-              backgroundColor: c.background,
+              backgroundColor: c.backgroundElement,
             }}
           >
             {footer}
@@ -77,19 +78,20 @@ export function PickupMerchantHeader({
   return (
     <View
       style={{
-        borderRadius: 12,
-        borderWidth: 0,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: c.divider,
         overflow: 'hidden',
-        backgroundColor: background,
+        backgroundColor: c.backgroundElement,
       }}
     >
       {cover && <ProductPhoto image={storagePublicUrl(cover)} cover />}
-      <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center', paddingVertical: 8 }}>
-        <BusinessLogo name={name} photos={photos} size={56} decorative />
+      <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center', padding: 16 }}>
+        <BusinessLogo name={name} photos={photos} size={40} decorative />
         <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
           <ThemedText
             type="card"
-            style={{ color: foreground, fontSize: 24, lineHeight: 30, letterSpacing: -0.5 }}
+            style={{ color: foreground, fontSize: 20, lineHeight: 26, fontWeight: '700' }}
           >
             {name}
           </ThemedText>
@@ -118,18 +120,7 @@ export function CustomerFlowNavigation({
   const c = useTheme();
   return (
     <View style={{ gap: 20 }}>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 12,
-        }}
-      >
-        <CustomerAction label="Back" icon="back" iconOnly onPress={onBack} />
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <CustomerBrand />
-        </View>
-      </View>
+      <PageHeader onBack={onBack} />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
           <ThemedText type="title" style={{ fontSize: 26, lineHeight: 32, letterSpacing: -0.6 }}>

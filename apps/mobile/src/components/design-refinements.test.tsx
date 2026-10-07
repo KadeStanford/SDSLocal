@@ -4,6 +4,7 @@ import { themeColors } from '@sds/design-tokens';
 import { AppTextInput } from './app-text-input';
 import { CustomerCalendar } from './customer-calendar';
 import { EventDetailHeading } from './event-detail-heading';
+vi.mock('@/components/app-icon', () => ({ AppIcon: 'AppIcon' }));
 
 const h = vi.hoisted(() => ({ slots: [] as any[], index: 0 }));
 vi.mock('react', async () => ({
@@ -23,6 +24,7 @@ vi.mock('react-native', () => ({
   TextInput: 'TextInput',
   View: 'View',
   Pressable: 'Pressable',
+  useWindowDimensions: () => ({ width: 320, height: 844, scale: 1, fontScale: 1 }),
   StyleSheet: {
     create: (v: any) => v,
     hairlineWidth: 1,
@@ -60,7 +62,7 @@ beforeEach(() => {
   h.index = 0;
 });
 
-it('filled inputs preserve native refs, editing callbacks, keyboard options and focus handlers', () => {
+it('inputs preserve native refs, editing callbacks, keyboard options and focus handlers', () => {
   const ref = { current: null },
     change = vi.fn(),
     focus = vi.fn(),
@@ -82,12 +84,12 @@ it('filled inputs preserve native refs, editing callbacks, keyboard options and 
   expect(change).toHaveBeenCalledWith('15');
   tree.props.onFocus({ nativeEvent: {} });
   tree = render();
-  expect(tree.props.style.at(-1).borderBottomColor).toBe(themeColors.dark.accent);
+  expect(tree.props.style.at(-1).borderColor).toBe(themeColors.dark.accent);
   expect(tree.props.style.at(-1).backgroundColor).toBe(themeColors.dark.inputSurface);
   expect(focus).toHaveBeenCalledOnce();
   tree.props.onBlur({ nativeEvent: {} });
   tree = render();
-  expect(tree.props.style.at(-1).borderBottomColor).toBe('transparent');
+  expect(tree.props.style.at(-1).borderColor).toBe(themeColors.dark.inputBorder);
   expect(blur).toHaveBeenCalledOnce();
 });
 it('keeps existing field errors visible and preserves disabled and multiline behavior', () => {
@@ -104,7 +106,7 @@ it('keeps existing field errors visible and preserves disabled and multiline beh
   expect(tree.props.editable).toBe(false);
   expect(tree.props.multiline).toBe(true);
   expect(tree.props.style.at(-1)).toMatchObject({
-    borderBottomColor: themeColors.dark.errorText,
+    borderColor: themeColors.dark.errorText,
     opacity: 0.6,
   });
   expect(tree.props.style[1].minHeight).toBe(140);
@@ -113,7 +115,7 @@ it('inline search text does not add a second filled box inside its search contro
   const tree = draw(() => (AppTextInput as any).render({ variant: 'inline' }, null));
   expect(tree.props.style.at(-1)).toMatchObject({
     backgroundColor: 'transparent',
-    borderBottomWidth: 0,
+    borderWidth: 0,
     padding: 0,
   });
 });

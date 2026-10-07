@@ -1,11 +1,11 @@
+import { PageHeader } from '@/components/page-header';
 import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import { Pressable, View } from 'react-native';
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from './themed-text';
 import { HorizontalScrollRow } from './horizontal-scroll-row';
 import { MerchantButton, MerchantSearch } from './merchant-ui';
-import { ParishBusinessBrand } from './business-screen-header';
 
 export type MenuStockFilter = 'all' | 'available' | 'sold-out' | 'hidden';
 export function menuStockMatches(
@@ -40,17 +40,8 @@ export function MenuSetupHeader({
   const c = useTheme();
   return (
     <View style={{ gap: 20 }}>
-      <ParishBusinessBrand />
+      <PageHeader onBack={onBack} backLabel="Back to business overview" backDisabled={disabled} />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Back to business overview"
-          disabled={disabled}
-          onPress={onBack}
-          style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
-        >
-          <SymbolView name="chevron.left" tintColor={c.text} style={{ width: 18, height: 18 }} />
-        </Pressable>
         <ThemedText type="title" accessibilityRole="header" style={{ flex: 1 }}>
           {services ? 'Services' : 'Menu'}
         </ThemedText>

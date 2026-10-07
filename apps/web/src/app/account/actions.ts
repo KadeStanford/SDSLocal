@@ -24,7 +24,7 @@ export async function updateProfileAction(
   const { error } = await supabase
     .from('profiles')
     .update({
-      display_name: result.data.displayName,
+      display_name: result.data.displayName || null,
       city: result.data.city ?? null,
       region_code: result.data.regionCode ?? null,
       postal_code: result.data.postalCode ?? null,

@@ -17,7 +17,7 @@ vi.mock('react-native', () => ({
     accessibilityLabel: string;
   }) => createElement('button', { 'aria-label': accessibilityLabel }, children),
 }));
-vi.mock('expo-symbols', () => ({ SymbolView: () => null }));
+vi.mock('@/components/app-icon', () => ({ AppIcon: () => null }));
 vi.mock('./alerts-button', () => ({ AlertsButton: () => null }));
 vi.mock('./themed-text', () => ({
   ThemedText: ({ children }: { children: ReactNode }) => <span>{children}</span>,

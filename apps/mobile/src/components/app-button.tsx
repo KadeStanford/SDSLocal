@@ -1,16 +1,8 @@
+import { ActionControl } from './shared-ui';
 import type { ReactNode } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  type StyleProp,
-  type ViewStyle,
-} from 'react-native';
-import { minimumTouchTarget } from '@sds/design-tokens';
-import { Radius, Spacing } from '@/constants/theme';
+import { type StyleProp, type ViewStyle, type TextStyle } from 'react-native';
 import { useTheme } from '@/hooks/use-theme';
 import { buttonPresentation, type ButtonVariant } from '@/lib/ui-presentation';
-import { ThemedText } from './themed-text';
 
 export function AppButton({
   label,
@@ -24,6 +16,7 @@ export function AppButton({
   icon,
   iconOnly = false,
   style,
+  labelStyle,
 }: {
   readonly label: string;
   readonly accessibilityLabel?: string;
@@ -36,49 +29,30 @@ export function AppButton({
   readonly icon?: ReactNode;
   readonly iconOnly?: boolean;
   readonly style?: StyleProp<ViewStyle>;
+  readonly labelStyle?: StyleProp<TextStyle>;
 }) {
   const colors = useTheme();
   const state = buttonPresentation(colors, variant, disabled, loading);
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityState={state.accessibilityState}
-      disabled={state.disabled}
+    <ActionControl
+      label={label}
+      accessibilityLabel={accessibilityLabel}
       onPress={onPress}
       onPressIn={onPressIn}
       onPressOut={onPressOut}
-      style={({ pressed }) => [
-        styles.button,
+      disabled={disabled}
+      loading={loading}
+      icon={icon}
+      iconOnly={iconOnly}
+      color={state.color}
+      labelStyle={labelStyle}
+      style={(pressed) => [
         style,
         {
           backgroundColor:
             pressed && variant === 'primary' ? colors.actionPressed : state.backgroundColor,
         },
-        pressed && styles.pressed,
       ]}
-    >
-      {loading ? <ActivityIndicator color={state.color} /> : icon}
-      {!iconOnly && (
-        <ThemedText type="button" style={[styles.label, { color: state.color }]}>
-          {label}
-        </ThemedText>
-      )}
-    </Pressable>
+    />
   );
 }
-const styles = StyleSheet.create({
-  button: {
-    minHeight: 48,
-    minWidth: minimumTouchTarget,
-    borderRadius: Radius.small,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.two,
-  },
-  label: { flexShrink: 1, textAlign: 'center' },
-  pressed: { opacity: 0.82 },
-});

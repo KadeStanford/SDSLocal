@@ -1,3 +1,4 @@
+import { FocusedHeader } from '@/components/focused-page-ui';
 import { FlowSection, FlowIdentity } from '@/components/flow-layout';
 import { ServiceRequestInboxControls } from '@/components/service-request-inbox-controls';
 import { ServiceRequestSummaryCard } from '@/components/service-request-summary-card';
@@ -93,6 +94,9 @@ export function ServiceRequestsContent({
     };
   }, [activeScope]);
   useEffect(() => {
+    // Capture the request-version ref object used to invalidate pending reads.
+    const generationForCleanup = generation;
+
     // Scope changes reset the inbox before its asynchronous refresh completes.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSavingId(null);
@@ -102,7 +106,7 @@ export function ServiceRequestsContent({
     setBusiness(null);
     setIsOwner(false);
     return () => {
-      generation.current++;
+      generationForCleanup.current++;
     };
   }, [businessId, session?.user.id]);
 
@@ -251,10 +255,16 @@ export function ServiceRequestsContent({
             {header}
             {!embedded && (
               <>
-                <ParishBusinessBrand />
-                <MerchantHeading
+                <FocusedHeader
                   title="Requests & estimates"
-                  subtitle={business?.name ?? 'Your customer enquiries'}
+                  subtitle={business?.name ?? 'Your customer inquiries'}
+                  onBack={() =>
+                    router.replace({
+                      pathname: '/business',
+                      params: { id: businessId ?? '', section: 'preview' },
+                    })
+                  }
+                  backLabel="Back to business"
                 />
               </>
             )}

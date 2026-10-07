@@ -3,6 +3,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { ListingBillingSummary } from '@/lib/listing-billing-core';
 import ListingPlansScreen, { ListingPlansWorkspace } from '../app/listing-plans';
+vi.mock('@/components/app-icon', () => ({ AppIcon: () => null }));
+vi.mock('@/components/business-screen-header', () => ({ ParishBusinessBrand: () => null }));
 
 const h = vi.hoisted(() => ({
   platform: 'ios' as 'ios' | 'android',
@@ -270,7 +272,7 @@ it('provides one actionable retry when prices fail, while keeping purchase block
   h.packages = [];
   h.error = 'Plans could not load from the App Store. Try again.';
   const html = renderToStaticMarkup(<ListingPlansScreen />);
-  const retry = h.targets.filter((target) => target.accessibilityLabel === 'Try again');
+  const retry = h.targets.filter((target) => target.accessibilityLabel === 'Refresh plans');
   expect(retry).toHaveLength(1);
   expect(retry[0]!.disabled).toBe(false);
   retry[0]!.onPress!();

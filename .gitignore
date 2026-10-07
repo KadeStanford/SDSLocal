@@ -27,7 +27,6 @@ dist-web/
 # Local Codex, Expo, and EAS state
 .codex/
 .codex-tmp/
-EmergencyBackup/
 .eas/
 .eas-cli-home/
 apps/.eas-userdata/
@@ -49,3 +48,15 @@ Thumbs.db
 # Logs
 *.log
 pnpm-debug.log*
+
+# Generated, dated readiness evidence
+reports/readiness/
+.readiness-cache/
+
+# Local review caches
+review/.test-temp/
+review/dependency-cache-before-link/
+
+# Hosted source recovery bundles remain private
+recovery/deployed-functions/
+recovery/backend-cutover/

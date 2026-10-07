@@ -1,5 +1,8 @@
+import { PageHeader } from '@/components/page-header';
+import { AppIcon } from '@/components/app-icon';
 import { PublicationRequirements } from '@/components/publication-requirements';
 import { FlowSection } from '@/components/flow-layout';
+
 import { MerchantButton, MerchantStatus } from '@/components/merchant-ui';
 import { useMerchantTheme } from '@/hooks/use-merchant-theme';
 import { router } from 'expo-router';
@@ -123,29 +126,11 @@ export function ListingPlansWorkspace({
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.container} edges={['top']}>
         <ScrollView contentContainerStyle={[styles.content, { paddingBottom: bottomPadding }]}>
-          <View style={styles.navigation}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Back"
-              onPress={onBack}
-              style={[
-                styles.back,
-                { backgroundColor: colors.backgroundElement, borderColor: colors.divider },
-              ]}
-            >
-              <ThemedText style={styles.backGlyph}>‹</ThemedText>
-            </Pressable>
-            <ThemedText type="smallBold" style={styles.wordmark}>
-              parish pass<ThemedText style={{ color: colors.accent }}> / business</ThemedText>
-            </ThemedText>
-          </View>
+          <PageHeader onBack={onBack} />
 
           <View style={styles.hero}>
-            <ThemedText type="smallBold" style={[styles.eyebrow, { color: colors.accent }]}>
-              BUILT FOR LOCAL BUSINESS
-            </ThemedText>
             <ThemedText accessibilityRole="header" type="title" style={styles.heroTitle}>
-              Your business.{'\n'}More possibilities.
+              Business plans
             </ThemedText>
             <ThemedText themeColor="textSecondary">
               Every plan covers up to three businesses. Choose the tools you need.
@@ -203,14 +188,6 @@ export function ListingPlansWorkspace({
               Testing details: {storeDiagnostic}
             </ThemedText>
           ) : null}
-          {!loading && (error || !packages.length) && session ? (
-            <MerchantButton
-              label="Try again"
-              secondary
-              disabled={purchasing}
-              onPress={() => void refresh()}
-            />
-          ) : null}
           <PublicationRequirements />
           {continuationError ? <StateNotice kind="error" message={continuationError} /> : null}
           {summary && !summary.billingEnabled ? (
@@ -252,12 +229,20 @@ export function ListingPlansWorkspace({
 
           <View style={styles.sectionHeading}>
             <ThemedText accessibilityRole="header" type="subtitle">
-              Business plans
+              Choose your plan
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
               Choose your tools
             </ThemedText>
           </View>
+          {!loading && (error || !packages.length) && session ? (
+            <MerchantButton
+              label="Refresh plans"
+              secondary
+              disabled={purchasing}
+              onPress={() => void refresh()}
+            />
+          ) : null}
           {hasYearlyPlans ? (
             <View
               accessibilityRole="tablist"
@@ -348,12 +333,7 @@ export function ListingPlansWorkspace({
                       ]}
                     >
                       {selected ? (
-                        <ThemedText
-                          accessible={false}
-                          style={[styles.check, { color: colors.onAccent }]}
-                        >
-                          ✓
-                        </ThemedText>
+                        <AppIcon name="check" size={18} tintColor={colors.onAccent} />
                       ) : null}
                     </View>
                   </View>
@@ -370,13 +350,7 @@ export function ListingPlansWorkspace({
                   <View style={[styles.planFeatures, { borderColor: colors.divider }]}>
                     {plan.benefits.map((benefit) => (
                       <View key={benefit} style={styles.benefitRow}>
-                        <ThemedText
-                          accessible={false}
-                          type="smallBold"
-                          style={{ color: colors.accent }}
-                        >
-                          ✓
-                        </ThemedText>
+                        <AppIcon name="check" size={18} />
                         <ThemedText type="small" style={styles.benefitText}>
                           {benefit}
                         </ThemedText>
@@ -514,9 +488,7 @@ export function ListingPlansWorkspace({
           >
             {listingPlanBenefits.map((benefit) => (
               <View key={benefit} style={styles.benefitRow}>
-                <ThemedText accessible={false} type="smallBold" style={{ color: colors.accent }}>
-                  ✓
-                </ThemedText>
+                <AppIcon name="check" size={18} />
                 <ThemedText type="small" themeColor="textSecondary" style={styles.benefitText}>
                   {benefit}
                 </ThemedText>
@@ -597,7 +569,7 @@ const styles = StyleSheet.create({
   wordmark: { fontSize: 17, letterSpacing: -0.5, flexShrink: 1 },
   hero: { gap: 12, paddingVertical: 8 },
   eyebrow: { fontSize: 11, letterSpacing: 1.6 },
-  heroTitle: { fontSize: 36, lineHeight: 40, letterSpacing: -1.2 },
+  heroTitle: { fontSize: 30, lineHeight: 37, letterSpacing: -0.7 },
   coverage: {
     alignSelf: 'flex-start',
     borderRadius: 8,
@@ -632,7 +604,7 @@ const styles = StyleSheet.create({
   heading: { gap: Spacing.two },
   currentCard: {
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 20,
     padding: Spacing.four,
     gap: Spacing.three,
   },

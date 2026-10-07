@@ -1,4 +1,6 @@
-import Link from 'next/link';
+import { SurfacePanel } from '@/components/shared-ui';
+import { BusinessWorkspaceHeader } from '@/components/business-workspace-header';
+
 import { notFound, redirect } from 'next/navigation';
 
 import { createClient } from '@/lib/supabase/server';
@@ -48,29 +50,23 @@ export default async function BusinessMediaPage({
   });
 
   return (
-    <main className="page-shell narrow-shell">
-      <nav className="topbar">
-        <Link className="brand" href="/account">
-          ← Account
-        </Link>
-        <Link href={`/b/${business.slug}`}>View page</Link>
-      </nav>
-      <div className="page-heading compact-heading">
-        <p className="eyebrow">Business media</p>
-        <h1>{business.name}</h1>
-        <p>
-          Originals stay on your device. The app uploads only optimized, metadata-free WebP
-          versions.
-        </p>
-      </div>
-      <section className="panel">
+    <main className="page-shell business-workspace">
+      <BusinessWorkspaceHeader
+        id={id}
+        name={business.name}
+        slug={business.slug}
+        section="media"
+        title="Photos & identity"
+        description="Manage the logo, cover and gallery customers see on your page."
+      />
+      <SurfacePanel>
         <MediaManager
           businessId={business.id}
           businessName={business.name}
           initialPhotos={photos}
           userId={authData.user.id}
         />
-      </section>
+      </SurfacePanel>
     </main>
   );
 }

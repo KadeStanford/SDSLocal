@@ -227,7 +227,8 @@ Deno.serve(async (request) => {
   let cleanupPending = false;
   try {
     await removeTargets(admin, targets);
-    await admin.rpc('finish_account_deletion_cleanup', { p_job_id: jobId, p_error: null });
+    const { error } = await admin.rpc('finish_account_deletion_cleanup', { p_job_id: jobId, p_error: null });
+    if (error) throw new Error('Account cleanup acknowledgement is pending.');
   } catch {
     cleanupPending = true;
     await admin.rpc('finish_account_deletion_cleanup', {

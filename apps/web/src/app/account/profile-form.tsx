@@ -1,4 +1,5 @@
 'use client';
+import { ActionButton } from '@/components/shared-ui';
 
 import { useActionState } from 'react';
 import { usRegionOptions } from '@sds/validation';
@@ -63,9 +64,9 @@ export function ProfileForm({ profile }: ProfileFormProps) {
       <div aria-live="polite" className={state.success ? 'form-success' : 'form-error'}>
         {state.success ?? state.message ?? errors[0]}
       </div>
-      <button className="button" disabled={pending}>
+      <ActionButton disabled={pending} type="submit">
         {pending ? 'Saving…' : 'Save profile'}
-      </button>
+      </ActionButton>
     </form>
   );
 }

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { AppTextInput as TextInput } from '@/components/app-text-input';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import { useTheme } from '@/hooks/use-theme';
 import type { DiscoveryFeature } from '@/lib/discovery-core';
 import { AppButton } from './app-button';

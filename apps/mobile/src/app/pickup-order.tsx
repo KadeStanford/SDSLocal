@@ -1,3 +1,4 @@
+import { PageHeader } from '@/components/page-header';
 import { FlowSection, FlowIdentity } from '@/components/flow-layout';
 import { usePullRefresh } from '@/hooks/use-pull-refresh';
 import {
@@ -13,7 +14,6 @@ import { useTheme } from '@/hooks/use-theme';
 import { useOrderPolling } from '@/hooks/use-order-polling';
 import { commerce, openCheckout } from '@/lib/square-commerce';
 import {
-  money,
   orderStatusLabel,
   type OrderSupportRequest,
   type PickupOrder,
@@ -47,7 +47,7 @@ export default function PickupOrderDetail() {
       permissions: { canRefund: boolean; canManage: boolean };
       supportRequests: OrderSupportRequest[];
     }>('operator_detail', { orderId });
-  }, [orderId, eligible, userId]);
+  }, [orderId, eligible]);
   const state = useOrderPolling(`${userId}:${orderId}`, read);
   const pullRefresh = usePullRefresh(() => state.refresh());
   const [busy, setBusy] = useState(false);
@@ -146,10 +146,9 @@ export default function PickupOrderDetail() {
           alignSelf: 'center',
         }}
       >
-        <AppButton
-          label="Back to orders"
-          variant="tertiary"
-          onPress={() => (router.canGoBack() ? router.back() : router.replace('/pickup-orders'))}
+        <PageHeader
+          onBack={() => (router.canGoBack() ? router.back() : router.replace('/pickup-orders'))}
+          backLabel="Back to orders"
         />
         {!!state.error && (
           <>

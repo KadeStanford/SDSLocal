@@ -1,3 +1,4 @@
+import { AppIcon } from '@/components/app-icon';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { AppButton } from '../app-button';
@@ -123,7 +124,7 @@ export function PickupSettingsEditor({
                           .join('\n')
                       : 'Closed'}
                   </ThemedText>
-                  <ThemedText themeColor="textSecondary">›</ThemedText>
+                  <AppIcon name="chevron-right" size={18} />
                 </Pressable>
                 {editingDay === index && (
                   <View style={{ gap: 12, paddingBottom: 12 }}>

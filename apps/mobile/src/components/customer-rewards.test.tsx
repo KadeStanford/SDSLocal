@@ -99,9 +99,9 @@ vi.mock('react', async () => {
               ? h.screen === 'following'
                 ? 'following'
                 : 'wallet'
-              : i === 6 && h.screen === 'reward-detail'
+              : i === 7 && h.screen === 'reward-detail'
                 ? rewardCards[0]
-                : i === 14
+                : i === 15
                   ? false
                   : initial,
       );
@@ -158,8 +158,8 @@ vi.mock('@/lib/biometric-auth', () => ({ clearBiometricSignInRefreshToken: () =>
 vi.mock('@/lib/haptics', () => ({ haptics: { selection: () => {} } }));
 vi.mock('@/lib/auth-intents', () => ({}));
 vi.mock('@/lib/business-onboarding', () => ({ clearBusinessOnboardingDraft: () => {} }));
-vi.mock('expo-symbols', async () => ({
-  SymbolView: (await import('../test/visual-symbol')).VisualSymbol,
+vi.mock('@/components/app-icon', async () => ({
+  AppIcon: (await import('../test/visual-symbol')).VisualSymbol,
 }));
 vi.mock('expo-apple-authentication', () => ({
   AppleAuthenticationButtonStyle: { WHITE_OUTLINE: 1 },
@@ -230,10 +230,10 @@ it('renders redesigned rewards, following, and details in both themes', async ()
       expect(body).toContain('parish pass');
       expect(body).toContain(
         screen === 'following'
-          ? 'Your local favorites'
+          ? 'Following'
           : screen === 'reward-detail'
             ? 'Show my rewards code'
-            : 'Your rewards',
+            : 'Rewards wallet',
       );
       const css = (StyleSheet as unknown as { getSheet(): { textContent: string } }).getSheet()
         .textContent;
@@ -250,7 +250,7 @@ it('groups ready rewards before in-progress cards without repeating the business
   const html = renderToStaticMarkup(
     <RewardsWalletList cards={[...rewardCards].reverse()} onOpen={() => {}} />,
   );
-  expect(html.indexOf('Ready to enjoy')).toBeLessThan(html.indexOf('Your next little win'));
+  expect(html.indexOf('Ready to enjoy')).toBeLessThan(html.indexOf('In progress'));
   expect(html.match(/Coffee club/g)).toHaveLength(2); // Button name and card title.
   expect(html).not.toContain('Parish Pass rewards');
 });

@@ -1,3 +1,5 @@
+import { PageHeaderScope, NestedHeaderBack } from './page-header';
+import { FocusedOperationsHeader } from './focused-operations-header';
 import { useState, useCallback } from 'react';
 import { Alert, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -5,8 +7,7 @@ import { useFocusEffect } from 'expo-router';
 import { useServiceOperations } from '@/providers/service-operations-provider';
 import { useTheme } from '@/hooks/use-theme';
 import { useScreenBottomPadding } from '@/hooks/use-screen-bottom-padding';
-import { SymbolView } from 'expo-symbols';
-import { OperationsScreenHeader } from './operations-screen-header';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 
 import { AppointmentWorkspace } from './appointment-workspace';
 
@@ -39,8 +40,8 @@ export function ServiceOperationsScreen({ kind }: { kind: 'appointments' | 'requ
     else apply();
   };
   const heading = (
-    <OperationsScreenHeader
-      title={kind === 'appointments' ? 'Appointments' : 'Requests & estimates'}
+    <FocusedOperationsHeader
+      title={kind === 'appointments' ? 'Appointment schedule' : 'Requests & estimates'}
       subtitle={
         kind === 'appointments' ? 'Your day, at a glance.' : 'New inquiries, all in one place.'
       }
@@ -48,7 +49,7 @@ export function ServiceOperationsScreen({ kind }: { kind: 'appointments' | 'requ
       selected={business?.id}
       onChange={choose}
       action={
-        kind === 'appointments' ? (
+        kind === 'appointments' && view === 'schedule' ? (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={view === 'schedule' ? 'Booking setup' : 'Back to schedule'}
@@ -74,47 +75,57 @@ export function ServiceOperationsScreen({ kind }: { kind: 'appointments' | 'requ
   );
   if (kind === 'requests' && business)
     return (
-      <ServiceRequestsContent
-        key={business.id}
-        businessId={business.id}
-        embedded
-        header={
-          <>
-            {heading}
-            {!!error && <StateNotice kind="error" message={error} />}
-          </>
-        }
-      />
+      <PageHeaderScope>
+        <ServiceRequestsContent
+          key={business.id}
+          businessId={business.id}
+          embedded
+          header={
+            <>
+              {view === 'setup' && (
+                <NestedHeaderBack label="Back to schedule" onPress={() => setView('schedule')} />
+              )}
+              {heading}
+              {!!error && <StateNotice kind="error" message={error} />}
+            </>
+          }
+        />
+      </PageHeaderScope>
     );
   return (
-    <SafeAreaView
-      edges={['top', 'left', 'right']}
-      style={{ flex: 1, backgroundColor: c.background }}
-    >
-      <ScrollView
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ padding: 20, paddingBottom: bottom, gap: 20 }}
+    <PageHeaderScope>
+      <SafeAreaView
+        edges={['top', 'left', 'right']}
+        style={{ flex: 1, backgroundColor: c.background }}
       >
-        {heading}
-        {!!error && <StateNotice kind="error" message={error} />}
-        {loading && !business ? (
-          <ListLoading label="Loading your businesses" />
-        ) : business ? (
-          <AppointmentWorkspace
-            key={business.id}
-            businessId={business.id}
-            businessTimezone={business.timezone || 'America/Chicago'}
-            onDirtyChange={setDirty}
-            view={view}
-            onViewChange={setView}
-          />
-        ) : (
-          <EmptyState
-            title="No eligible businesses"
-            message="Appointments and requests are available for service businesses you own."
-          />
-        )}
-      </ScrollView>
-    </SafeAreaView>
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ padding: 20, paddingBottom: bottom, gap: 20 }}
+        >
+          {view === 'setup' && (
+            <NestedHeaderBack label="Back to schedule" onPress={() => setView('schedule')} />
+          )}
+          {heading}
+          {!!error && <StateNotice kind="error" message={error} />}
+          {loading && !business ? (
+            <ListLoading label="Loading your businesses" />
+          ) : business ? (
+            <AppointmentWorkspace
+              key={business.id}
+              businessId={business.id}
+              businessTimezone={business.timezone || 'America/Chicago'}
+              onDirtyChange={setDirty}
+              view={view}
+              onViewChange={setView}
+            />
+          ) : (
+            <EmptyState
+              title="No eligible businesses"
+              message="Appointments and requests are available for service businesses you own."
+            />
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    </PageHeaderScope>
   );
 }

@@ -1,3 +1,7 @@
+import { ActionButton } from '@/components/shared-ui';
+
+import { AppIcon } from '@/components/app-icon';
+import { PageHeader } from '@/components/page-header';
 import { OpenInApp } from '@/components/open-in-app';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -180,16 +184,20 @@ export default async function EventDetailPage({
 
   return (
     <main className="event-detail-page">
-      <nav className="event-detail-nav">
-        <Link className="brand" href="/">
-          Parish Pass
-        </Link>
+      <PageHeader backHref="/events" backLabel="Back to events" />
+      <nav className="parish-page-links" aria-label="Event page links">
         <div className="nav-actions">
-          <Link href="/events">All events</Link>
+          <Link href="/events">
+            <AppIcon name="calendar-days" size={18} />
+            All events
+          </Link>
           <Link href={`/b/${business.slug}`}>{business.name}</Link>
         </div>
       </nav>
-      <OpenInApp path={`calendar?eventId=${encodeURIComponent(event.id)}&businessId=${encodeURIComponent(business!.id)}`} description="Open this event to RSVP, manage your group and set a reminder." />
+      <OpenInApp
+        path={`calendar?eventId=${encodeURIComponent(event.id)}&businessId=${encodeURIComponent(business!.id)}`}
+        description="Open this event to RSVP, manage your group and set a reminder."
+      />
       {!event.is_published && (!event.publish_at || new Date(event.publish_at) > new Date()) && (
         <div className="draft-banner">Private event preview</div>
       )}
@@ -308,7 +316,7 @@ export default async function EventDetailPage({
                       <option value="monthly">Every month until the event</option>
                     </select>
                   </label>
-                  <button className="button">Remind me</button>
+                  <ActionButton type="submit">Remind me</ActionButton>
                 </div>
               </form>
             ) : (

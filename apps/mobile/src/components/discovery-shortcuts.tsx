@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import { useTheme } from '@/hooks/use-theme';
 import type { DiscoveryFeature } from '@/lib/discovery-core';
 import { HorizontalScrollRow } from './horizontal-scroll-row';

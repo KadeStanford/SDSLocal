@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { moderationPushCopy } from '../_shared/moderation-push.ts';
 
 const expoPushUrl = 'https://exp.host/--/api/v2/push/send';
 const expoReceiptsUrl = 'https://exp.host/--/api/v2/push/getReceipts';
@@ -13,6 +14,7 @@ interface Delivery {
   body: string;
   url: string;
   attempt_count: number;
+  moderation_outcome?: unknown;
 }
 
 interface PushToken {
@@ -138,6 +140,17 @@ Deno.serve(async (request) => {
   let retried = 0;
 
   for (const delivery of deliveries) {
+    if (delivery.moderation_outcome) {
+      const {data:allowed,error}=await admin.rpc('moderation_notification_sendable',{p_delivery_id:delivery.id});
+      if(error||!allowed) {
+        await updateDelivery(delivery.id,{
+          status:error?(delivery.attempt_count>=5?'failed':'queued'):'skipped',
+          nextAttemptAt:new Date(Date.now()+60000).toISOString(),
+          lastError:error?'Moderation access check unavailable':'Outcome superseded or recipient access removed',
+        });
+        skipped+=1; continue;
+      }
+    }
     if (delivery.notification_type === 'orders') {
       const { data: allowed, error } = await admin.rpc('pickup_notification_sendable', {
         p_delivery: delivery.id,
@@ -199,16 +212,17 @@ Deno.serve(async (request) => {
     }
 
     try {
+      const moderationCopy=moderationPushCopy(delivery);
       const pushResponse = await fetch(expoPushUrl, {
         method: 'POST',
         headers: jsonHeaders,
         body: JSON.stringify(
           tokens.map((token) => ({
             to: token.expo_push_token,
-            title: delivery.title,
-            body: delivery.body,
+            title: moderationCopy?.title??delivery.title,
+            body: moderationCopy?.body??delivery.body,
             data: {
-              url: delivery.url,
+              url: moderationCopy?.url??delivery.url,
               notificationType: delivery.notification_type,
               deliveryId: delivery.id,
             },

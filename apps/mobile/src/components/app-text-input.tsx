@@ -8,7 +8,7 @@ export type AppTextInputProps = TextInputProps & {
   invalid?: boolean;
 };
 
-/** One filled input treatment; forwards native refs, keyboard options and events unchanged. */
+/** Outlined fields and unboxed inline text; forwards native refs, keyboard options and events. */
 export const AppTextInput = forwardRef<NativeTextInput, AppTextInputProps>(function AppTextInput(
   { style, variant = 'field', invalid = false, onFocus, onBlur, editable, multiline, ...props },
   ref,
@@ -46,12 +46,8 @@ export const AppTextInput = forwardRef<NativeTextInput, AppTextInputProps>(funct
         {
           color: c.text,
           backgroundColor: inline ? 'transparent' : c.inputSurface,
-          borderWidth: 0,
-          borderTopWidth: 0,
-          borderLeftWidth: 0,
-          borderRightWidth: 0,
-          borderBottomWidth: inline ? 0 : 2,
-          borderBottomColor: hasError ? c.errorText : focused ? c.accent : 'transparent',
+          borderWidth: inline ? 0 : 1,
+          borderColor: hasError ? c.errorText : focused ? c.accent : c.inputBorder,
           borderRadius: inline ? 0 : 12,
           opacity: editable === false ? 0.6 : (existing?.opacity ?? 1),
           ...(inline ? { padding: 0, paddingHorizontal: 0, paddingVertical: 0 } : {}),

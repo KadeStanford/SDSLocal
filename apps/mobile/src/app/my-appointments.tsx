@@ -1,6 +1,9 @@
+import { PageHeader } from '@/components/page-header';
 import { appointmentIsPast } from '@/lib/customer-commitments';
-import { useCallback, useRef, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { Pressable, ScrollView, View } from 'react-native';
+import { AppIcon } from '@/components/app-icon';
+import { EmptyState } from '@/components/data-state';
 import { router, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/providers/auth-provider';
@@ -10,12 +13,10 @@ import {
   readGuestAppointmentIds,
   readAppointmentAccess,
 } from '@/lib/appointment-commerce';
-import { CustomerBrand } from '@/components/customer-brand';
-import { BackPill } from '@/components/back-pill';
+
 import {
   MerchantButton,
   MerchantHeading,
-  MerchantRow,
   MerchantStatus,
   merchantStyles,
 } from '@/components/merchant-ui';
@@ -42,6 +43,7 @@ export function AppointmentHistoryList({
   filter: 'upcoming' | 'past';
   onOpen: (id: string) => void;
 }) {
+  const c = useTheme();
   const visible = rows
     .filter((row) => appointmentIsPast(row) === (filter === 'past'))
     .sort((a, b) =>
@@ -53,20 +55,90 @@ export function AppointmentHistoryList({
     <View style={{ gap: 12 }}>
       {visible.length ? (
         visible.map((row) => (
-          <MerchantRow
+          <Pressable
             key={row.id}
-            title={row.service_name}
-            subtitle={`${row.business_name}\n${new Date(row.starts_at).toLocaleString(undefined, { timeZone: row.timezone, month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })}`}
-            status={<MerchantStatus label={row.status.replaceAll('_', ' ')} tone="quiet" />}
+            accessibilityRole="button"
+            accessibilityLabel={`View ${row.service_name} at ${row.business_name}, ${row.status.replaceAll('_', ' ')}`}
             onPress={() => onOpen(row.id)}
-          />
+            style={({ pressed }) => ({
+              borderWidth: 1,
+              borderColor: c.divider,
+              borderRadius: 20,
+              overflow: 'hidden',
+              backgroundColor: c.backgroundElement,
+              opacity: pressed ? 0.8 : 1,
+            })}
+          >
+            <View style={{ padding: 18, gap: 16 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 14 }}>
+                <View
+                  style={{
+                    width: 66,
+                    paddingVertical: 12,
+                    borderRadius: 14,
+                    backgroundColor: c.backgroundSelected,
+                    alignItems: 'center',
+                    gap: 4,
+                  }}
+                >
+                  <ThemedText type="smallBold">
+                    {new Date(row.starts_at).toLocaleDateString(undefined, {
+                      timeZone: row.timezone,
+                      month: 'short',
+                    })}
+                  </ThemedText>
+                  <ThemedText style={{ fontSize: 26, lineHeight: 32, fontWeight: '700' }}>
+                    {new Date(row.starts_at).toLocaleDateString(undefined, {
+                      timeZone: row.timezone,
+                      day: 'numeric',
+                    })}
+                  </ThemedText>
+                </View>
+                <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
+                  <ThemedText type="card">{row.service_name}</ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {row.business_name}
+                  </ThemedText>
+                  <ThemedText type="smallBold">
+                    {new Date(row.starts_at).toLocaleTimeString(undefined, {
+                      timeZone: row.timezone,
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      timeZoneName: 'short',
+                    })}
+                  </ThemedText>
+                </View>
+              </View>
+              <MerchantStatus label={row.status.replaceAll('_', ' ')} tone="quiet" />
+            </View>
+            <View
+              style={{
+                minHeight: 48,
+                paddingHorizontal: 18,
+                paddingVertical: 13,
+                backgroundColor: c.accent,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+              }}
+            >
+              <ThemedText type="smallBold" style={{ color: c.onAccent }}>
+                View appointment
+              </ThemedText>
+              <AppIcon name="chevron-right" size={20} tintColor={c.onAccent} />
+            </View>
+          </Pressable>
         ))
       ) : (
-        <ThemedText themeColor="textSecondary">
-          {filter === 'past'
-            ? 'No past appointments yet.'
-            : 'No upcoming appointments. Book a service from a business page.'}
-        </ThemedText>
+        <EmptyState
+          title={filter === 'past' ? 'No past appointments yet' : 'No upcoming appointments'}
+          message={
+            filter === 'past'
+              ? 'Completed and cancelled bookings appear here.'
+              : 'Book a service from a business page.'
+          }
+        />
       )}
     </View>
   );
@@ -75,7 +147,12 @@ export default function MyAppointmentsScreen() {
   const { session } = useAuth();
   const owner = session?.user.id ?? null;
   const identity = useRef(owner);
-  identity.current = owner;
+  useLayoutEffect(() => {
+    identity.current = owner;
+    return () => {
+      identity.current = null;
+    };
+  }, [owner]);
   const version = useRef(0);
   const c = useTheme();
   const bottom = useScreenBottomPadding();
@@ -145,10 +222,7 @@ export default function MyAppointmentsScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       <ScrollView contentContainerStyle={[merchantStyles.content, { paddingBottom: bottom }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <BackPill onPress={() => router.back()} />
-          <CustomerBrand />
-        </View>
+        <PageHeader onBack={() => router.back()} />
         <MerchantHeading
           title="My appointments"
           subtitle="View, reschedule or cancel your bookings."

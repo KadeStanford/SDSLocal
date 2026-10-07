@@ -5,13 +5,16 @@ import {
   type BusinessReviewSummary,
 } from '@/lib/business-review-summary';
 import { ThemedText } from './themed-text';
+import { AppIcon } from './app-icon';
 
 export function BusinessRating({
   summary,
   compact = false,
+  compactSize = 12,
 }: {
   summary: BusinessReviewSummary;
   compact?: boolean;
+  compactSize?: number;
 }) {
   const c = useTheme();
   const label = businessRatingAccessibilityLabel(summary);
@@ -21,20 +24,15 @@ export function BusinessRating({
       accessibilityLabel={label}
       style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 5 }}
     >
+      <AppIcon name="star" size={compact ? compactSize + 2 : 16} tintColor={summary.reviewCount > 0 ? c.accent : c.textMuted} fill />
       <ThemedText
         accessible={false}
         type="smallBold"
-        style={{
-          color: summary.reviewCount > 0 ? c.accent : c.textMuted,
-          ...(compact ? { fontSize: 12, lineHeight: 16 } : {}),
-        }}
-      >
-        ★
-      </ThemedText>
-      <ThemedText
-        accessible={false}
-        type="smallBold"
-        style={compact ? { fontSize: 12, lineHeight: 16 } : undefined}
+        style={
+          compact
+            ? { fontSize: compactSize, lineHeight: compactSize === 12 ? 16 : compactSize + 5 }
+            : undefined
+        }
       >
         {summary.reviewCount > 0 ? summary.averageRating.toFixed(1) : 'No reviews yet'}
       </ThemedText>
@@ -43,7 +41,11 @@ export function BusinessRating({
           accessible={false}
           type="small"
           themeColor="textSecondary"
-          style={compact ? { fontSize: 12, lineHeight: 16 } : undefined}
+          style={
+            compact
+              ? { fontSize: compactSize, lineHeight: compactSize === 12 ? 16 : compactSize + 5 }
+              : undefined
+          }
         >
           {compact
             ? `(${summary.reviewCount})`

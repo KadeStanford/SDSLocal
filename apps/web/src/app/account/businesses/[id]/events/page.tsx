@@ -1,3 +1,6 @@
+import { ActionButton } from '@/components/shared-ui';
+import { BusinessWorkspaceHeader } from '@/components/business-workspace-header';
+
 import type { EventLocationMode, EventTimezone } from '@sds/validation';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
@@ -71,25 +74,16 @@ export default async function EventsManagerPage({
   const archivedEvents = events.filter((event) => event.archived_at);
 
   return (
-    <main className="page-shell narrow-shell">
-      <nav className="topbar">
-        <Link className="brand" href="/account">
-          ← Account
-        </Link>
-        <div className="nav-actions">
-          <Link href="/events">Discover events</Link>
-          <Link href={`/account/businesses/${id}/updates`}>Follower updates</Link>
-          <Link href={`/b/${business.slug}`}>View page</Link>
-        </div>
-      </nav>
-
-      <div className="page-heading compact-heading">
-        <p className="eyebrow">Events</p>
-        <h1>{business.name}</h1>
-        <p>
-          Create structured event pages customers can discover, save, share, and add to a calendar.
-        </p>
-      </div>
+    <main className="page-shell business-workspace">
+      <BusinessWorkspaceHeader
+        id={id}
+        name={business.name}
+        slug={business.slug}
+        section="events"
+        title="Your events"
+        description="Create event pages customers can discover, save, share and add to a calendar."
+        utility={{ href: '/events', label: 'Discover events' }}
+      />
 
       {typeof query.saved === 'string' && <p className="notice-success">{query.saved}</p>}
       {typeof query.error === 'string' && <p className="notice-error">{query.error}</p>}
@@ -99,9 +93,16 @@ export default async function EventsManagerPage({
         <form action={createEventAction} className="form-stack">
           <input type="hidden" name="businessId" value={id} />
           <EventFields />
-          <button className="button">Save event</button>
+          <ActionButton type="submit">Save event</ActionButton>
         </form>
       </details>
+
+      <div className="workspace-collection-heading">
+        <h2>Event library</h2>
+        <span>
+          {activeEvents.length} {activeEvents.length === 1 ? 'event' : 'events'}
+        </span>
+      </div>
 
       <div className="event-editor-list">
         {activeEvents.map((event) => {
@@ -120,7 +121,11 @@ export default async function EventsManagerPage({
           return (
             <details className="panel event-editor" key={event.id}>
               <summary>
-                <span>
+                {currentImage && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img className="workspace-event-photo" src={currentImage.url} alt="" />
+                )}
+                <span className="workspace-event-identity">
                   <strong>{event.title}</strong>
                   <small>{formatEventTime(event.starts_at, event.timezone)}</small>
                 </span>
@@ -163,7 +168,9 @@ export default async function EventsManagerPage({
                   currentImage={currentImage}
                 />
                 <div className="event-editor-actions">
-                  <button className="button button-small">Save details</button>
+                  <ActionButton className="button-small" type="submit">
+                    Save details
+                  </ActionButton>
                   <Link href={`/events/${business.slug}/${event.slug}`}>Preview event page</Link>
                   <button className="text-button" formAction={archiveEventAction}>
                     Archive

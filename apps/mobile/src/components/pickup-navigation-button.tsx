@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { View, type StyleProp, type ViewStyle, type TextStyle } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { AppButton } from './app-button';
 import { ThemedText } from './themed-text';
@@ -15,10 +15,14 @@ export function PickupNavigationButton({
   label,
   destination,
   variant = 'primary',
+  style,
+  labelStyle,
 }: {
   readonly label: string;
   readonly destination: PickupDestination;
   readonly variant?: 'primary' | 'secondary';
+  readonly style?: StyleProp<ViewStyle>;
+  readonly labelStyle?: StyleProp<TextStyle>;
 }) {
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState('');
@@ -45,6 +49,8 @@ export function PickupNavigationButton({
         variant={variant}
         label={opening ? 'Opening pickup…' : label}
         loading={opening}
+        style={style}
+        labelStyle={labelStyle}
         disabled={!id.trim()}
         onPressIn={beginControlGesture}
         onPressOut={endControlGesture}

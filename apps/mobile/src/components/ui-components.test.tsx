@@ -67,8 +67,8 @@ vi.mock('expo-image', () => ({
     createElement('img', { src: source.uri, 'data-fit': contentFit, 'data-cache': cachePolicy }),
 }));
 vi.mock('expo-router', () => ({ router: { push: vi.fn() }, useFocusEffect: () => {} }));
-vi.mock('expo-symbols', () => ({
-  SymbolView: () => createElement('span', { 'data-symbol': true }),
+vi.mock('@/components/app-icon', () => ({
+  AppIcon: () => createElement('span', { 'data-symbol': true }),
 }));
 
 const photos = ['cover', 'logo'].map((role) => ({

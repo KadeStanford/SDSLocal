@@ -1,11 +1,18 @@
+import { Platform } from 'react-native';
+import { Fonts } from '@/constants/theme';
+import { RatingLabel } from '@/components/rating-label';
+import { FocusedHeader, ReviewStars } from '@/components/focused-page-ui';
+import { AppIcon } from '@/components/app-icon';
+import { Pressable } from 'react-native';
 import { CustomerBrand } from '@/components/customer-brand';
 import { FlowAvatar, FlowIdentity } from '@/components/flow-layout';
 import { BackPill } from '@/components/back-pill';
 import { usePullRefresh } from '@/hooks/use-pull-refresh';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { FlatList, RefreshControl, View } from 'react-native';
 import { AppTextInput as TextInput } from '@/components/app-text-input';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { isOutcomeId } from '@sds/business-logic';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
@@ -25,6 +32,8 @@ import { useMerchantTheme } from '@/hooks/use-merchant-theme';
 import { commerce } from '@/lib/square-commerce';
 import { userMessageFromError } from '@/lib/user-error';
 import { useAuth } from '@/providers/auth-provider';
+
+const focusedFont = Platform.OS === 'web' ? 'system-ui' : Fonts.sans;
 
 interface EventReview {
   readonly id: string;
@@ -47,6 +56,9 @@ interface AttendedEvent {
 
 export default function MyEventReviewsScreen() {
   const { session } = useAuth();
+  const params = useLocalSearchParams<{ eventId?: string }>();
+  const initialEventId = isOutcomeId(params.eventId) ? params.eventId : null;
+  const initialFocus = useRef<string | null>(null);
   const colors = useMerchantTheme();
   const bottom = useScreenBottomPadding();
   const [events, setEvents] = useState<AttendedEvent[]>([]);
@@ -62,23 +74,26 @@ export default function MyEventReviewsScreen() {
     mutation = useRef(false);
   const activeScope = session?.user.id ?? '';
   const scopeRef = useRef(activeScope);
-  scopeRef.current = activeScope;
-  useEffect(() => {
+  useLayoutEffect(() => {
     scopeRef.current = activeScope;
     return () => {
       scopeRef.current = '';
     };
   }, [activeScope]);
-  useEffect(() => {
+  const [previousScope, setPreviousScope] = useState(activeScope);
+  if (previousScope !== activeScope) {
+    setPreviousScope(activeScope);
     setEvents([]);
     setRatings({});
     setTexts({});
     setSelectedId(null);
-    return () => {
+  }
+  useEffect(
+    () => () => {
       generation.current++;
-    };
-  }, [session?.user.id]);
-
+    },
+    [activeScope],
+  );
   const load = useCallback(async () => {
     const readGeneration = ++generation.current;
     if (!session) {
@@ -143,6 +158,19 @@ export default function MyEventReviewsScreen() {
     }
   }
 
+  useEffect(() => {
+    if (
+      !session ||
+      loading ||
+      !initialEventId ||
+      initialFocus.current === `${session.user.id}:${initialEventId}`
+    )
+      return;
+    if (events.some((event) => event.eventId === initialEventId)) {
+      setSelectedId(initialEventId);
+      initialFocus.current = `${session.user.id}:${initialEventId}`;
+    }
+  }, [session?.user.id, loading, events, initialEventId]);
   const selected = events.find((e) => e.eventId === selectedId);
   const visible = events.filter(
     (e) => filter === 'all' || (filter === 'needs-review' ? !e.review : !!e.review),
@@ -177,9 +205,45 @@ export default function MyEventReviewsScreen() {
         }
         ListHeaderComponent={
           <View style={{ gap: 20 }}>
-            <BackPill label="Back to Account" onPress={() => router.back()} />
-            <CustomerBrand />
-            <MerchantHeading title="Attended events" subtitle="Your verified event experiences" />
+            <FocusedHeader
+              title="Attended events"
+              subtitle="Keep your experiences close. Share a review after your visit."
+              onBack={() => (router.canGoBack() ? router.back() : router.replace('/account'))}
+              backLabel="Back to Account"
+            />
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              {[
+                { label: 'To review', count: events.filter((e) => !e.review).length },
+                { label: 'Reviewed', count: events.filter((e) => e.review).length },
+              ].map((stat) => (
+                <View
+                  key={stat.label}
+                  style={{
+                    flex: 1,
+                    padding: 16,
+                    borderRadius: 18,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    backgroundColor: colors.surface,
+                    gap: 4,
+                  }}
+                >
+                  <ThemedText
+                    style={{
+                      fontFamily: focusedFont,
+                      fontSize: 26,
+                      lineHeight: 32,
+                      fontWeight: '700',
+                    }}
+                  >
+                    {stat.count}
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {stat.label}
+                  </ThemedText>
+                </View>
+              ))}
+            </View>
             {!!error && (
               <>
                 <StateNotice kind="error" message={error} />
@@ -195,20 +259,94 @@ export default function MyEventReviewsScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <MerchantRow
-            title={item.title}
-            leading={<FlowAvatar name={item.businessName} />}
-            subtitle={item.businessName + ' · ' + new Date(item.startsAt).toLocaleDateString()}
-            detail={item.review?.text ?? ''}
-            status={
-              <MerchantStatus
-                label={item.review ? 'Reviewed' : 'Ready to review'}
-                tone={item.review ? 'success' : 'quiet'}
-              />
-            }
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={(item.review ? 'Read review for ' : 'Review ') + item.title}
             onPress={() => setSelectedId(item.eventId)}
-            label={(item.review ? 'Read review for ' : 'Review ') + item.title}
-          />
+            style={({ pressed }) => ({
+              padding: 18,
+              gap: 16,
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: colors.surface,
+              opacity: pressed ? 0.8 : 1,
+            })}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 14 }}>
+              <View
+                style={{
+                  width: 58,
+                  paddingVertical: 10,
+                  alignItems: 'center',
+                  borderRadius: 14,
+                  backgroundColor: colors.background,
+                  gap: 2,
+                }}
+              >
+                <ThemedText type="smallBold">
+                  {new Date(item.startsAt).toLocaleDateString(undefined, { month: 'short' })}
+                </ThemedText>
+                <ThemedText
+                  style={{
+                    fontFamily: focusedFont,
+                    fontSize: 24,
+                    lineHeight: 29,
+                    fontWeight: '700',
+                  }}
+                >
+                  {new Date(item.startsAt).getDate()}
+                </ThemedText>
+              </View>
+              <View style={{ flex: 1, minWidth: 0, gap: 5 }}>
+                <ThemedText
+                  style={{
+                    fontFamily: focusedFont,
+                    fontSize: 19,
+                    lineHeight: 25,
+                    fontWeight: '700',
+                  }}
+                >
+                  {item.title}
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {item.businessName}
+                </ThemedText>
+                <MerchantStatus
+                  label={item.review ? 'Reviewed' : 'Verified attendance'}
+                  tone="success"
+                />
+              </View>
+            </View>
+            {item.review ? (
+              <>
+                <ReviewStars rating={item.review.rating} />
+                {!!item.review.text && (
+                  <ThemedText numberOfLines={3}>{item.review.text}</ThemedText>
+                )}
+              </>
+            ) : (
+              <ThemedText type="small" themeColor="textSecondary">
+                How was your experience? Your review helps other neighbors decide.
+              </ThemedText>
+            )}
+            <View
+              style={{
+                paddingTop: 14,
+                borderTopWidth: 1,
+                borderColor: colors.border,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 10,
+              }}
+            >
+              <ThemedText type="smallBold">
+                {item.review ? 'View your review' : 'Write a review'}
+              </ThemedText>
+              <AppIcon name="chevron-right" size={20} />
+            </View>
+          </Pressable>
         )}
         ListEmptyComponent={
           loading && !events.length ? (
@@ -252,10 +390,7 @@ export default function MyEventReviewsScreen() {
             )}
             {selected.review ? (
               <>
-                <ThemedText accessibilityLabel={selected.review.rating + ' out of 5 stars'}>
-                  {'★'.repeat(selected.review.rating)}
-                  {'☆'.repeat(5 - selected.review.rating)}
-                </ThemedText>
+                <RatingLabel rating={selected.review.rating} />
                 {!!selected.review.text && <ThemedText>{selected.review.text}</ThemedText>}
                 {selected.review.moderationStatus !== 'published' && (
                   <MerchantStatus label="Review is not currently public" tone="warning" />

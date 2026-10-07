@@ -22,9 +22,9 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { BusinessLogo } from '@/components/business-logo';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import { router } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -253,9 +253,7 @@ export function PublicBusinessPageContent({
   const [items, setItems] = useState<ItemData[]>([]);
   const [events, setEvents] = useState<EventData[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-  useEffect(() => {
-    setSelectedEventId(null);
-  }, [businessId, session?.user.id]);
+
   const [loyalty, setLoyalty] = useState<LoyaltyData | null>(null);
   const [hours, setHours] = useState<HourData[]>([]);
   const [detailsPanel, setDetailsPanel] = useState<
@@ -298,10 +296,15 @@ export function PublicBusinessPageContent({
   const eventMutation = useRef(false);
   const eventScope = businessId + ':' + (session?.user.id ?? '');
   const eventScopeRef = useRef(eventScope);
-  eventScopeRef.current = eventScope;
-  useEffect(() => {
+  const [previousEventScope, setPreviousEventScope] = useState(eventScope);
+  if (previousEventScope !== eventScope) {
+    setPreviousEventScope(eventScope);
+    setSelectedEventId(null);
     setActionPending(null);
     setActionMessage(null);
+  }
+  useLayoutEffect(() => {
+    eventScopeRef.current = eventScope;
     return () => {
       eventScopeRef.current = '';
     };
@@ -433,18 +436,22 @@ export function PublicBusinessPageContent({
         const firstError = [
           businessResult.error,
 
-
-
-
-
-
           followResult.error,
           savesResult.error,
           membershipResult.error,
           ownerResult.error,
-
         ].find(Boolean);
-        setPartialError(Boolean(photoResult.error || sectionResult.error || itemResult.error || eventResult.error || loyaltyResult.error || hourResult.error || locationResult.error));
+        setPartialError(
+          Boolean(
+            photoResult.error ||
+            sectionResult.error ||
+            itemResult.error ||
+            eventResult.error ||
+            loyaltyResult.error ||
+            hourResult.error ||
+            locationResult.error,
+          ),
+        );
         if (firstError)
           setError(userMessageFromError(firstError, 'We could not load this business page.'));
         else if (!businessResult.data) setError('This business page is unavailable.');
@@ -805,7 +812,14 @@ export function PublicBusinessPageContent({
     return (
       <View style={styles.errorCard}>
         <ThemedText style={styles.errorText}>{error ?? 'Business unavailable.'}</ThemedText>
-        <AppButton label="Retry business page" onPress={() => { setError(null); setLoading(true); setLoadAttempt(n => n + 1); }} />
+        <AppButton
+          label="Retry business page"
+          onPress={() => {
+            setError(null);
+            setLoading(true);
+            setLoadAttempt((n) => n + 1);
+          }}
+        />
       </View>
     );
 
@@ -945,7 +959,21 @@ export function PublicBusinessPageContent({
 
   return (
     <View style={styles.page}>
-      {partialError && <View style={{ gap: 10, padding: 16 }}><ThemedText>Some photos, offerings, events or hours are unavailable right now.</ThemedText><AppButton label="Retry missing details" variant="secondary" onPress={() => { setError(null); setLoadAttempt(n => n + 1); }} /></View>}
+      {partialError && (
+        <View style={{ gap: 10, padding: 16 }}>
+          <ThemedText>
+            Some photos, offerings, events or hours are unavailable right now.
+          </ThemedText>
+          <AppButton
+            label="Retry missing details"
+            variant="secondary"
+            onPress={() => {
+              setError(null);
+              setLoadAttempt((n) => n + 1);
+            }}
+          />
+        </View>
+      )}
       {(preview || business.status !== 'active') && (
         <View style={[styles.previewBanner, { backgroundColor: colors.infoSurface }]}>
           <ThemedText style={{ color: colors.infoText }} type="smallBold">
@@ -953,6 +981,7 @@ export function PublicBusinessPageContent({
           </ThemedText>
         </View>
       )}
+      <View style={{ backgroundColor: colors.backgroundElement, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: colors.divider }}>
       {cover && (
         <View style={[styles.hero, { backgroundColor: colors.backgroundSelected }]}>
           <Image
@@ -965,9 +994,9 @@ export function PublicBusinessPageContent({
         </View>
       )}
       <View style={styles.businessIdentity}>
-        <BusinessLogo name={business.name} uri={logo?.url} size={64} decorative />
+        <BusinessLogo name={business.name} uri={logo?.url} size={44} decorative />
         <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-          <ThemedText type="title">{business.name}</ThemedText>
+          <ThemedText type="title" style={{ fontSize: 24, lineHeight: 30 }}>{business.name}</ThemedText>
           {!!business.category_summary && (
             <ThemedText themeColor="textSecondary" type="small">
               {business.category_summary}
@@ -978,6 +1007,13 @@ export function PublicBusinessPageContent({
           )}
         </View>
       </View>
+      </View>
+
+      <PickupOrderCta
+        businessId={business.id}
+        physicalState={todayHours.state}
+        nextHours={todayHours.state === 'closed' ? todayHours.label : null}
+      />
 
       <View
         style={{
@@ -1063,7 +1099,7 @@ export function PublicBusinessPageContent({
                     </ThemedText>
                     {!!directionsUrl && (
                       <SymbolView
-                        name={{ ios: 'arrow.up.right', android: 'north_east', web: 'north_east' }}
+                        name="arrow-up-right"
                         tintColor={colors.accent}
                         style={{ width: 18, height: 18 }}
                       />
@@ -1159,11 +1195,7 @@ export function PublicBusinessPageContent({
           </BusinessDetailsDisclosure>
         )}
       </View>
-      <PickupOrderCta
-        businessId={business.id}
-        physicalState={todayHours.state}
-        nextHours={todayHours.state === 'closed' ? todayHours.label : null}
-      />
+
       {!preview && appointmentsAvailable && business?.business_type === 'services' ? (
         <AppButton
           label="Book appointment"
@@ -1239,8 +1271,22 @@ export function PublicBusinessPageContent({
           <ThemedText themeColor="textSecondary" type="small">
             Finish the action you started below.
           </ThemedText>
-          {resumeAction === 'report_review' && <AppButton label="Continue review report" onPress={() => setDetailsPanel('reviews')} />}
-          {resumeAction === 'report_offering' && resumeTargetId && <AppButton label="Continue item report" onPress={() => requestReport({ type: 'offering_item', businessId: business.id, offeringItemId: resumeTargetId, label: items.find(item => item.id === resumeTargetId)?.name ?? 'Item' })} />}
+          {resumeAction === 'report_review' && (
+            <AppButton label="Continue review report" onPress={() => setDetailsPanel('reviews')} />
+          )}
+          {resumeAction === 'report_offering' && resumeTargetId && (
+            <AppButton
+              label="Continue item report"
+              onPress={() =>
+                requestReport({
+                  type: 'offering_item',
+                  businessId: business.id,
+                  offeringItemId: resumeTargetId,
+                  label: items.find((item) => item.id === resumeTargetId)?.name ?? 'Item',
+                })
+              }
+            />
+          )}
         </View>
       ) : null}
       {actionMessage ? (
@@ -2147,20 +2193,6 @@ function BusinessPagerDot({
   );
 }
 
-function PageSection({
-  title,
-  children,
-}: {
-  readonly title: string;
-  readonly children: React.ReactNode;
-}) {
-  return (
-    <View style={styles.card}>
-      <ThemedText type="subtitle">{title}</ThemedText>
-      {children}
-    </View>
-  );
-}
 function formatTime(value: string | null) {
   if (!value) return '—';
   const [hourText, minute = '00'] = value.split(':');
@@ -2184,7 +2216,7 @@ function formatStopTimeRange(startsAt: string, endsAt: string) {
   return `${formatTime(`${String(starts.getHours()).padStart(2, '0')}:${String(starts.getMinutes()).padStart(2, '0')}`)} – ${formatTime(`${String(ends.getHours()).padStart(2, '0')}:${String(ends.getMinutes()).padStart(2, '0')}`)}`;
 }
 const styles = StyleSheet.create({
-  page: { gap: Spacing.three },
+  page: { gap: 20 },
   loader: { marginVertical: Spacing.six },
   previewBanner: {
     alignSelf: 'flex-start',
@@ -2194,10 +2226,9 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   previewText: { color: '#164E38' },
-  businessIdentity: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  businessIdentity: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, padding: 16 },
   hero: {
-    minHeight: 192,
-    borderRadius: Radius.hero,
+    aspectRatio: 16 / 9,
     overflow: 'hidden',
     justifyContent: 'flex-end',
   },

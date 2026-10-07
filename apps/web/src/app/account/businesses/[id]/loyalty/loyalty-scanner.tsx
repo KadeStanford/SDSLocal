@@ -1,4 +1,5 @@
 'use client';
+import { ActionButton } from '@/components/shared-ui';
 
 import { useState } from 'react';
 
@@ -92,7 +93,7 @@ export function LoyaltyScanner() {
           />
         </label>
       )}
-      <button className="button" type="button" disabled={busy} onClick={() => void processCode()}>
+      <ActionButton type="button" disabled={busy} onClick={() => void processCode()}>
         {busy
           ? 'Processing…'
           : action === 'stamp'
@@ -100,7 +101,7 @@ export function LoyaltyScanner() {
             : action === 'earn_points'
               ? 'Add points'
               : 'Redeem reward'}
-      </button>
+      </ActionButton>
       <p className="form-status" aria-live="polite">
         {message}
       </p>

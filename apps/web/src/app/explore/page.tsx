@@ -1,3 +1,7 @@
+import { SurfacePanel } from '@/components/shared-ui';
+import { PageHeader } from '@/components/page-header';
+import { AppIcon } from '@/components/app-icon';
+
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
@@ -101,25 +105,34 @@ export default async function ExplorePage({ searchParams }: PageProps<'/explore'
   }
 
   return (
-    <main className="page-shell">
-      <nav className="topbar">
-        <Link className="brand" href="/">
-          Parish Pass
-        </Link>
+    <main className="page-shell marketplace-page">
+      <PageHeader />
+      <nav className="parish-page-links" aria-label="Page links">
         <div className="nav-actions">
-          <Link href="/events">Events</Link>
-          {authData.user && <Link href="/following">Following</Link>}
+          <Link href="/events">
+            <AppIcon name="calendar-days" size={18} />
+            Events
+          </Link>
+          {authData.user && (
+            <Link href="/following">
+              <AppIcon name="heart" size={18} />
+              Following
+            </Link>
+          )}
           <Link href={authData.user ? '/account' : '/auth'}>
             {authData.user ? 'Your account' : 'Sign in'}
           </Link>
         </div>
       </nav>
       <div className="page-heading compact-heading">
-        <p className="eyebrow">Explore local</p>
-        <h1>Find the right business nearby.</h1>
+        <p className="marketplace-location">
+          <AppIcon name="map-pin" size={22} />
+          {city || 'Explore your area'}
+        </p>
+        <h1>Find your next local place.</h1>
         <p>Search offerings, browse categories, or narrow the results to what is open now.</p>
       </div>
-      <section className="panel explore-filter-panel">
+      <SurfacePanel className="explore-filter-panel">
         <ExploreFilters
           categories={(categories ?? []) as { id: number; name: string }[]}
           initial={{
@@ -134,8 +147,14 @@ export default async function ExplorePage({ searchParams }: PageProps<'/explore'
             events,
           }}
         />
-      </section>
+      </SurfacePanel>
       {error && <p className="notice-error">Businesses could not be loaded: {error.message}</p>}
+      <div className="section-heading marketplace-results">
+        <h2>Local businesses</h2>
+        <span className="muted">
+          {businesses.length} {businesses.length === 1 ? 'place' : 'places'} on this page
+        </span>
+      </div>
       <section className="business-card-grid" aria-label="Local businesses">
         {businesses.map((business) => {
           const imageUrl = business.image_path
@@ -156,8 +175,8 @@ export default async function ExplorePage({ searchParams }: PageProps<'/explore'
                 )}
               </div>
               <div className="discovery-business-body">
-                <p className="eyebrow">{business.category_names.join(' · ') || 'Local business'}</p>
                 <h2>{business.business_name}</h2>
+                <p className="eyebrow">{business.category_names.join(' · ') || 'Local business'}</p>
                 <p>
                   {business.description.length > 150
                     ? `${business.description.slice(0, 147)}…`

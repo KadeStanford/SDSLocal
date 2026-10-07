@@ -251,6 +251,7 @@ function BusinessesScreen() {
             session && (
               <MerchantBusinessList
                 businesses={businesses}
+                unavailable={!!error}
                 search={search}
                 filter={filter}
                 onSearch={setSearch}

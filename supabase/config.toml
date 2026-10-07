@@ -52,7 +52,8 @@ minimum_password_length = 10
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
-enable_confirmations = false
+# Match the verified normal-preview staging auth contract. Local delivery stays in Inbucket.
+enable_confirmations = true
 secure_password_change = true
 max_frequency = "1m"
 otp_length = 6

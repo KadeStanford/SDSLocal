@@ -289,7 +289,7 @@ export function NearbyAlertsProvider({ children }: PropsWithChildren) {
     if (!session || busy) return;
     const disclosed = await explain(
       'Nearby mobile-business alerts',
-      'SDS Local uses your location to alert you when mobile businesses you follow are serving nearby, even when the app is closed or not in use. Your location is evaluated on this device and is not used for advertising.',
+      'Parish Pass uses your location to alert you when mobile businesses you follow are serving nearby, even when the app is closed or not in use. Your location is evaluated on this device and is not used for advertising.',
     );
     if (!disclosed) return;
     setBusy(true);
@@ -316,7 +316,7 @@ export function NearbyAlertsProvider({ children }: PropsWithChildren) {
       if (Platform.OS === 'android') {
         const continueToSettings = await explain(
           'Allow location all the time',
-          'Android will open SDS Local’s settings. Choose Allow all the time so nearby alerts can work when the app is closed.',
+          'Android will open the app’s settings. Choose Allow all the time so nearby alerts can work when the app is closed.',
         );
         if (!continueToSettings) {
           setStatus('needs_background_location_permission');

@@ -106,7 +106,7 @@ function CustomerOrdersList({
       keyExtractor={(o) => o.id}
       renderItem={({ item }) => <CustomerOrderCard order={item} />}
       ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottom, gap: 0 }}
+      contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: bottom, gap: 0 }}
       initialNumToRender={8}
       refreshControl={
         <RefreshControl

@@ -11,7 +11,6 @@ import { useAuth } from '@/providers/auth-provider';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Alert,
   type GestureResponderEvent,
   Platform,
   Pressable,
@@ -33,7 +32,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { userMessageFromError } from '@/lib/user-error';
 import { useNearbyAlerts, type NearbyAlertStatus } from '@/providers/nearby-alerts-provider';
-import { notificationDeviceDescription, useNotifications } from '@/providers/notification-provider';
+import { useNotifications } from '@/providers/notification-provider';
 import { OrderNotificationSettings } from './pickup/order-notification-settings';
 
 type PreferenceKey = 'events_enabled' | 'loyalty_enabled' | 'general_updates_enabled';

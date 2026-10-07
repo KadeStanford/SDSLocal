@@ -1,3 +1,4 @@
+import { AppIcon } from '@/components/app-icon';
 import { useReducedMotion } from '@/hooks/use-reduced-motion';
 import { useTheme } from '@/hooks/use-theme';
 import { useCallback, useState } from 'react';
@@ -23,6 +24,7 @@ export interface DismissibleAlertRow {
   readonly body: string;
   readonly created_at: string;
   readonly read_at: string | null;
+  readonly moderation_outcome?: unknown;
   readonly order_status?: string | null;
   readonly order_audience?: 'customer' | 'business' | null;
 }
@@ -285,9 +287,23 @@ export function DismissibleAlert({ alert, onOpen, onDismiss }: DismissibleAlertP
               {formatAlertDate(alert.created_at)}
             </ThemedText>
           </View>
-          <ThemedText style={[styles.chevron, { color: colors.textSecondary }]} type="subtitle">
-            ›
-          </ThemedText>
+          <View
+            style={{
+              minHeight: 44,
+              paddingTop: 12,
+              borderTopWidth: 1,
+              borderTopColor: colors.divider,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+            }}
+          >
+            <ThemedText type="smallBold" themeColor="accent">
+              View alert
+            </ThemedText>
+            <AppIcon name="chevron-right" size={18} tintColor={colors.accent} />
+          </View>
         </Pressable>
       </Swipeable>
     </Animated.View>
@@ -310,8 +326,8 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'stretch',
     minHeight: 104,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'column',
+    alignItems: 'stretch',
     gap: Spacing.two,
     borderRadius: 16,
     borderWidth: 1,
@@ -343,7 +359,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  alertTitle: { fontSize: 16, lineHeight: 22, fontWeight: '700', letterSpacing: -0.15 },
+  alertTitle: { fontSize: 18, lineHeight: 24, fontWeight: '700', letterSpacing: -0.15 },
   alertBody: { fontSize: 14, lineHeight: 20 },
   alertHint: {
     fontSize: 14,

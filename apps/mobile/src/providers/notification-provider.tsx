@@ -82,7 +82,7 @@ async function registerToken(session: Session) {
       sound: 'default',
     });
     await Notifications.setNotificationChannelAsync('updates', {
-      name: 'SDS Local updates',
+      name: 'Parish Pass updates',
       description: 'Event reminders, rewards, and followed-business updates.',
       importance: Notifications.AndroidImportance.DEFAULT,
     });
@@ -136,7 +136,7 @@ export function NotificationProvider({ children }: PropsWithChildren) {
       setChimePreference({ userId: session.user.id, enabled });
     }, 0);
     return () => clearTimeout(timer);
-  }, [session?.user.id]);
+  }, [session]);
   const setBusinessChime = useCallback(
     (enabled: boolean) => {
       if (!session) return;
@@ -145,7 +145,7 @@ export function NotificationProvider({ children }: PropsWithChildren) {
         businessChimeStorage.set('business-chime:' + session.user.id, String(enabled));
       } catch {}
     },
-    [session?.user.id],
+    [session],
   );
 
   const refreshUnreadCount = useCallback(async () => {
@@ -157,7 +157,7 @@ export function NotificationProvider({ children }: PropsWithChildren) {
       .from('notification_deliveries')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', session.user.id)
-      .or('status.eq.sent,entity_type.eq.pickup_order')
+      .or('status.eq.sent,entity_type.eq.pickup_order,inbox_available_at.not.is.null')
       .is('read_at', null)
       .is('dismissed_at', null);
     if (!error) setUnreadCount(count ?? 0);
@@ -247,7 +247,7 @@ export function NotificationProvider({ children }: PropsWithChildren) {
     try {
       if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('updates', {
-          name: 'SDS Local updates',
+          name: 'Parish Pass updates',
           description: 'Event reminders, rewards, and followed-business updates.',
           importance: Notifications.AndroidImportance.DEFAULT,
         });

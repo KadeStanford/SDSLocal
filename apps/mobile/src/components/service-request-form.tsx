@@ -7,6 +7,10 @@ import { AppButton } from './app-button';
 import { MerchantButton } from './merchant-ui';
 import { ThemedText } from './themed-text';
 import type { ServiceRequestDraft } from '@/lib/service-request-draft';
+import { AppIcon } from './app-icon';
+import { BookingFact } from './booking-ui';
+import { FlowSection } from './flow-layout';
+import { useTheme } from '@/hooks/use-theme';
 
 export interface RequestOffering {
   readonly id: string;
@@ -31,8 +35,12 @@ export function ServiceRequestForm({
   const customError = requestAnswersError(fields, draft.answers ?? {});
   return (
     <View style={{ gap: 20 }}>
-      <RequestSection number="01" title="Your request" detail="Tell us what you have in mind.">
-        {!!offerings.length && (
+      {!!offerings.length && (
+        <RequestSection
+          number="01"
+          title="Choose a service"
+          detail="You can ask the business to help you choose."
+        >
           <View style={{ gap: 8 }}>
             <ChoicePicker
               businessStyle
@@ -53,7 +61,13 @@ export function ServiceRequestForm({
               </ThemedText>
             )}
           </View>
-        )}
+        </RequestSection>
+      )}
+      <RequestSection
+        number={offerings.length ? '02' : '01'}
+        title="Your request"
+        detail="Tell us what you have in mind."
+      >
         <RequestFieldLabel label="What do you need?" required>
           <RequestInput
             accessibilityLabel="Service request details"
@@ -77,7 +91,7 @@ export function ServiceRequestForm({
       </RequestSection>
       {!!fields.length && (
         <RequestSection
-          number="02"
+          number={offerings.length ? '03' : '02'}
           title="A few more details"
           detail="Questions chosen by this business."
         >
@@ -90,7 +104,7 @@ export function ServiceRequestForm({
         </RequestSection>
       )}
       <RequestSection
-        number={fields.length ? '03' : '02'}
+        number={String(2 + (offerings.length ? 1 : 0) + (fields.length ? 1 : 0)).padStart(2, '0')}
         title="Your availability"
         detail="Share a preference. No appointment is booked yet."
       >
@@ -138,6 +152,7 @@ export function ServiceRequestReview({
   onEdit: () => void;
   onSend: () => void;
 }) {
+  const c = useTheme();
   return (
     <View style={{ gap: 20 }}>
       <RequestSection number="✓" title="Ready to send" detail={businessName}>
@@ -156,14 +171,27 @@ export function ServiceRequestReview({
           </View>
         )}
         <RequestAnswers answers={requestAnswerSnapshot(draft.fields ?? [], draft.answers ?? {})} />
-        <View style={{ gap: 4 }}>
-          <ThemedText type="smallBold">Replies go to</ThemedText>
-          <ThemedText selectable>{email ?? 'Your account email'}</ThemedText>
-        </View>
       </RequestSection>
-      <ThemedText type="small" themeColor="textSecondary">
-        This is a quote or consultation request. Sending it does not confirm a booking or price.
-      </ThemedText>
+      <FlowSection title="Contact for replies">
+        <BookingFact icon="mail">
+          <ThemedText selectable>{email ?? 'Your account email'}</ThemedText>
+        </BookingFact>
+      </FlowSection>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          padding: 16,
+          gap: 10,
+          borderRadius: 16,
+          backgroundColor: c.backgroundSelected,
+        }}
+      >
+        <AppIcon name="info" size={20} tintColor={c.accent} />
+        <ThemedText type="small" style={{ flex: 1, minWidth: 0 }}>
+          This is a quote or consultation request. Sending it does not confirm a booking or price.
+        </ThemedText>
+      </View>
       <MerchantButton
         brand
         label={busy ? 'Sending request…' : locked ? 'Retry same request' : 'Send request'}

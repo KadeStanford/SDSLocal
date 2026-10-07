@@ -1,3 +1,8 @@
+import { SurfacePanel } from '@/components/shared-ui';
+import { PageHeader } from '@/components/page-header';
+
+import { AppIcon } from '@/components/app-icon';
+
 import { OpenInApp } from '@/components/open-in-app';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -47,19 +52,23 @@ export default async function NewBusinessPage() {
 
   return (
     <main className="page-shell narrow-shell">
-      <nav className="topbar">
-        <Link className="brand" href="/">
-          Parish Pass
+      <PageHeader backHref="/account" backLabel="Back" />
+      <nav className="parish-page-links" aria-label="Page links">
+        <Link href="/account">
+          <AppIcon name="circle-user-round" size={18} />
+          Cancel
         </Link>
-        <Link href="/account">Cancel</Link>
       </nav>
-      <OpenInApp path="account?startBusiness=1" description="Choose your business plan and continue setting up your listing in the app." />
+      <OpenInApp
+        path="account?startBusiness=1"
+        description="Choose your business plan and continue setting up your listing in the app."
+      />
       <div className="page-heading compact-heading">
         <p className="eyebrow">Business onboarding</p>
         <h1>Create your business page.</h1>
         <p>Start a private, unpublished profile. Finish the page, then submit it for approval.</p>
       </div>
-      <section className="panel">
+      <SurfacePanel>
         {canCreate ? (
           <BusinessForm categories={(data ?? []) as CategoryRow[]} />
         ) : (
@@ -70,7 +79,7 @@ export default async function NewBusinessPage() {
             <Link href="/account">Continue as a customer</Link>
           </>
         )}
-      </section>
+      </SurfacePanel>
     </main>
   );
 }

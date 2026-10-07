@@ -1,0 +1,1858 @@
+{
+  "at": "2026-10-07T20:09:22.198Z",
+  "source": "F:/BusinessApp/.codex-tmp/parish-pass-dark-review",
+  "releaseGroup": "16899e45-ef46-427c-870a-009ff22a3caf",
+  "candidateIdentity": "c8fdaace793838dec271cda14196b85a818f1b7894c4d5e4fb29e7fff8b07478",
+  "routes": [
+    "account",
+    "business-appointments",
+    "business-requests",
+    "businesses",
+    "calendar",
+    "explore",
+    "orders",
+    "pickup-orders",
+    "rewards",
+    "staff-scan",
+    "admin-moderation-case",
+    "admin-moderation",
+    "appointment",
+    "auth/callback",
+    "b/[slug]",
+    "book-appointment",
+    "business-account",
+    "business-new",
+    "business-reviews",
+    "business",
+    "event-attendees",
+    "index",
+    "listing-plans",
+    "moderation-outcome",
+    "my-appointments",
+    "my-event-reviews",
+    "my-service-requests",
+    "notification",
+    "order",
+    "pickup-order",
+    "request-form",
+    "service-request",
+    "service-requests",
+    "staff-invite"
+  ],
+  "specs": [
+    {
+      "key": "mobile-entries:auth-callback:large-text",
+      "name": "Sign-in callback error - large-text",
+      "route": "/auth/callback",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/mobile-entries_auth-callback_large-text-top.png",
+      "bottom": "header-consistency/captures/mobile-entries_auth-callback_large-text-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=auth%2Fcallback&clock=2026-10-06T16%3A00%3A00Z&user=guest&textScale=1.3",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=auth%2Fcallback&clock=2026-10-06T16%3A00%3A00Z&user=guest&textScale=1.3",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "mobile-entries:auth-callback:narrow",
+      "name": "Sign-in callback error - narrow",
+      "route": "/auth/callback",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/mobile-entries_auth-callback_narrow-top.png",
+      "bottom": "header-consistency/captures/mobile-entries_auth-callback_narrow-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=auth%2Fcallback&clock=2026-10-06T16%3A00%3A00Z&user=guest",
+        "viewportWidth": 320,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=auth%2Fcallback&clock=2026-10-06T16%3A00%3A00Z&user=guest",
+      "viewport": {
+        "width": 320,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "mobile-entries:auth-callback:phone",
+      "name": "Sign-in callback error - phone",
+      "route": "/auth/callback",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/mobile-entries_auth-callback_phone-top.png",
+      "bottom": "header-consistency/captures/mobile-entries_auth-callback_phone-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=auth%2Fcallback&clock=2026-10-06T16%3A00%3A00Z&user=guest",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=auth%2Fcallback&clock=2026-10-06T16%3A00%3A00Z&user=guest",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "mobile-entries:business-account:large-text",
+      "name": "Standalone business account - large-text",
+      "route": "/business-account",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/mobile-entries_business-account_large-text-top.png",
+      "bottom": "header-consistency/captures/mobile-entries_business-account_large-text-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=business-account&clock=2026-10-06T16%3A00%3A00Z&mode=business&textScale=1.3",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=business-account&clock=2026-10-06T16%3A00%3A00Z&mode=business&textScale=1.3",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "mobile-entries:business-account:narrow",
+      "name": "Standalone business account - narrow",
+      "route": "/business-account",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/mobile-entries_business-account_narrow-top.png",
+      "bottom": "header-consistency/captures/mobile-entries_business-account_narrow-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=business-account&clock=2026-10-06T16%3A00%3A00Z&mode=business",
+        "viewportWidth": 320,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=business-account&clock=2026-10-06T16%3A00%3A00Z&mode=business",
+      "viewport": {
+        "width": 320,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "mobile-entries:business-account:phone",
+      "name": "Standalone business account - phone",
+      "route": "/business-account",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/mobile-entries_business-account_phone-top.png",
+      "bottom": "header-consistency/captures/mobile-entries_business-account_phone-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=business-account&clock=2026-10-06T16%3A00%3A00Z&mode=business",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=business-account&clock=2026-10-06T16%3A00%3A00Z&mode=business",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "remaining-mobile:event-attendees:page",
+      "name": "Event attendees — page",
+      "route": "/event-attendees",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/remaining-mobile_event-attendees_page-top.png",
+      "bottom": "header-consistency/captures/remaining-mobile_event-attendees_page-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=event-attendees&clock=2026-10-06T16%3A00%3A00Z&mode=business&eventId=30000000-0000-4000-8000-000000000001",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=event-attendees&clock=2026-10-06T16%3A00%3A00Z&mode=business&eventId=30000000-0000-4000-8000-000000000001",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "remaining-mobile:listing-plans:page",
+      "name": "Business plans — page",
+      "route": "/listing-plans",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/remaining-mobile_listing-plans_page-top.png",
+      "bottom": "header-consistency/captures/remaining-mobile_listing-plans_page-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=listing-plans&clock=2026-10-06T16%3A00%3A00Z&mode=business",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=listing-plans&clock=2026-10-06T16%3A00%3A00Z&mode=business",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "remaining-mobile:staff-scan:page",
+      "name": "Scan & verify — page",
+      "route": "/staff-scan",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/remaining-mobile_staff-scan_page-top.png",
+      "bottom": "header-consistency/captures/remaining-mobile_staff-scan_page-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=staff-scan&clock=2026-10-06T16%3A00%3A00Z&mode=business",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=staff-scan&clock=2026-10-06T16%3A00%3A00Z&mode=business",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "remaining-mobile:pickup-order:page",
+      "name": "Merchant pickup order — page",
+      "route": "/pickup-order",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/remaining-mobile_pickup-order_page-top.png",
+      "bottom": "header-consistency/captures/remaining-mobile_pickup-order_page-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=pickup-order&clock=2026-10-06T16%3A00%3A00Z&mode=business&orderId=fixture",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=pickup-order&clock=2026-10-06T16%3A00%3A00Z&mode=business&orderId=fixture",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "remaining-mobile:my-event-reviews:review",
+      "name": "Attended events — review",
+      "route": "/my-event-reviews",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/remaining-mobile_my-event-reviews_review-top.png",
+      "bottom": "header-consistency/captures/remaining-mobile_my-event-reviews_review-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=my-event-reviews&clock=2026-10-06T16%3A00%3A00Z&reviewView=event-review%3Aeditor",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=my-event-reviews&clock=2026-10-06T16%3A00%3A00Z&reviewView=event-review%3Aeditor",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+    },
+    {
+      "key": "remaining-mobile:my-event-reviews:page",
+      "name": "Attended events — page",
+      "route": "/my-event-reviews",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/remaining-mobile_my-event-reviews_page-top.png",
+      "bottom": "header-consistency/captures/remaining-mobile_my-event-reviews_page-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=my-event-reviews&clock=2026-10-06T16%3A00%3A00Z",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=my-event-reviews&clock=2026-10-06T16%3A00%3A00Z",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "remaining-mobile:staff-invite:page",
+      "name": "Staff invitation — page",
+      "route": "/staff-invite",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/remaining-mobile_staff-invite_page-top.png",
+      "bottom": "header-consistency/captures/remaining-mobile_staff-invite_page-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=staff-invite&clock=2026-10-06T16%3A00%3A00Z&user=guest&token=local-synthetic-only",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=staff-invite&clock=2026-10-06T16%3A00%3A00Z&user=guest&token=local-synthetic-only",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "remaining-mobile:service-requests:page",
+      "name": "Requests & estimates — page",
+      "route": "/service-requests",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/remaining-mobile_service-requests_page-top.png",
+      "bottom": "header-consistency/captures/remaining-mobile_service-requests_page-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=service-requests&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=services",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=service-requests&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=services",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "remaining-mobile:request-form:preview",
+      "name": "Request form editor — preview",
+      "route": "/request-form",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/remaining-mobile_request-form_preview-top.png",
+      "bottom": "header-consistency/captures/remaining-mobile_request-form_preview-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=request-form&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=services&reviewView=request-form%3Apreview",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+      },
+      "diagnostic": null,
+      "headerMode": "compact-dialog with shared Close heading",
+      "url": "http://127.0.0.1:4207/?screen=request-form&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=services&reviewView=request-form%3Apreview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+    },
+    {
+      "key": "remaining-mobile:request-form:edit",
+      "name": "Request form editor — edit",
+      "route": "/request-form",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/remaining-mobile_request-form_edit-top.png",
+      "bottom": "header-consistency/captures/remaining-mobile_request-form_edit-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=request-form&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=services&reviewView=request-form%3Aedit",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+      },
+      "diagnostic": null,
+      "headerMode": "compact-dialog with shared Close heading",
+      "url": "http://127.0.0.1:4207/?screen=request-form&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=services&reviewView=request-form%3Aedit",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+    },
+    {
+      "key": "remaining-mobile:request-form:page",
+      "name": "Request form editor — page",
+      "route": "/request-form",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/remaining-mobile_request-form_page-top.png",
+      "bottom": "header-consistency/captures/remaining-mobile_request-form_page-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=request-form&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=services",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=request-form&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=services",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "remaining-mobile:business-reviews:reply",
+      "name": "Customer reviews — reply",
+      "route": "/business-reviews",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/remaining-mobile_business-reviews_reply-top.png",
+      "bottom": "header-consistency/captures/remaining-mobile_business-reviews_reply-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=business-reviews&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=cafe&reviewView=review%3Areply",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+      },
+      "diagnostic": null,
+      "headerMode": "compact-dialog with shared Close heading",
+      "url": "http://127.0.0.1:4207/?screen=business-reviews&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=cafe&reviewView=review%3Areply",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+    },
+    {
+      "key": "remaining-mobile:business-reviews:page",
+      "name": "Customer reviews — page",
+      "route": "/business-reviews",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/remaining-mobile_business-reviews_page-top.png",
+      "bottom": "header-consistency/captures/remaining-mobile_business-reviews_page-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=business-reviews&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=cafe",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=business-reviews&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=cafe",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "remaining-mobile:business-new:review",
+      "name": "Create a business — review",
+      "route": "/business-new",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/remaining-mobile_business-new_review-top.png",
+      "bottom": "header-consistency/captures/remaining-mobile_business-new_review-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=business-new&clock=2026-10-06T16%3A00%3A00Z&mode=business&reviewView=business-new%3Areview",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=business-new&clock=2026-10-06T16%3A00%3A00Z&mode=business&reviewView=business-new%3Areview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+    },
+    {
+      "key": "remaining-mobile:business-new:location",
+      "name": "Create a business — location",
+      "route": "/business-new",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/remaining-mobile_business-new_location-top.png",
+      "bottom": "header-consistency/captures/remaining-mobile_business-new_location-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=business-new&clock=2026-10-06T16%3A00%3A00Z&mode=business&reviewView=business-new%3Alocation",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=business-new&clock=2026-10-06T16%3A00%3A00Z&mode=business&reviewView=business-new%3Alocation",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+    },
+    {
+      "key": "remaining-mobile:business-new:service-model",
+      "name": "Create a business — service-model",
+      "route": "/business-new",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/remaining-mobile_business-new_service-model-top.png",
+      "bottom": "header-consistency/captures/remaining-mobile_business-new_service-model-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=business-new&clock=2026-10-06T16%3A00%3A00Z&mode=business&reviewView=business-new%3Aservice-model",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=business-new&clock=2026-10-06T16%3A00%3A00Z&mode=business&reviewView=business-new%3Aservice-model",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+    },
+    {
+      "key": "remaining-mobile:business-new:identity",
+      "name": "Create a business — identity",
+      "route": "/business-new",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/remaining-mobile_business-new_identity-top.png",
+      "bottom": "header-consistency/captures/remaining-mobile_business-new_identity-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=business-new&clock=2026-10-06T16%3A00%3A00Z&mode=business&reviewView=business-new%3Aidentity",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=business-new&clock=2026-10-06T16%3A00%3A00Z&mode=business&reviewView=business-new%3Aidentity",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+    },
+    {
+      "key": "request-pass:review",
+      "name": "Service request - review",
+      "route": "/service-request",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/request-pass_review-top.png",
+      "bottom": "header-consistency/captures/request-pass_review-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=service-request&clock=2026-10-06T16%3A00%3A00Z&businessId=services",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=service-request&clock=2026-10-06T16%3A00%3A00Z&businessId=services",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "request-pass:form",
+      "name": "Service request - details",
+      "route": "/service-request",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/request-pass_form-top.png",
+      "bottom": "header-consistency/captures/request-pass_form-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=service-request&clock=2026-10-06T16%3A00%3A00Z&businessId=services",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=service-request&clock=2026-10-06T16%3A00%3A00Z&businessId=services",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "booking-pass:status",
+      "name": "Appointment status",
+      "route": "/appointment",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/booking-pass_status-top.png",
+      "bottom": "header-consistency/captures/booking-pass_status-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=appointment&clock=2026-10-06T16%3A00%3A00Z&businessId=services&appointmentId=60000000-0000-4000-8000-000000000001",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=appointment&clock=2026-10-06T16%3A00%3A00Z&businessId=services&appointmentId=60000000-0000-4000-8000-000000000001",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "booking-pass:review",
+      "name": "Book appointment · review",
+      "route": "/book-appointment",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/booking-pass_review-top.png",
+      "bottom": "header-consistency/captures/booking-pass_review-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=book-appointment&clock=2026-10-06T16%3A00%3A00Z&businessId=services&reviewView=booking%3Areview",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=book-appointment&clock=2026-10-06T16%3A00%3A00Z&businessId=services&reviewView=booking%3Areview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+    },
+    {
+      "key": "booking-pass:time",
+      "name": "Book appointment · choose a time",
+      "route": "/book-appointment",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/booking-pass_time-top.png",
+      "bottom": "header-consistency/captures/booking-pass_time-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=book-appointment&clock=2026-10-06T16%3A00%3A00Z&businessId=services&reviewView=booking%3Atime",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=book-appointment&clock=2026-10-06T16%3A00%3A00Z&businessId=services&reviewView=booking%3Atime",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+    },
+    {
+      "key": "booking-pass:service",
+      "name": "Book appointment · services",
+      "route": "/book-appointment",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/booking-pass_service-top.png",
+      "bottom": "header-consistency/captures/booking-pass_service-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=book-appointment&clock=2026-10-06T16%3A00%3A00Z&businessId=services&reviewView=booking%3Aservice",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=book-appointment&clock=2026-10-06T16%3A00%3A00Z&businessId=services&reviewView=booking%3Aservice",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+    },
+    {
+      "key": "mobile-admin:outcome",
+      "name": "Checked moderation outcome",
+      "route": "/moderation-outcome",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/mobile-admin_outcome-top.png",
+      "bottom": "header-consistency/captures/mobile-admin_outcome-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?deliveryId=40000000-0000-4000-8000-000000000001&screen=moderation-outcome",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?deliveryId=40000000-0000-4000-8000-000000000001&screen=moderation-outcome",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "mobile-admin:decision",
+      "name": "Case · explicit decision form",
+      "route": "/admin-moderation-case",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/mobile-admin_decision-top.png",
+      "bottom": "header-consistency/captures/mobile-admin_decision-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?kind=business&id=b0000000-0000-4000-8000-000000000001&screen=admin-moderation-case&fixture=admin",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?kind=business&id=b0000000-0000-4000-8000-000000000001&screen=admin-moderation-case&fixture=admin",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "mobile-admin:guidance",
+      "name": "Case · evidence and guidance",
+      "route": "/admin-moderation-case",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/mobile-admin_guidance-top.png",
+      "bottom": "header-consistency/captures/mobile-admin_guidance-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?kind=business&id=b0000000-0000-4000-8000-000000000001&screen=admin-moderation-case&fixture=admin",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?kind=business&id=b0000000-0000-4000-8000-000000000001&screen=admin-moderation-case&fixture=admin",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "mobile-admin:case",
+      "name": "Case details",
+      "route": "/admin-moderation-case",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/mobile-admin_case-top.png",
+      "bottom": "header-consistency/captures/mobile-admin_case-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?kind=business&id=b0000000-0000-4000-8000-000000000001&screen=admin-moderation-case&fixture=admin",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?kind=business&id=b0000000-0000-4000-8000-000000000001&screen=admin-moderation-case&fixture=admin",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "mobile-admin:queue",
+      "name": "Review workspace",
+      "route": "/admin-moderation",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/mobile-admin_queue-top.png",
+      "bottom": "header-consistency/captures/mobile-admin_queue-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=admin-moderation&fixture=admin",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=admin-moderation&fixture=admin",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "event-pass:event-detail",
+      "name": "Calendar · Event detail",
+      "route": "/calendar",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/event-pass_event-detail-top.png",
+      "bottom": "header-consistency/captures/event-pass_event-detail-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=calendar&clock=2026-10-06T16%3A00%3A00Z&reviewView=calendar%3Adetail",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=calendar&clock=2026-10-06T16%3A00%3A00Z&reviewView=calendar%3Adetail",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+    },
+    {
+      "key": "event-pass:calendar",
+      "name": "Calendar",
+      "route": "/calendar",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/event-pass_calendar-top.png",
+      "bottom": "header-consistency/captures/event-pass_calendar-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=calendar&clock=2026-10-06T16%3A00%3A00Z",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=calendar&clock=2026-10-06T16%3A00%3A00Z",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "merchant-pass:merchant-requests",
+      "name": "Business Requests",
+      "route": "/business-requests",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/merchant-pass_merchant-requests-top.png",
+      "bottom": "header-consistency/captures/merchant-pass_merchant-requests-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=business-requests&clock=2026-10-06T16%3A00%3A00Z&mode=business",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=business-requests&clock=2026-10-06T16%3A00%3A00Z&mode=business",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "merchant-pass:merchant-orders",
+      "name": "Pickup Orders",
+      "route": "/pickup-orders",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/merchant-pass_merchant-orders-top.png",
+      "bottom": "header-consistency/captures/merchant-pass_merchant-orders-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=pickup-orders&clock=2026-10-06T16%3A00%3A00Z&mode=business",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=pickup-orders&clock=2026-10-06T16%3A00%3A00Z&mode=business",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "merchant-pass:merchant-appointments",
+      "name": "Business Appointments",
+      "route": "/business-appointments",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/merchant-pass_merchant-appointments-top.png",
+      "bottom": "header-consistency/captures/merchant-pass_merchant-appointments-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=business-appointments&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=services",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=business-appointments&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=services",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "merchant-pass:businesses",
+      "name": "Businesses",
+      "route": "/businesses",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/merchant-pass_businesses-top.png",
+      "bottom": "header-consistency/captures/merchant-pass_businesses-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=businesses&clock=2026-10-06T16%3A00%3A00Z&mode=business",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=businesses&clock=2026-10-06T16%3A00%3A00Z&mode=business",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "real-order:status",
+      "name": "Order · Status",
+      "route": "/order",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/real-order_status-top.png",
+      "bottom": "header-consistency/captures/real-order_status-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=order&clock=2026-10-06T16%3A00%3A00Z&orderId=fixture",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=order&clock=2026-10-06T16%3A00%3A00Z&orderId=fixture",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "real-order:review",
+      "name": "Order · Review",
+      "route": "/order",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/real-order_review-top.png",
+      "bottom": "header-consistency/captures/real-order_review-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=order&clock=2026-10-06T16%3A00%3A00Z&businessId=cafe&reviewView=order%3Areview",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=order&clock=2026-10-06T16%3A00%3A00Z&businessId=cafe&reviewView=order%3Areview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+    },
+    {
+      "key": "real-order:contact",
+      "name": "Order · Contact",
+      "route": "/order",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/real-order_contact-top.png",
+      "bottom": "header-consistency/captures/real-order_contact-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=order&clock=2026-10-06T16%3A00%3A00Z&businessId=cafe&reviewView=order%3Acontact",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=order&clock=2026-10-06T16%3A00%3A00Z&businessId=cafe&reviewView=order%3Acontact",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+    },
+    {
+      "key": "real-order:cart",
+      "name": "Order · Cart",
+      "route": "/order",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/real-order_cart-top.png",
+      "bottom": "header-consistency/captures/real-order_cart-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=order&clock=2026-10-06T16%3A00%3A00Z&businessId=cafe&reviewView=order%3Acart",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=order&clock=2026-10-06T16%3A00%3A00Z&businessId=cafe&reviewView=order%3Acart",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+    },
+    {
+      "key": "real-order:customization",
+      "name": "Order · Customization",
+      "route": "/order",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/real-order_customization-top.png",
+      "bottom": "header-consistency/captures/real-order_customization-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=order&clock=2026-10-06T16%3A00%3A00Z&businessId=cafe&reviewView=order%3Acustomization",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+      },
+      "diagnostic": null,
+      "headerMode": "foreground full-page dialog",
+      "url": "http://127.0.0.1:4207/?screen=order&clock=2026-10-06T16%3A00%3A00Z&businessId=cafe&reviewView=order%3Acustomization",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+    },
+    {
+      "key": "real-order:menu",
+      "name": "Order · Menu",
+      "route": "/order",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/real-order_menu-top.png",
+      "bottom": "header-consistency/captures/real-order_menu-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=order&clock=2026-10-06T16%3A00%3A00Z&businessId=cafe&reviewView=order%3Amenu",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=order&clock=2026-10-06T16%3A00%3A00Z&businessId=cafe&reviewView=order%3Amenu",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save/submit."
+    },
+    {
+      "key": "activity-pass:mobile:alerts",
+      "name": "Notification",
+      "route": "/notification",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/activity-pass_mobile_alerts-top.png",
+      "bottom": "header-consistency/captures/activity-pass_mobile_alerts-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=notification&clock=2026-10-06T16%3A00%3A00Z",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=notification&clock=2026-10-06T16%3A00%3A00Z",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "activity-pass:mobile:requests",
+      "name": "My Service Requests",
+      "route": "/my-service-requests",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/activity-pass_mobile_requests-top.png",
+      "bottom": "header-consistency/captures/activity-pass_mobile_requests-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=my-service-requests&clock=2026-10-06T16%3A00%3A00Z",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=my-service-requests&clock=2026-10-06T16%3A00%3A00Z",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "activity-pass:mobile:appointments",
+      "name": "My Appointments",
+      "route": "/my-appointments",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/activity-pass_mobile_appointments-top.png",
+      "bottom": "header-consistency/captures/activity-pass_mobile_appointments-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=my-appointments&clock=2026-10-06T16%3A00%3A00Z&businessId=services",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=my-appointments&clock=2026-10-06T16%3A00%3A00Z&businessId=services",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "activity-pass:mobile:orders",
+      "name": "Orders",
+      "route": "/orders",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/activity-pass_mobile_orders-top.png",
+      "bottom": "header-consistency/captures/activity-pass_mobile_orders-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=orders&clock=2026-10-06T16%3A00%3A00Z",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=orders&clock=2026-10-06T16%3A00%3A00Z",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "pass-2:merchant",
+      "name": "Merchant overview",
+      "route": "/business",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/pass-2_merchant-top.png",
+      "bottom": "header-consistency/captures/pass-2_merchant-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=business&clock=2026-10-06T16%3A00%3A00Z&mode=business",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=business&clock=2026-10-06T16%3A00%3A00Z&mode=business",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "pass-2:rewards",
+      "name": "Rewards wallet",
+      "route": "/rewards",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/pass-2_rewards-top.png",
+      "bottom": "header-consistency/captures/pass-2_rewards-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=rewards&clock=2026-10-06T16%3A00%3A00Z",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=rewards&clock=2026-10-06T16%3A00%3A00Z",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "pass-2:account",
+      "name": "Account",
+      "route": "/account",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/pass-2_account-top.png",
+      "bottom": "header-consistency/captures/pass-2_account-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=account&clock=2026-10-06T16%3A00%3A00Z",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=account&clock=2026-10-06T16%3A00%3A00Z",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "fidelity:business:current",
+      "name": "Business detail - verified mobile-source browser route",
+      "route": "/b/[slug] (mobile, slug=bayou-bloom)",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/fidelity_business_current-top.png",
+      "bottom": "header-consistency/captures/fidelity_business_current-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=b%2F%5Bslug%5D&slug=bayou-bloom&clock=2026-10-06T16%3A00%3A00Z",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=b%2F%5Bslug%5D&slug=bayou-bloom&clock=2026-10-06T16%3A00%3A00Z",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "current-home:integrated",
+      "name": "Discovery home - current icon family",
+      "route": "/explore",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/current-home_integrated-top.png",
+      "bottom": "header-consistency/captures/current-home_integrated-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=explore&clock=2026-10-06T16%3A00%3A00Z",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open the actual route; additional controls remain interactive."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=explore&clock=2026-10-06T16%3A00%3A00Z",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open the actual route; additional controls remain interactive."
+    },
+    {
+      "key": "focused:attended-events",
+      "name": "Attended events",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/focused_attended-events-top.png",
+      "bottom": "header-consistency/captures/focused_attended-events-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=my-event-reviews&clock=2026-10-06T16%3A00%3A00Z&",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=my-event-reviews&clock=2026-10-06T16%3A00%3A00Z&",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+    },
+    {
+      "key": "focused:event-review",
+      "name": "Attended event review",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/focused_event-review-top.png",
+      "bottom": "header-consistency/captures/focused_event-review-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=my-event-reviews&clock=2026-10-06T16%3A00%3A00Z&reviewView=event-review%3Aeditor",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+      },
+      "diagnostic": null,
+      "headerMode": "compact-dialog with shared Close heading",
+      "url": "http://127.0.0.1:4207/?screen=my-event-reviews&clock=2026-10-06T16%3A00%3A00Z&reviewView=event-review%3Aeditor",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+    },
+    {
+      "key": "focused:staff-guest",
+      "name": "Staff invitation - sign-in",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/focused_staff-guest-top.png",
+      "bottom": "header-consistency/captures/focused_staff-guest-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=staff-invite&clock=2026-10-06T16%3A00%3A00Z&user=guest&token=local-synthetic-only",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=staff-invite&clock=2026-10-06T16%3A00%3A00Z&user=guest&token=local-synthetic-only",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+    },
+    {
+      "key": "focused:staff-identity",
+      "name": "Staff invitation - checked identity",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/focused_staff-identity-top.png",
+      "bottom": "header-consistency/captures/focused_staff-identity-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=staff-invite&clock=2026-10-06T16%3A00%3A00Z&token=local-synthetic-only",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=staff-invite&clock=2026-10-06T16%3A00%3A00Z&token=local-synthetic-only",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+    },
+    {
+      "key": "focused:requests-inbox",
+      "name": "Requests & estimates - standalone inbox",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/focused_requests-inbox-top.png",
+      "bottom": "header-consistency/captures/focused_requests-inbox-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=service-requests&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=services",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=service-requests&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=services",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+    },
+    {
+      "key": "focused:requests-tab",
+      "name": "Requests & estimates - business tab",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/focused_requests-tab-top.png",
+      "bottom": "header-consistency/captures/focused_requests-tab-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=business-requests&clock=2026-10-06T16%3A00%3A00Z&mode=business",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=business-requests&clock=2026-10-06T16%3A00%3A00Z&mode=business",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+    },
+    {
+      "key": "focused:intake-editor-preserved",
+      "name": "Intake editor - preserved",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/focused_intake-editor-preserved-top.png",
+      "bottom": "header-consistency/captures/focused_intake-editor-preserved-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=request-form&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=services&reviewView=request-form%3Aedit",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+      },
+      "diagnostic": null,
+      "headerMode": "compact-dialog with shared Close heading",
+      "url": "http://127.0.0.1:4207/?screen=request-form&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=services&reviewView=request-form%3Aedit",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+    },
+    {
+      "key": "focused:intake-preview-preserved",
+      "name": "Customer form preview - preserved",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/focused_intake-preview-preserved-top.png",
+      "bottom": "header-consistency/captures/focused_intake-preview-preserved-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=request-form&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=services&reviewView=request-form%3Apreview",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+      },
+      "diagnostic": null,
+      "headerMode": "compact-dialog with shared Close heading",
+      "url": "http://127.0.0.1:4207/?screen=request-form&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=services&reviewView=request-form%3Apreview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+    },
+    {
+      "key": "focused:customer-response",
+      "name": "Customer response - stars",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/focused_customer-response-top.png",
+      "bottom": "header-consistency/captures/focused_customer-response-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=business-reviews&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=cafe&reviewView=review%3Areply",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=business-reviews&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=cafe&reviewView=review%3Areply",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+    },
+    {
+      "key": "focused:create-business-basics",
+      "name": "Create business - listing identity",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/focused_create-business-basics-top.png",
+      "bottom": "header-consistency/captures/focused_create-business-basics-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=business-new&clock=2026-10-06T16%3A00%3A00Z&mode=business&reviewView=business-new%3Aidentity",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=business-new&clock=2026-10-06T16%3A00%3A00Z&mode=business&reviewView=business-new%3Aidentity",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+    },
+    {
+      "key": "focused:create-business-visit",
+      "name": "Create business - customer visits",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/focused_create-business-visit-top.png",
+      "bottom": "header-consistency/captures/focused_create-business-visit-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=business-new&clock=2026-10-06T16%3A00%3A00Z&mode=business&reviewView=business-new%3Aservice-model",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=business-new&clock=2026-10-06T16%3A00%3A00Z&mode=business&reviewView=business-new%3Aservice-model",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+    },
+    {
+      "key": "focused:create-business-location",
+      "name": "Create business - location",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/focused_create-business-location-top.png",
+      "bottom": "header-consistency/captures/focused_create-business-location-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=business-new&clock=2026-10-06T16%3A00%3A00Z&mode=business&reviewView=business-new%3Alocation",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=business-new&clock=2026-10-06T16%3A00%3A00Z&mode=business&reviewView=business-new%3Alocation",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+    },
+    {
+      "key": "focused:create-business-review",
+      "name": "Create business - draft and review path",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/focused_create-business-review-top.png",
+      "bottom": "header-consistency/captures/focused_create-business-review-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=business-new&clock=2026-10-06T16%3A00%3A00Z&mode=business&reviewView=business-new%3Areview",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=business-new&clock=2026-10-06T16%3A00%3A00Z&mode=business&reviewView=business-new%3Areview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+    },
+    {
+      "key": "focused:booking-service",
+      "name": "Book appointment - services",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/focused_booking-service-top.png",
+      "bottom": "header-consistency/captures/focused_booking-service-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=book-appointment&clock=2026-10-06T16%3A00%3A00Z&businessId=services&reviewView=booking%3Aservice",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=book-appointment&clock=2026-10-06T16%3A00%3A00Z&businessId=services&reviewView=booking%3Aservice",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+    },
+    {
+      "key": "focused:booking-time",
+      "name": "Book appointment - times",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/focused_booking-time-top.png",
+      "bottom": "header-consistency/captures/focused_booking-time-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=book-appointment&clock=2026-10-06T16%3A00%3A00Z&businessId=services&reviewView=booking%3Atime",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=book-appointment&clock=2026-10-06T16%3A00%3A00Z&businessId=services&reviewView=booking%3Atime",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+    },
+    {
+      "key": "focused:booking-contact",
+      "name": "Book appointment - contact",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/focused_booking-contact-top.png",
+      "bottom": "header-consistency/captures/focused_booking-contact-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=book-appointment&clock=2026-10-06T16%3A00%3A00Z&businessId=services&reviewView=booking%3Acontact",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=book-appointment&clock=2026-10-06T16%3A00%3A00Z&businessId=services&reviewView=booking%3Acontact",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+    },
+    {
+      "key": "focused:booking-review",
+      "name": "Book appointment - review",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/focused_booking-review-top.png",
+      "bottom": "header-consistency/captures/focused_booking-review-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=book-appointment&clock=2026-10-06T16%3A00%3A00Z&businessId=services&reviewView=booking%3Areview",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=book-appointment&clock=2026-10-06T16%3A00%3A00Z&businessId=services&reviewView=booking%3Areview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+    },
+    {
+      "key": "focused:appointment-status",
+      "name": "Appointment status",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/focused_appointment-status-top.png",
+      "bottom": "header-consistency/captures/focused_appointment-status-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=appointment&clock=2026-10-06T16%3A00%3A00Z&appointmentId=60000000-0000-4000-8000-000000000001",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=appointment&clock=2026-10-06T16%3A00%3A00Z&appointmentId=60000000-0000-4000-8000-000000000001",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+    },
+    {
+      "key": "focused:appointment-changes",
+      "name": "Appointment change controls",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/focused_appointment-changes-top.png",
+      "bottom": "header-consistency/captures/focused_appointment-changes-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=appointment&clock=2026-10-06T16%3A00%3A00Z&appointmentId=60000000-0000-4000-8000-000000000001",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Open Change appointment to inspect the existing cancellation and rescheduling controls. No change is submitted."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=appointment&clock=2026-10-06T16%3A00%3A00Z&appointmentId=60000000-0000-4000-8000-000000000001",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Open Change appointment to inspect the existing cancellation and rescheduling controls. No change is submitted."
+    },
+    {
+      "key": "focused:business-appointments",
+      "name": "Business appointments - schedule cards",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/focused_business-appointments-top.png",
+      "bottom": "header-consistency/captures/focused_business-appointments-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?screen=business-appointments&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=services",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted.",
+        "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?screen=business-appointments&clock=2026-10-06T16%3A00%3A00Z&mode=business&businessId=services",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Local setup opens actual controls and enters labelled synthetic form data; no final save or submit."
+    },
+    {
+      "key": "focused:moderation-outcome",
+      "name": "Checked moderation outcome - visible Back",
+      "reviewGroup": "mobile",
+      "status": "PASS — current browser fixture presentation",
+      "after": "header-consistency/captures/focused_moderation-outcome-top.png",
+      "bottom": "header-consistency/captures/focused_moderation-outcome-bottom.png",
+      "fullPreview": {
+        "after": "http://127.0.0.1:4193/?deliveryId=40000000-0000-4000-8000-000000000001&screen=moderation-outcome",
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "limits": "Actual current source UI with read-only local fixtures; no real authenticated session, backend mutation, provider, physical-device or OTA acceptance. Admin uses ONE existing client-test case, not the 15-case v6 DB seed. Native safe-area insets are zero; native root tabs omitted."
+      },
+      "diagnostic": null,
+      "headerMode": "page",
+      "url": "http://127.0.0.1:4207/?deliveryId=40000000-0000-4000-8000-000000000001&screen=moderation-outcome",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "key": "route:index",
+      "name": "index",
+      "route": "/index",
+      "url": "http://127.0.0.1:4207/?screen=index&clock=2026-10-06T16%3A00%3A00Z",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stateSetup": "Direct source route; saved fixture defaults; parameter/provider limits recorded."
+    }
+  ],
+  "results": [],
+  "limits": "Actual React Native source rendered through react-native-web. Isolated fixture transport; native root tabs, safe areas, status-bar appearance, keyboard, camera, gestures, provider payment and installed-iPhone verification remain device acceptance gates."
+}

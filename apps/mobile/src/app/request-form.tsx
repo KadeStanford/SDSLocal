@@ -1,10 +1,11 @@
+import { PageHeader } from '@/components/page-header';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BusinessFeatureGate } from '@/components/business-feature-gate';
 import { Alert, ScrollView, View } from 'react-native';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { usePreventRemove } from 'expo-router/react-navigation';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ParishBusinessBrand } from '@/components/business-screen-header';
+
 import { MerchantButton, MerchantHeading, merchantStyles } from '@/components/merchant-ui';
 import { RequestFormBuilder } from '@/components/request-form-builder';
 import { ListLoading, StateNotice } from '@/components/data-state';
@@ -126,7 +127,7 @@ function Editor({ businessId }: { businessId: string }) {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[merchantStyles.content, { paddingBottom: bottom }]}
       >
-        <ParishBusinessBrand />
+        <PageHeader onBack={() => router.back()} backLabel="Back to requests" backDisabled={busy} />
         <MerchantHeading
           title="Request form"
           subtitle={name || 'Questions for estimates and service requests'}
@@ -151,15 +152,7 @@ function Editor({ businessId }: { businessId: string }) {
         ) : (
           <MerchantButton brand label="Retry loading" onPress={() => void load()} />
         )}
-        <View>
-          <MerchantButton
-            brand
-            label="Back to requests"
-            secondary
-            disabled={busy}
-            onPress={() => router.back()}
-          />
-        </View>
+        <View></View>
       </ScrollView>
     </SafeAreaView>
   );

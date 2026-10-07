@@ -1,6 +1,6 @@
 import { View, Pressable } from 'react-native';
 import { AppTextInput as TextInput } from '@/components/app-text-input';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import { useTheme } from '@/hooks/use-theme';
 import { CustomerAction } from './customer-ui';
 import { ThemedText } from './themed-text';
@@ -40,14 +40,14 @@ export function DiscoverySearchBar({
           style={{
             flex: 1,
             minWidth: 0,
-            minHeight: 48,
+            minHeight: onBrandSurface ? 52 : 48,
             flexDirection: 'row',
             alignItems: 'center',
             gap: 8,
             paddingLeft: 12,
-            paddingRight: query ? 0 : 12,
-            borderRadius: 12,
-            backgroundColor: c.background,
+            paddingRight: onBrandSurface || query ? 0 : 12,
+            borderRadius: onBrandSurface ? 16 : 12,
+            backgroundColor: onBrandSurface ? c.backgroundElement : c.background,
             borderWidth: 1,
             borderColor: c.divider,
           }}
@@ -69,7 +69,14 @@ export function DiscoverySearchBar({
             returnKeyType="search"
             autoCorrect={false}
             autoCapitalize="none"
-            style={{ flex: 1, minWidth: 0, minHeight: 48, color: c.text, fontSize: 15 }}
+            style={{
+              flex: 1,
+              minWidth: 0,
+              minHeight: onBrandSurface ? 52 : 48,
+              color: c.text,
+              fontSize: 16,
+              lineHeight: 22,
+            }}
           />
           {!!query && (
             <Pressable
@@ -90,16 +97,36 @@ export function DiscoverySearchBar({
               />
             </Pressable>
           )}
+          {onBrandSurface && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={active ? `Filters (${active})` : 'Filters'}
+              onPress={onFilters}
+              style={({ pressed }) => ({
+                minWidth: 72,
+                minHeight: 44,
+                paddingHorizontal: 10,
+                paddingVertical: 10,
+                borderLeftWidth: 1,
+                borderColor: c.divider,
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <ThemedText style={{ fontSize: 14, lineHeight: 20, fontWeight: '600' }}>
+                {active ? `Filters (${active})` : 'Filters'}
+              </ThemedText>
+            </Pressable>
+          )}
         </View>
-        <CustomerAction label={active ? `Filters (${active})` : 'Filters'} onPress={onFilters} />
+        {!onBrandSurface && (
+          <CustomerAction label={active ? `Filters (${active})` : 'Filters'} onPress={onFilters} />
+        )}
       </View>
       {suggestions}
       {!!count && !suggestions && (
-        <ThemedText
-          type="small"
-          themeColor="textSecondary"
-          style={onBrandSurface ? { color: '#F4F2E9' } : undefined}
-        >
+        <ThemedText type="small" themeColor="textSecondary">
           {count}
           {summary ? ` · ${summary}` : ''}
         </ThemedText>

@@ -5,6 +5,7 @@ import { ThemedText } from '../themed-text';
 import { ReceiptItem, ReceiptTotal } from './order-presentation';
 import { QuantityStepper } from './quantity-stepper';
 import { useTheme } from '@/hooks/use-theme';
+import { ProductPhoto } from './product-photo';
 import { cartReview } from '@/lib/pickup-order-flow';
 import { formattedPickupPhone } from '@/lib/pickup-checkout-presentation';
 import {
@@ -53,37 +54,40 @@ export function PickupCart({
           <View
             key={index}
             style={{
-              padding: 20,
-              borderRadius: 14,
+              padding: 16,
+              borderRadius: 18,
               borderWidth: 1,
               borderColor: c.divider,
               backgroundColor: c.backgroundElement,
               gap: 12,
             }}
           >
-            <View style={{ gap: 4 }}>
-              <ThemedText type="card">{p?.name ?? 'Item no longer available'}</ThemedText>
-              {p && (
-                <ThemedText type="small" themeColor="textSecondary">
-                  {[
-                    p.variation !== 'Regular' ? p.variation : '',
-                    ...p.groups
-                      .flatMap((g) => g.modifiers)
-                      .filter((m) => line.modifierIds.includes(m.id))
-                      .map((m) => m.name),
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')}
+            <View style={{ flexDirection: 'row', gap: 14, alignItems: 'flex-start' }}>
+              <View style={{ gap: 4, flex: 1, minWidth: 0 }}>
+                <ThemedText type="card">{p?.name ?? 'Item no longer available'}</ThemedText>
+                {p && (
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {[
+                      p.variation !== 'Regular' ? p.variation : '',
+                      ...p.groups
+                        .flatMap((g) => g.modifiers)
+                        .filter((m) => line.modifierIds.includes(m.id))
+                        .map((m) => m.name),
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </ThemedText>
+                )}
+                {line.rewardClaim && rewardDiscount > 0 && (
+                  <ThemedText type="caption" style={{ color: c.accent }}>
+                    Reward applied to one base item
+                  </ThemedText>
+                )}
+                <ThemedText type="smallBold">
+                  {money(cartReview([line], products).subtotal, p?.currency ?? 'USD')}
                 </ThemedText>
-              )}
-              {line.rewardClaim && rewardDiscount > 0 && (
-                <ThemedText type="caption" style={{ color: c.accent }}>
-                  Reward applied to one base item
-                </ThemedText>
-              )}
-              <ThemedText type="smallBold">
-                {money(cartReview([line], products).subtotal, p?.currency ?? 'USD')}
-              </ThemedText>
+              </View>
+              {p?.image && <ProductPhoto image={p.image} compact />}
             </View>
             <View
               style={{
@@ -203,6 +207,7 @@ export function PickupReview({
   expired: boolean;
   onEdit?: ((step: 'cart' | 'pickup' | 'contact') => void) | undefined;
 }) {
+  const c = useTheme();
   return (
     <View style={{ gap: 16 }}>
       <CustomerSurface style={{ gap: 0, paddingTop: 0, paddingBottom: 0 }}>
@@ -215,6 +220,8 @@ export function PickupReview({
           <ThemedText>{name}</ThemedText>
           <ThemedText themeColor="textSecondary">{formattedPickupPhone(phone)}</ThemedText>
         </ReviewSection>
+      </CustomerSurface>
+      <CustomerSurface style={{ gap: 0, paddingTop: 0, paddingBottom: 0 }}>
         <ReviewSection title="Order summary" onEdit={onEdit ? () => onEdit('cart') : undefined}>
           {cart.map((line, i) => {
             const p = products.find((p) => p.id === line.variationId);
@@ -239,7 +246,15 @@ export function PickupReview({
               />
             );
           })}
-          <View style={{ gap: 8, paddingTop: 8 }}>
+          <View
+            style={{
+              gap: 10,
+              marginTop: 8,
+              padding: 16,
+              borderRadius: 12,
+              backgroundColor: c.background,
+            }}
+          >
             <ReceiptTotal label="Subtotal" value={quote.subtotal} currency={quote.currency} />
             {quote.reward && quote.reward.discountMinor > 0 && (
               <ReceiptTotal

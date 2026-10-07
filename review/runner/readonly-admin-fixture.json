@@ -1,0 +1,77 @@
+{
+  "record": {
+    "kind": "business",
+    "id": "b0000000-0000-4000-8000-000000000001",
+    "title": "SYNTHETIC — Cypress Corner Cafe",
+    "subtitle": "Synthetic fixture",
+    "status": "pending_review",
+    "content_status": "pending_review",
+    "created_at": "2026-10-06T09:00:00Z",
+    "text": "A clearly fictional neighborhood cafe.",
+    "reason": null,
+    "details": null,
+    "resolution_note": null,
+    "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "readiness": {
+      "ready": true,
+      "checks": [
+        {
+          "key": "contact",
+          "label": "Contact details",
+          "complete": true
+        }
+      ]
+    },
+    "duplicates": 0,
+    "activity_count": 1,
+    "context": {}
+  },
+  "snapshot": {
+    "records": [
+      {
+        "kind": "business",
+        "id": "b0000000-0000-4000-8000-000000000001",
+        "title": "SYNTHETIC — Cypress Corner Cafe",
+        "subtitle": "Synthetic fixture",
+        "status": "pending_review",
+        "content_status": "pending_review",
+        "created_at": "2026-10-06T09:00:00Z",
+        "text": "A clearly fictional neighborhood cafe.",
+        "reason": null,
+        "details": null,
+        "resolution_note": null,
+        "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "readiness": {
+          "ready": true,
+          "checks": [
+            {
+              "key": "contact",
+              "label": "Contact details",
+              "complete": true
+            }
+          ]
+        },
+        "duplicates": 0,
+        "activity_count": 1,
+        "context": {}
+      }
+    ],
+    "total": 1,
+    "offset": 0,
+    "page_size": 40,
+    "counts": {
+      "business": 1,
+      "content_report": 0,
+      "pickup_review": 0,
+      "event_review": 0
+    },
+    "generated_at": "2026-10-06T09:00:00Z",
+    "operations": {
+      "service_requests": 0,
+      "order_requests": 0,
+      "appointments": 0
+    }
+  },
+  "provenance": "revisions/apps/mobile/src/lib/admin/mobile-moderation-client.test.ts",
+  "scope": "One existing client-test case for visual rendering only; no database, authenticated-session or backend acceptance claim"
+}

@@ -1,3 +1,4 @@
+import { AppIcon } from '@/components/app-icon';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppButton } from './app-button';
@@ -78,7 +79,7 @@ export function ChoicePicker<T extends string>({
         ) : (
           <ThemedText themeColor="textSecondary">{placeholder}</ThemedText>
         )}
-        <ThemedText themeColor="textSecondary">{businessStyle ? 'Change  ⌄' : '⌄'}</ThemedText>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>{businessStyle && <ThemedText type="small" themeColor="textSecondary">Change</ThemedText>}<AppIcon name="chevron-down" size={18} tintColor={colors.textSecondary} /></View>
       </Pressable>
       <Modal animationType="fade" onRequestClose={() => setOpen(false)} transparent visible={open}>
         <View style={[styles.backdrop, { backgroundColor: colors.backdrop }]}>
@@ -148,7 +149,7 @@ export function ChoicePicker<T extends string>({
                     >
                       {option.label}
                     </ThemedText>
-                    {selected && <ThemedText style={styles.check}>✓</ThemedText>}
+                    {selected && <AppIcon name="check" size={18} />}
                   </Pressable>
                 );
               })}

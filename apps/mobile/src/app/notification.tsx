@@ -1,3 +1,7 @@
+import { MobileModerationOutcomeScreen } from '@/components/admin/moderation-outcome-screen';
+import { BackPill } from '@/components/back-pill';
+import { CustomerBrand } from '@/components/customer-brand';
+import { isOutcomeId } from '@sds/business-logic';
 import { buildDirectionsUrl } from '@/lib/external-actions';
 import { EventDetailHeading } from '@/components/event-detail-heading';
 import { FlowSection, FlowIdentity } from '@/components/flow-layout';
@@ -97,6 +101,7 @@ interface AlertRow {
   created_at: string;
   read_at: string | null;
   dismissed_at: string | null;
+  moderation_outcome?: unknown;
   order_status?: string | null;
   order_audience?: 'customer' | 'business' | null;
 }
@@ -130,7 +135,7 @@ export default function NotificationTargetScreen() {
   const targetType = typeof params.type === 'string' ? params.type : undefined;
   const hasValidId = Boolean(targetId && /^[0-9a-f-]{36}$/i.test(targetId));
   const hasValidTarget = hasValidId && (targetType === 'event' || targetType === 'business_update');
-  const hasValidDeliveryId = Boolean(deliveryId && /^[0-9a-f-]{36}$/i.test(deliveryId));
+  const hasValidDeliveryId = isOutcomeId(deliveryId);
   const isInbox = !hasValidTarget && !hasValidDeliveryId;
 
   const loadInbox = useCallback(async () => {
@@ -144,10 +149,10 @@ export default function NotificationTargetScreen() {
     const { data, error: queryError } = await supabase
       .from('notification_deliveries')
       .select(
-        'id, notification_type, entity_type, entity_id, title, body, url, status, created_at, read_at, dismissed_at, order_status, order_audience',
+        'id, notification_type, entity_type, entity_id, title, body, url, status, created_at, read_at, dismissed_at, order_status, order_audience, moderation_outcome',
       )
       .eq('user_id', session.user.id)
-      .or('status.eq.sent,entity_type.eq.pickup_order')
+      .or('status.eq.sent,entity_type.eq.pickup_order,inbox_available_at.not.is.null')
       .is('dismissed_at', null)
       .order('created_at', { ascending: false })
       .limit(100);
@@ -173,10 +178,15 @@ export default function NotificationTargetScreen() {
       return () => clearTimeout(task);
     }
     if (hasValidDeliveryId && deliveryId) {
+      if (!session) {
+        setDelivery(null);
+        setLoading(false);
+        return;
+      }
       void supabase
         .from('notification_deliveries')
         .select(
-          'id, notification_type, entity_type, entity_id, title, body, url, status, created_at, read_at, dismissed_at, order_status, order_audience',
+          'id, notification_type, entity_type, entity_id, title, body, url, status, created_at, read_at, dismissed_at, order_status, order_audience, moderation_outcome',
         )
         .eq('id', deliveryId)
         .maybeSingle()
@@ -198,7 +208,7 @@ export default function NotificationTargetScreen() {
               }
             }
             setDelivery(row);
-            if (!row.read_at) {
+            if (!row.read_at && !row.moderation_outcome) {
               void supabase
                 .from('notification_deliveries')
                 .update({ read_at: new Date().toISOString() })
@@ -315,6 +325,10 @@ export default function NotificationTargetScreen() {
   }
 
   async function openAlert(row: AlertRow) {
+    if (row.moderation_outcome) {
+      router.push(`/moderation-outcome?deliveryId=${encodeURIComponent(row.id)}` as never);
+      return;
+    }
     if (!row.read_at) {
       const readAt = new Date().toISOString();
       setAlerts((current) =>
@@ -345,6 +359,8 @@ export default function NotificationTargetScreen() {
               >
                 <AlertsInboxHeader
                   count={alerts.length}
+                  loading={loading}
+                  failed={!!inboxError}
                   unread={alerts.filter((row) => !row.read_at).length}
                   onClear={() => void clearAllAlerts()}
                   onClose={() => router.back()}
@@ -392,6 +408,15 @@ export default function NotificationTargetScreen() {
           <ActivityIndicator color={colors.accent} />
         </ThemedView>
       </SwipeBackView>
+    );
+  }
+
+  if (hasValidDeliveryId && deliveryId && (!session || delivery?.moderation_outcome)) {
+    return (
+      <MobileModerationOutcomeScreen
+        key={`${deliveryId}:${session?.user.id ?? 'guest'}`}
+        deliveryId={deliveryId}
+      />
     );
   }
 
@@ -459,21 +484,23 @@ export default function NotificationTargetScreen() {
                 <ThemedText themeColor="textSecondary" type="small">
                   {formatAlertDate(delivery.created_at)}
                 </ThemedText>
-                <Pressable
-                  onPress={() => {
-                    if (
-                      delivery.url.startsWith('/pickup-order?') ||
-                      delivery.url.startsWith('/service-requests?')
-                    )
-                      setMode('business');
-                    router.push(delivery.url as never);
-                  }}
-                  style={styles.primaryButton}
-                >
-                  <ThemedText style={styles.primaryButtonText} type="smallBold">
-                    {delivery.entity_type === 'pickup_order' ? 'Open order' : 'Open details'}
-                  </ThemedText>
-                </Pressable>
+                {isSafeNotificationUrl(delivery.url) && (
+                  <Pressable
+                    onPress={() => {
+                      if (
+                        delivery.url.startsWith('/pickup-order?') ||
+                        delivery.url.startsWith('/service-requests?')
+                      )
+                        setMode('business');
+                      router.push(delivery.url as never);
+                    }}
+                    style={styles.primaryButton}
+                  >
+                    <ThemedText style={styles.primaryButtonText} type="smallBold">
+                      {delivery.entity_type === 'pickup_order' ? 'Open order' : 'Open details'}
+                    </ThemedText>
+                  </Pressable>
+                )}
               </View>
             </ScrollView>
           </SafeAreaView>
@@ -513,9 +540,13 @@ export default function NotificationTargetScreen() {
             (!event && !businessUpdate) ||
             (event && !eventBusiness) ||
             (businessUpdate && !updateBusiness) ? (
-              <View style={styles.card}>
+              <View style={[styles.card, { backgroundColor: colors.backgroundElement }]}>
                 <ThemedText type="subtitle">
-                  {targetType === 'business_update' ? 'Update unavailable' : 'Event unavailable'}
+                  {hasValidDeliveryId
+                    ? 'Alert unavailable'
+                    : targetType === 'business_update'
+                      ? 'Update unavailable'
+                      : 'Event unavailable'}
                 </ThemedText>
                 <ThemedText themeColor="textSecondary">
                   {error ??

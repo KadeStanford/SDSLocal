@@ -1,4 +1,7 @@
-import Link from 'next/link';
+import { SurfacePanel, ActionButton } from '@/components/shared-ui';
+import { BusinessWorkspaceHeader } from '@/components/business-workspace-header';
+
+import { AppIcon } from '@/components/app-icon';
 import { notFound, redirect } from 'next/navigation';
 
 import { createClient } from '@/lib/supabase/server';
@@ -102,108 +105,46 @@ export default async function LoyaltyManagerPage({
   const transactions = (transactionData ?? []) as TransactionRow[];
 
   return (
-    <main className="page-shell narrow-shell">
-      <nav className="topbar">
-        <Link className="brand" href="/account">
-          ← Account
-        </Link>
-        <div className="nav-actions">
-          <Link href="/rewards">My rewards</Link>
-          <Link href={`/b/${business.slug}`}>View page</Link>
-        </div>
-      </nav>
-      <div className="page-heading compact-heading">
-        <p className="eyebrow">Rewards</p>
-        <h1>{business.name}</h1>
-        <p>
-          Run a secure visit or spend-based loyalty program and serve customers from one screen.
-        </p>
-      </div>
+    <main className="page-shell business-workspace">
+      <BusinessWorkspaceHeader
+        id={id}
+        name={business.name}
+        slug={business.slug}
+        section="loyalty"
+        canManage={isOwner}
+        title="Rewards workspace"
+        description="Serve customers, manage your rewards program and review member activity."
+        utility={{ href: '/rewards', label: 'My rewards' }}
+      />
       {typeof query.saved === 'string' && <p className="notice-success">{query.saved}</p>}
       {typeof query.error === 'string' && <p className="notice-error">{query.error}</p>}
 
-      {isOwner && (
-        <form action={saveLoyaltyProgramAction} className="panel form-stack">
-          <input type="hidden" name="businessId" value={id} />
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Program setup</p>
-              <h2>{program ? 'Edit rewards program' : 'Create rewards program'}</h2>
-            </div>
-            <label className="closed-toggle">
-              <input name="isActive" type="checkbox" defaultChecked={program?.is_active ?? true} />{' '}
-              Active
-            </label>
+      {program && (
+        <section className="workspace-program-summary">
+          <div className="workspace-program-icon">
+            <AppIcon name="gift" size={28} />
           </div>
-          <div className="form-row two-columns">
-            <label>
-              Reward type <span className="required-marker">Required</span>
-              <select name="programType" defaultValue={program?.program_type ?? 'visits'}>
-                <option value="visits">Visit stamps</option>
-                <option value="points">Spend points</option>
-              </select>
-            </label>
-            <label>
-              Program name <span className="required-marker">Required</span>
-              <input name="name" defaultValue={program?.name ?? ''} maxLength={120} required />
-            </label>
-            <label>
-              Visits required <span className="required-marker">Required</span>
-              <select name="stampsRequired" defaultValue={program?.stamps_required ?? 8}>
-                {Array.from({ length: 29 }, (_, index) => index + 2).map((count) => (
-                  <option value={count} key={count}>
-                    {count} visits
-                  </option>
-                ))}
-              </select>
-            </label>
+          <div>
+            <span className="workspace-state">
+              {program.is_active ? 'Active program' : 'Inactive program'}
+            </span>
+            <h2>{program.name}</h2>
+            <p>{program.reward_description}</p>
           </div>
-          <div className="form-row two-columns">
-            <label>
-              Points earned per $1 <span className="optional-marker">For points programs</span>
-              <input
-                name="pointsPerDollar"
-                type="number"
-                min="0.01"
-                max="1000"
-                step="0.01"
-                defaultValue={program?.points_per_dollar ?? 1}
-              />
-            </label>
-            <label>
-              Points needed to redeem <span className="optional-marker">For points programs</span>
-              <input
-                name="pointsRequired"
-                type="number"
-                min="1"
-                max="1000000"
-                step="1"
-                defaultValue={program?.points_required ?? 100}
-              />
-            </label>
+          <div className="workspace-program-target">
+            <strong>
+              {program.program_type === 'points'
+                ? program.points_required
+                : program.stamps_required}
+            </strong>
+            <span>
+              {program.program_type === 'points' ? 'points to redeem' : 'visits to redeem'}
+            </span>
           </div>
-          <p className="field-hint">
-            Points are earned from the purchase total staff enters at checkout.
-          </p>
-          <label>
-            Reward <span className="required-marker">Required</span>
-            <input
-              name="rewardDescription"
-              defaultValue={program?.reward_description ?? ''}
-              maxLength={500}
-              placeholder="One free drink"
-              required
-            />
-          </label>
-          <label>
-            Terms <span className="optional-marker">Optional</span>
-            <textarea name="terms" defaultValue={program?.terms ?? ''} maxLength={2000} rows={3} />
-          </label>
-          <button className="button">Save rewards program</button>
-        </form>
+        </section>
       )}
 
-      <section className="panel loyalty-scan-panel">
+      <SurfacePanel className="loyalty-scan-panel">
         <p className="eyebrow">Staff counter</p>
         <h2>Scan a customer card</h2>
         {program?.is_active ? (
@@ -211,9 +152,102 @@ export default async function LoyaltyManagerPage({
         ) : (
           <p className="muted">Activate the program before processing rewards.</p>
         )}
-      </section>
+      </SurfacePanel>
 
-      <section className="panel">
+      {isOwner && (
+        <details className="panel workspace-program-settings">
+          <summary>{program ? 'Edit rewards program' : 'Create rewards program'}</summary>
+          <form action={saveLoyaltyProgramAction} className="form-stack">
+            <input type="hidden" name="businessId" value={id} />
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Program setup</p>
+                <h2>{program ? 'Edit rewards program' : 'Create rewards program'}</h2>
+              </div>
+              <label className="closed-toggle">
+                <input
+                  name="isActive"
+                  type="checkbox"
+                  defaultChecked={program?.is_active ?? true}
+                />{' '}
+                Active
+              </label>
+            </div>
+            <div className="form-row two-columns">
+              <label>
+                Reward type <span className="required-marker">Required</span>
+                <select name="programType" defaultValue={program?.program_type ?? 'visits'}>
+                  <option value="visits">Visit stamps</option>
+                  <option value="points">Spend points</option>
+                </select>
+              </label>
+              <label>
+                Program name <span className="required-marker">Required</span>
+                <input name="name" defaultValue={program?.name ?? ''} maxLength={120} required />
+              </label>
+              <label>
+                Visits required <span className="required-marker">Required</span>
+                <select name="stampsRequired" defaultValue={program?.stamps_required ?? 8}>
+                  {Array.from({ length: 29 }, (_, index) => index + 2).map((count) => (
+                    <option value={count} key={count}>
+                      {count} visits
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="form-row two-columns">
+              <label>
+                Points earned per $1 <span className="optional-marker">For points programs</span>
+                <input
+                  name="pointsPerDollar"
+                  type="number"
+                  min="0.01"
+                  max="1000"
+                  step="0.01"
+                  defaultValue={program?.points_per_dollar ?? 1}
+                />
+              </label>
+              <label>
+                Points needed to redeem <span className="optional-marker">For points programs</span>
+                <input
+                  name="pointsRequired"
+                  type="number"
+                  min="1"
+                  max="1000000"
+                  step="1"
+                  defaultValue={program?.points_required ?? 100}
+                />
+              </label>
+            </div>
+            <p className="field-hint">
+              Points are earned from the purchase total staff enters at checkout.
+            </p>
+            <label>
+              Reward <span className="required-marker">Required</span>
+              <input
+                name="rewardDescription"
+                defaultValue={program?.reward_description ?? ''}
+                maxLength={500}
+                placeholder="One free drink"
+                required
+              />
+            </label>
+            <label>
+              Terms <span className="optional-marker">Optional</span>
+              <textarea
+                name="terms"
+                defaultValue={program?.terms ?? ''}
+                maxLength={2000}
+                rows={3}
+              />
+            </label>
+            <ActionButton type="submit">Save rewards program</ActionButton>
+          </form>
+        </details>
+      )}
+
+      <SurfacePanel>
         <div className="section-heading">
           <div>
             <p className="eyebrow">Customers</p>
@@ -236,10 +270,10 @@ export default async function LoyaltyManagerPage({
           ))}
           {!members.length && <p className="muted">No customers have joined yet.</p>}
         </div>
-      </section>
+      </SurfacePanel>
 
       {isOwner && (
-        <section className="panel">
+        <SurfacePanel>
           <p className="eyebrow">Access</p>
           <h2>Invite staff</h2>
           <p className="muted">
@@ -252,7 +286,9 @@ export default async function LoyaltyManagerPage({
               Staff email
               <input name="email" type="email" autoComplete="email" required />
             </label>
-            <button className="button button-small">Create invite</button>
+            <ActionButton className="button-small" type="submit">
+              Create invite
+            </ActionButton>
           </form>
           {typeof query.inviteUrl === 'string' && (
             <div className="notice-success">
@@ -294,21 +330,26 @@ export default async function LoyaltyManagerPage({
               </form>
             ))}
           </div>
-        </section>
+        </SurfacePanel>
       )}
 
-      <section className="panel">
+      <SurfacePanel>
         <p className="eyebrow">Audit trail</p>
         <h2>Recent transactions</h2>
         <div className="loyalty-transaction-list">
           {transactions.map((transaction) => (
             <div key={transaction.transaction_id}>
               <span className={`loyalty-transaction-icon loyalty-${transaction.transaction_type}`}>
-                {transaction.transaction_type === 'stamp'
-                  ? '+'
-                  : transaction.transaction_type === 'redemption'
-                    ? '✓'
-                    : '↶'}
+                <AppIcon
+                  name={
+                    transaction.transaction_type === 'stamp'
+                      ? 'plus'
+                      : transaction.transaction_type === 'redemption'
+                        ? 'check'
+                        : 'undo-2'
+                  }
+                  size={18}
+                />
               </span>
               <div>
                 <strong>{transaction.customer_name}</strong>
@@ -330,7 +371,7 @@ export default async function LoyaltyManagerPage({
             <p className="muted">Transactions will appear after the first scan.</p>
           )}
         </div>
-      </section>
+      </SurfacePanel>
     </main>
   );
 }

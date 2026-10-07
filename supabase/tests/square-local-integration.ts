@@ -6,7 +6,13 @@ import { SquareClient, type SquareObject } from '../functions/_shared/square-cli
 import { randomToken, type SquareConfig } from '../functions/_shared/square-security.ts';
 
 const url = Deno.env.get('LOCAL_SUPABASE_URL');
-if (!['http://host.docker.internal:54321', 'http://host.docker.internal:55321'].includes(url ?? ''))
+if (
+  ![
+    'http://host.docker.internal:54321',
+    'http://host.docker.internal:55321',
+    'http://host.docker.internal:56321',
+  ].includes(url ?? '')
+)
   throw new Error('This fixture runs only against local Docker Supabase.');
 const db = createClient(url, Deno.env.get('LOCAL_SUPABASE_SERVICE_ROLE_KEY')!, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -291,7 +297,10 @@ try {
   }
   const pickupCode = await service.pickupCode(id, null, token);
   await service.pickupScan(businessId, userId, { code: pickupCode.code, confirm: true });
-  const repeatedPickup = await service.pickupScan(businessId, userId, { code: pickupCode.code, confirm: true });
+  const repeatedPickup = await service.pickupScan(businessId, userId, {
+    code: pickupCode.code,
+    confirm: true,
+  });
   check(repeatedPickup.alreadyConfirmed === true, 'Repeated handoff was not idempotent');
   status = await service.status(id, null, token);
   check(status.order.status === 'completed', 'Pickup confirmation did not complete the order');
@@ -377,7 +386,8 @@ try {
   await service.checked(db.from('businesses').delete().eq('id', businessId));
   await service.checked(db.from('square_webhook_inbox').delete().eq('event_id', eventId));
   const deletedUser = await db.auth.admin.deleteUser(userId);
-  if (deletedUser.error) throw new Error(`Local fixture user cleanup failed: ${deletedUser.error.message}`);
+  if (deletedUser.error)
+    throw new Error(`Local fixture user cleanup failed: ${deletedUser.error.message}`);
   await db
     .from('platform_settings')
     .update({ value: priorFlag!.value })

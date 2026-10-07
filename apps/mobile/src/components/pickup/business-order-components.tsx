@@ -7,6 +7,7 @@ import { money, nextPickupAction, pickupLabel, type PickupOrder } from '@/lib/sq
 import { orderAge, orderUrgency, shortOrderNumber } from '@/lib/pickup-workspace';
 import { OrderBadge } from './order-presentation';
 import { businessOrderStage } from '@/lib/business-order-stage';
+import { AppIcon } from '../app-icon';
 
 export function BusinessOrderHeader({ order }: { order: PickupOrder }) {
   const c = useTheme();
@@ -66,7 +67,9 @@ export function PickupOrderCard({ order, now }: { order: PickupOrder; now: numbe
       style={({ pressed }) => ({
         padding: 16,
         gap: 12,
-        borderRadius: 16,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: c.divider,
         backgroundColor: c.backgroundElement,
         opacity: pressed ? 0.8 : 1,
         minHeight: 48,
@@ -81,22 +84,38 @@ export function PickupOrderCard({ order, now }: { order: PickupOrder; now: numbe
           gap: 8,
         }}
       >
-        <ThemedText type="smallBold">#{shortOrderNumber(order.number)}</ThemedText>
+        <ThemedText type="card">#{shortOrderNumber(order.number)}</ThemedText>
         <OrderBadge status={order.status} />
       </View>
-      <View style={{ gap: 4 }}>
-        <ThemedText type="card">{order.recipient?.display_name || 'Pickup customer'}</ThemedText>
-        <ThemedText type="smallBold">
-          {pickupLabel({
-            at: order.pickupAt,
-            timezone: order.business?.timezone ?? order.timezone,
-          })}
-        </ThemedText>
-        {urgency && (
-          <ThemedText type="smallBold" style={{ color: c.warningText }}>
-            {urgency}
+      <View
+        style={{
+          flexDirection: 'row',
+          gap: 12,
+          padding: 12,
+          borderRadius: 12,
+          backgroundColor: c.background,
+        }}
+      >
+        <AppIcon name="clock" size={22} tintColor={c.accent} />
+        <View style={{ flex: 1, minWidth: 0, gap: 5 }}>
+          <ThemedText type="small" themeColor="textSecondary">
+            Pickup time
           </ThemedText>
-        )}
+          <ThemedText type="smallBold">
+            {pickupLabel({
+              at: order.pickupAt,
+              timezone: order.business?.timezone ?? order.timezone,
+            })}
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {order.recipient?.display_name || 'Pickup customer'}
+          </ThemedText>
+          {urgency && (
+            <ThemedText type="smallBold" style={{ color: c.warningText }}>
+              {urgency}
+            </ThemedText>
+          )}
+        </View>
       </View>
       {order.supportRequest?.status === 'open' && (
         <View style={{ padding: 10, borderRadius: 8, backgroundColor: c.warningSurface }}>
@@ -111,15 +130,30 @@ export function PickupOrderCard({ order, now }: { order: PickupOrder; now: numbe
       <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
         {count} {count === 1 ? 'item' : 'items'} · {order.items.map((i) => i.name).join(', ')}
       </ThemedText>
-      <View
-        style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8 }}
-      >
+      <View style={{ gap: 12 }}>
         <ThemedText type="small" themeColor="textSecondary">
           {orderAge(order.createdAt, now)}
         </ThemedText>
-        <ThemedText type="smallBold">
-          {money(order.total, order.currency)} · View order ›
-        </ThemedText>
+        <View
+          style={{
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 12,
+            padding: 14,
+            minHeight: 48,
+            borderRadius: 12,
+            backgroundColor: c.accent,
+          }}
+        >
+          <ThemedText type="smallBold" style={{ color: c.onAccent }}>
+            View order
+          </ThemedText>
+          <ThemedText type="smallBold" style={{ color: c.onAccent }}>
+            {money(order.total, order.currency)}
+          </ThemedText>
+        </View>
       </View>
     </Pressable>
   );

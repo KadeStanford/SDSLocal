@@ -1,0 +1,105 @@
+{
+  "project": "F:/BusinessApp",
+  "activeSource": "F:/BusinessApp/.codex-tmp/parish-pass-dark-review",
+  "branch": "codex/current-redesign-2026-10-07",
+  "branchStatus": "Independent project-associated source checkout saved to GitHub; OTA publication pending.",
+  "candidateIdentity": "c8fdaace793838dec271cda14196b85a818f1b7894c4d5e4fb29e7fff8b07478",
+  "releaseGroup": "16899e45-ef46-427c-870a-009ff22a3caf",
+  "rows": [
+    {
+      "path": "apps/mobile/src/app/(tabs)/account.tsx",
+      "method": "three-way published delta + approved presentation",
+      "baseSha": "e3d0f13ceab3ebccc20509db3b0d4d3e66d8c30b04d6e9f6d1eb8d253bba81e5",
+      "candidateSha": "a379261ad49d6aecf7b86ce7208fccb1c246a903335827c82e5f2a98c8da7eae",
+      "publishedSha": "b6ca794b7e02008443fef79b2070ca65b8e640bb68d30bdb423c03e30851a435",
+      "conflict": false,
+      "resultStatus": 0,
+      "stderr": ""
+    },
+    {
+      "path": "apps/mobile/src/app/(tabs)/staff-scan.tsx",
+      "method": "Reviewed three-way resolution",
+      "baseSha": "2f674f96a59693ba39bbf07d8e691ed60fca5c0bd8b39ff03a6d14698d1e25b8",
+      "candidateSha": "1f71d3f18e3e57c3ec58adfd804e829504860867d0314755022b7877357cb10e",
+      "publishedSha": "3515a3e547c07e8e1a7082db1688685dc3798acb00960a7a1b12195e19a5ed70",
+      "conflict": false,
+      "resultStatus": 2,
+      "stderr": "",
+      "conflictFile": "F:\\BusinessApp\\.codex-tmp\\dark-review-tools/merge/apps/mobile/src/app/(tabs)/staff-scan.tsx.conflict"
+    },
+    {
+      "path": "apps/mobile/src/components/admin/moderation-backup-panel.tsx",
+      "method": "published addition",
+      "publishedSha": "bb5c1f93f6344df99a1bc79f14a28739237a639fec77ffb2ee472be72646ce35"
+    },
+    {
+      "path": "apps/mobile/src/components/admin/moderation-case-screen.tsx",
+      "method": "Reviewed three-way resolution",
+      "baseSha": "fd61f6a66f89650b9233c513f9496c39c224c00407f20b8ac9b549a82e5e5d09",
+      "candidateSha": "410cf6d3eb5c073f6bb2ed7235f9cedee836e50241f6be2b1d72b034bcef2beb",
+      "publishedSha": "1095013c748befebba2ec2bcce8508e331f20440c559bdc96c29dabdeff53c40",
+      "conflict": false,
+      "resultStatus": 2,
+      "stderr": "",
+      "conflictFile": "F:\\BusinessApp\\.codex-tmp\\dark-review-tools/merge/apps/mobile/src/components/admin/moderation-case-screen.tsx.conflict"
+    },
+    {
+      "path": "apps/mobile/src/components/admin/moderation-queue-screen.tsx",
+      "method": "Reviewed three-way resolution",
+      "baseSha": "b5c579f88f4adf7221722aa472fba293f6243a0b698da3813bb1c98d4400922a",
+      "candidateSha": "3aa077a414de8898872b20da6e5880db0626274934f05b2aca636eb48c6859d0",
+      "publishedSha": "15e565841b54d37240cf6fedbfa3649cfb53d7355e5e56e93759d6d13fc8a0a4",
+      "conflict": false,
+      "resultStatus": 2,
+      "stderr": "",
+      "conflictFile": "F:\\BusinessApp\\.codex-tmp\\dark-review-tools/merge/apps/mobile/src/components/admin/moderation-queue-screen.tsx.conflict"
+    },
+    {
+      "path": "apps/mobile/src/lib/admin/backup-types.ts",
+      "method": "published addition",
+      "publishedSha": "42eee086de0fbea2b635ffbf881699177c3b50bcc64d378bb77027472b8cc736"
+    },
+    {
+      "path": "apps/mobile/src/lib/admin/case-brief.ts",
+      "method": "published addition",
+      "publishedSha": "b223e845a894c88e2983da0605ba29f7bf6ed21d2621d16d427bb8f724cd8f7f"
+    },
+    {
+      "path": "apps/mobile/src/lib/admin/mobile-moderation-client.ts",
+      "method": "published exact",
+      "publishedSha": "9d187b72ca8b37c0deb0cdf29575059a5507211a91842808ca8cad0cf80a1ee0"
+    },
+    {
+      "path": "apps/mobile/src/lib/admin/moderation-types.ts",
+      "method": "published exact",
+      "publishedSha": "f3acc8f186ba20ab9043bc9d46a7d4615e308fdfc1a76a871a2d48b5a1c171fe"
+    },
+    {
+      "path": "apps/mobile/src/lib/square-commerce.ts",
+      "method": "published exact",
+      "publishedSha": "322a905bb52f33ddc6b0a3946098f367f7a54aa907ba4876f8d4133a7ff1d2e3"
+    },
+    {
+      "path": "packages/validation/src/index.ts",
+      "method": "published exact",
+      "publishedSha": "608d70981975e742c09bc1ff825c4de9108c848385db5dd8f96d816bdb1f9987"
+    }
+  ],
+  "resolutions": [
+    {
+      "path": "apps/mobile/src/app/(tabs)/staff-scan.tsx",
+      "conflictBlocks": 2,
+      "reason": "Keep one stored error declaration and approved scanner UI; retain published account/business/version guards."
+    },
+    {
+      "path": "apps/mobile/src/components/admin/moderation-case-screen.tsx",
+      "conflictBlocks": 2,
+      "reason": "Keep approved status badge and themed components; retain published brief and actionable evidence semantics."
+    },
+    {
+      "path": "apps/mobile/src/components/admin/moderation-queue-screen.tsx",
+      "conflictBlocks": 2,
+      "reason": "Keep theme hook and queue icons; add published gated backup panel and truthful backup description."
+    }
+  ]
+}

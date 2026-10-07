@@ -1,3 +1,4 @@
+import { AppIcon } from '@/components/app-icon';
 import { pendingPaymentPresentation } from '@/lib/pending-payment';
 import { Pressable, View } from 'react-native';
 import { router } from 'expo-router';
@@ -19,7 +20,7 @@ export function CustomerOrderCard({ order }: { order: PickupOrder }) {
   return (
     <View
       style={{
-        borderRadius: 14,
+        borderRadius: 20,
         borderWidth: 1,
         borderColor: c.divider,
         overflow: 'hidden',
@@ -32,6 +33,15 @@ export function CustomerOrderCard({ order }: { order: PickupOrder }) {
         onPress={() => router.push({ pathname: '/order', params: { orderId: order.id } })}
         style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
       >
+        <View style={{ paddingHorizontal: 20, paddingTop: 18, paddingBottom: 0 }}>
+          {' '}
+          <OrderBadge
+            status={order.status}
+            {...(order.status === 'checkout_pending'
+              ? { label: pendingPaymentPresentation(order).title }
+              : {})}
+          />
+        </View>
         <View
           style={{
             flexDirection: 'row',
@@ -56,9 +66,7 @@ export function CustomerOrderCard({ order }: { order: PickupOrder }) {
               {count ? ` · ${count} ${count === 1 ? 'item' : 'items'}` : ''}
             </ThemedText>
           </View>
-          <ThemedText accessible={false} style={{ color: foreground }}>
-            ›
-          </ThemedText>
+          <AppIcon name="chevron-right" size={18} />
         </View>
         <View
           style={{
@@ -69,12 +77,6 @@ export function CustomerOrderCard({ order }: { order: PickupOrder }) {
             borderTopColor: c.divider,
           }}
         >
-          <OrderBadge
-            status={order.status}
-            {...(order.status === 'checkout_pending'
-              ? { label: pendingPaymentPresentation(order).title }
-              : {})}
-          />
           <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
             <ThemedText type="small" themeColor="textSecondary" style={{ flex: 1, minWidth: 0 }}>
               {history ? 'Ordered ' : 'Pickup '}
@@ -87,6 +89,23 @@ export function CustomerOrderCard({ order }: { order: PickupOrder }) {
               {money(order.total, order.currency)}
             </ThemedText>
           </View>
+        </View>
+        <View
+          style={{
+            minHeight: 48,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            backgroundColor: c.accent,
+            paddingHorizontal: 20,
+            paddingVertical: 13,
+          }}
+        >
+          <ThemedText type="smallBold" style={{ color: c.onAccent, fontSize: 16, lineHeight: 22 }}>
+            View order
+          </ThemedText>
+          <AppIcon name="chevron-right" tintColor={c.onAccent} size={20} />
         </View>
       </Pressable>
       {history && order.status === 'completed' && order.businessId && (

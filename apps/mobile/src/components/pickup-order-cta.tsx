@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import { useFocusEffect } from 'expo-router';
 import { commerce, pickupCapabilities, readOrderAccess } from '@/lib/square-commerce';
 import { type Availability } from '@/lib/square-commerce-core';
@@ -96,9 +96,11 @@ export function PickupOrderCtaContent({
   return (
     <View
       style={{
-        padding: Spacing.four,
-        gap: Spacing.three,
-        borderRadius: Radius.medium,
+        padding: 16,
+        gap: 12,
+        borderWidth: 1,
+        borderColor: colors.divider,
+        borderRadius: 18,
         backgroundColor: warning
           ? colors.warningSurface
           : active
@@ -112,12 +114,12 @@ export function PickupOrderCtaContent({
         <SymbolView
           name={
             warning
-              ? { ios: 'exclamationmark.triangle.fill', android: 'warning', web: 'warning' }
+              ? 'triangle-alert'
               : view.kind === 'paused'
-                ? { ios: 'pause.circle.fill', android: 'pause_circle', web: 'pause_circle' }
+                ? 'circle-pause'
                 : view.kind === 'scheduled' || view.kind === 'closed'
-                  ? { ios: 'clock.fill', android: 'schedule', web: 'schedule' }
-                  : { ios: 'bag.fill', android: 'shopping_bag', web: 'shopping_bag' }
+                  ? 'clock'
+                  : 'shopping-bag'
           }
           tintColor={foreground}
           style={{ width: 24, height: 24, flexShrink: 0 }}

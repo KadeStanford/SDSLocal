@@ -1,4 +1,5 @@
 'use client';
+import { ActionButton } from '@/components/shared-ui';
 
 import { useState } from 'react';
 
@@ -45,16 +46,16 @@ export function InviteLinkActions({ url }: { readonly url: string }) {
 
   return (
     <div className="inline-actions">
-      <button className="button button-small" onClick={() => void shareLink()} type="button">
+      <ActionButton className="button-small" onClick={() => void shareLink()} type="button">
         Share link
-      </button>
-      <button
-        className="button button-small button-secondary"
+      </ActionButton>
+      <ActionButton
+        className="button-small button-secondary"
         onClick={() => void copyLink()}
         type="button"
       >
         Copy link
-      </button>
+      </ActionButton>
       {status && <span className="field-hint">{status}</span>}
     </div>
   );

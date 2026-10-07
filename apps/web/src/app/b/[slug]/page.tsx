@@ -1,3 +1,8 @@
+import { PageHeader } from '@/components/page-header';
+import { ActionButton } from '@/components/shared-ui';
+
+import { AppIcon } from '@/components/app-icon';
+
 import { OpenInApp } from '@/components/open-in-app';
 import { getBusinessStatusLabel, getOfferingTerminology } from '@sds/business-logic';
 import type { BusinessType, ServiceAreaType } from '@sds/types';
@@ -301,19 +306,23 @@ export default async function BusinessPage({ params, searchParams }: PageProps<'
           Private preview · {getBusinessStatusLabel(business.status)}
         </div>
       )}
-      <nav className="business-nav">
-        <Link className="brand" href="/">
-          Parish Pass
-        </Link>
+      <PageHeader backHref="/explore" />
+      <nav className="parish-page-links" aria-label="Page links">
         <div className="nav-actions">
-          <Link href="/explore">Explore</Link>
-          <Link href="/events">Events</Link>
+          <Link href="/explore">
+            <AppIcon name="compass" size={18} />
+            Explore
+          </Link>
+          <Link href="/events">
+            <AppIcon name="calendar-days" size={18} />
+            Events
+          </Link>
           <Link href={authData.user ? '/account' : '/auth'}>
             {authData.user ? 'Account' : 'Sign in'}
           </Link>
         </div>
       </nav>
-      <OpenInApp path={`b/${encodeURIComponent(business.slug)}`} description="Follow this business, use its available booking or ordering tools, and manage your rewards in the app." />
+
       {query.followed === '1' && (
         <p className="business-page-notice">You are now following this business.</p>
       )}
@@ -339,10 +348,13 @@ export default async function BusinessPage({ params, searchParams }: PageProps<'
           {business.description && <p>{business.description}</p>}
         </div>
       </header>
+      <OpenInApp
+        path={`b/${encodeURIComponent(business.slug)}`}
+        description="Follow this business, use its available booking or ordering tools, and manage your rewards in the app."
+      />
       <div className="business-content">
         <section className="business-main-card">
-          <p className="eyebrow">Welcome</p>
-          <h2>Everything you need before you visit.</h2>
+          <h2>Plan your visit</h2>
           <p>
             Discover what {business.name} offers, see what is coming up, and plan your next visit.
           </p>
@@ -350,11 +362,13 @@ export default async function BusinessPage({ params, searchParams }: PageProps<'
             {authData.user ? (
               followData ? (
                 <form action={unfollowBusinessAction.bind(null, business.slug)}>
-                  <button className="button button-secondary">Following · Unfollow</button>
+                  <ActionButton className="button-secondary" type="submit">
+                    Following · Unfollow
+                  </ActionButton>
                 </form>
               ) : (
                 <form action={followBusinessAction.bind(null, business.slug)}>
-                  <button className="button">Follow business</button>
+                  <ActionButton type="submit">Follow business</ActionButton>
                 </form>
               )
             ) : (
@@ -473,7 +487,15 @@ export default async function BusinessPage({ params, searchParams }: PageProps<'
                           <div>
                             <strong>
                               {item.name}
-                              {item.is_featured ? ' ★' : ''}
+                              {item.is_featured && (
+                                <AppIcon
+                                  name="star"
+                                  size={16}
+                                  aria-label="Featured item"
+                                  role="img"
+                                  aria-hidden={false}
+                                />
+                              )}
                             </strong>
                             {item.description && <span>{item.description}</span>}
                           </div>
@@ -563,7 +585,7 @@ export default async function BusinessPage({ params, searchParams }: PageProps<'
             </Link>
           ) : authData.user ? (
             <form action={joinRewardsAction.bind(null, business.slug)}>
-              <button className="button">Join rewards</button>
+              <ActionButton type="submit">Join rewards</ActionButton>
             </form>
           ) : (
             <Link

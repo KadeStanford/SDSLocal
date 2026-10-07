@@ -1,0 +1,48 @@
+{
+  "hash": "3200722a",
+  "configHash": "7fcf3d0e",
+  "lockfileHash": "00c6783a",
+  "browserHash": "f20d286d",
+  "optimized": {
+    "@parish-audit/svg-library": {
+      "src": "../../../../../../node_modules/.pnpm/react-native-svg@15.15.4_re_dfe37c98cbfb320c3a2849f8b3b2dc8f/node_modules/react-native-svg/src/ReactNativeSVG.web.ts",
+      "file": "@parish-audit_svg-library.js",
+      "fileHash": "505664c5",
+      "needsInterop": false
+    },
+    "react-dom/client": {
+      "src": "../../../../../../node_modules/.pnpm/react-dom@19.2.3_react@19.2.3/node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "7e823d7a",
+      "needsInterop": true
+    },
+    "react-native-web": {
+      "src": "../../../../../../node_modules/.pnpm/react-native-web@0.21.2_rea_f5518d5b95f79a9309036944c9c286ee/node_modules/react-native-web/dist/index.js",
+      "file": "react-native-web.js",
+      "fileHash": "ce63606a",
+      "needsInterop": false
+    },
+    "react": {
+      "src": "../../../../../../node_modules/.pnpm/react@19.2.3/node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "71b15ade",
+      "needsInterop": true
+    },
+    "react/jsx-dev-runtime": {
+      "src": "../../../../../../node_modules/.pnpm/react@19.2.3/node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "ceb83daf",
+      "needsInterop": true
+    }
+  },
+  "chunks": {
+    "client-C5PRJuo1": {
+      "file": "client-C5PRJuo1.js",
+      "isDynamicEntry": false
+    },
+    "rolldown-runtime-7_rZTKki": {
+      "file": "rolldown-runtime-7_rZTKki.js",
+      "isDynamicEntry": false
+    }
+  }
+}

@@ -8,7 +8,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { AppButton } from '@/components/app-button';
-import { BackPill } from '@/components/back-pill';
 import { EmptyState, ListLoading, StateNotice } from '@/components/data-state';
 import { EventAttendeeInboxHeader, EventAttendeeStatus } from '@/components/event-attendee-inbox';
 import { MerchantRow, MerchantSheet } from '@/components/merchant-ui';
@@ -62,10 +61,13 @@ function EventAttendeeWorkspace({
     writeBusy = useRef(false),
     exportBusy = useRef(false);
   useEffect(() => {
+    // Capture the request-version ref object used to invalidate pending reads.
+    const readVersionForCleanup = readVersion;
+
     mounted.current = true;
     return () => {
       mounted.current = false;
-      readVersion.current++;
+      readVersionForCleanup.current++;
     };
   }, []);
   const selected = attendees.find((a) => a.rsvp_id === selectedId);
@@ -205,12 +207,12 @@ function EventAttendeeWorkspace({
         }
         ListHeaderComponent={
           <View style={{ gap: 12, paddingBottom: 16 }}>
-            <BackPill
-              label="Back to business"
-              disabled={!!savingId || sharing}
-              onPress={() => router.back()}
+            <BusinessScreenHeader
+              title="Attendees"
+              subtitle={eventTitle}
+              onBack={() => router.back()}
+              backDisabled={!!savingId || sharing}
             />
-            <BusinessScreenHeader title="Attendees" subtitle={eventTitle} />
             {!!error && (
               <>
                 <StateNotice kind="error" message={error} />
@@ -235,15 +237,25 @@ function EventAttendeeWorkspace({
           </View>
         }
         renderItem={({ item }) => (
-          <MerchantRow
-            title={item.attendee_name}
-            leading={<FlowAvatar name={item.attendee_name} />}
-            subtitle={`${item.party_size} ${item.party_size === 1 ? 'person' : 'people'}`}
-            status={<EventAttendeeStatus attendee={item} />}
-            disabled={loading || !!savingId || !!error}
-            label={`Open ${item.attendee_name}, group of ${item.party_size}`}
-            onPress={() => setSelectedId(item.rsvp_id)}
-          />
+          <View
+            style={{
+              backgroundColor: colors.backgroundElement,
+              borderColor: colors.divider,
+              borderWidth: 1,
+              borderRadius: 18,
+              overflow: 'hidden',
+            }}
+          >
+            <MerchantRow
+              title={item.attendee_name}
+              leading={<FlowAvatar name={item.attendee_name} />}
+              subtitle={`${item.party_size} ${item.party_size === 1 ? 'person' : 'people'}`}
+              status={<EventAttendeeStatus attendee={item} />}
+              disabled={loading || !!savingId || !!error}
+              label={`Open ${item.attendee_name}, group of ${item.party_size}`}
+              onPress={() => setSelectedId(item.rsvp_id)}
+            />
+          </View>
         )}
         ListEmptyComponent={
           loading ? (

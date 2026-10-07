@@ -44,7 +44,7 @@ vi.mock('react-native', () => ({
   StyleSheet: { create: (v: any) => v, hairlineWidth: 1 },
 }));
 vi.mock('@expo/ui/community/datetime-picker', () => ({ DateTimePicker: 'DateTimePicker' }));
-vi.mock('expo-symbols', () => ({ SymbolView: 'SymbolView' }));
+vi.mock('@/components/app-icon', () => ({ AppIcon: 'SymbolView' }));
 vi.mock('./business-logo', () => ({ BusinessLogo: 'BusinessLogo' }));
 vi.mock('./business-workspace-sheet', () => ({ BusinessWorkspaceSheet: 'BusinessWorkspaceSheet' }));
 vi.mock('./themed-text', () => ({ ThemedText: 'ThemedText' }));
@@ -64,7 +64,7 @@ beforeEach(() => {
 });
 
 it.each([
-  [6, 3],
+  [6, 6],
   [8, 4],
   [13, 5],
   [30, 6],

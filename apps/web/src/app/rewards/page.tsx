@@ -1,3 +1,6 @@
+import { PageHeader } from '@/components/page-header';
+import { AppIcon } from '@/components/app-icon';
+
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
@@ -30,15 +33,22 @@ export default async function RewardsPage({ searchParams }: PageProps<'/rewards'
   const cards = (data ?? []) as WalletCard[];
 
   return (
-    <main className="page-shell">
-      <nav className="topbar">
-        <Link className="brand" href="/">
-          Parish Pass
-        </Link>
+    <main className="page-shell rewards-page">
+      <PageHeader />
+      <nav className="parish-page-links" aria-label="Page links">
         <div className="nav-actions">
-          <Link href="/explore">Explore</Link>
-          <Link href="/events">Events</Link>
-          <Link href="/account">Account</Link>
+          <Link href="/explore">
+            <AppIcon name="compass" size={18} />
+            Explore
+          </Link>
+          <Link href="/events">
+            <AppIcon name="calendar-days" size={18} />
+            Events
+          </Link>
+          <Link href="/account">
+            <AppIcon name="circle-user-round" size={18} />
+            Account
+          </Link>
         </div>
       </nav>
       <div className="page-heading compact-heading">
@@ -48,30 +58,77 @@ export default async function RewardsPage({ searchParams }: PageProps<'/rewards'
       </div>
       {query.left === '1' && <p className="notice-success">You left the rewards program.</p>}
       {error && <p className="notice-error">Rewards could not be loaded: {error.message}</p>}
-      <section className="reward-card-grid">
-        {cards.map((card) => (
-          <Link
-            className="reward-wallet-card"
-            href={`/rewards/${card.membership_id}`}
-            key={card.membership_id}
-            style={{ '--reward-color': card.primary_color } as React.CSSProperties}
-          >
-            <p>{card.business_name}</p>
-            <h2>{card.program_name}</h2>
-            <span>{card.reward_description}</span>
-            {card.program_type === 'points' ? <p>{card.available_points} points available · {card.points_required} points per reward</p> : <div className="stamp-progress" aria-hidden="true">
-              {Array.from({ length: card.stamps_required }, (_, index) => (
-                <i className={index < card.progress_stamps ? 'stamp-earned' : ''} key={index} />
-              ))}
-            </div>}
-            <strong>
-              {card.rewards_ready
-                ? `${card.rewards_ready} reward ready`
-                : card.program_type === 'points' ? `${card.progress_points} / ${card.points_required} points toward your next reward` : `${card.progress_stamps} / ${card.stamps_required} visits`}
-            </strong>
-          </Link>
+      <div className="wallet-summary">
+        <AppIcon name="gift" size={24} />
+        <span>
+          {cards.length} {cards.length === 1 ? 'reward card' : 'reward cards'}
+        </span>
+        <Link href="/following">
+          Your followed businesses <AppIcon name="chevron-right" size={18} />
+        </Link>
+      </div>
+      {[
+        { title: 'Ready to enjoy', cards: cards.filter((card) => card.rewards_ready > 0) },
+        { title: 'In progress', cards: cards.filter((card) => card.rewards_ready <= 0) },
+      ]
+        .filter((group) => group.cards.length)
+        .map((group) => (
+          <section key={group.title} className="wallet-collection">
+            <h2>{group.title}</h2>
+            <div className="reward-card-grid">
+              {group.cards.map((card) => {
+                const points = card.program_type === 'points';
+                const progress = points ? card.progress_points : card.progress_stamps;
+                const target = points ? card.points_required : card.stamps_required;
+                return (
+                  <Link
+                    className="wallet-card"
+                    href={`/rewards/${card.membership_id}`}
+                    key={card.membership_id}
+                  >
+                    <div className="wallet-issuer">
+                      <span className="workspace-initial" aria-hidden="true">
+                        {card.business_name.slice(0, 1).toUpperCase()}
+                      </span>
+                      <div>
+                        <strong>{card.business_name}</strong>
+                        <span>{points ? 'Points rewards' : 'Visit rewards'}</span>
+                      </div>
+                    </div>
+                    <div className="wallet-program">
+                      <h3>{card.program_name}</h3>
+                      <p>{card.reward_description}</p>
+                      {card.rewards_ready > 0 && (
+                        <span className="wallet-ready">
+                          {card.rewards_ready}{' '}
+                          {card.rewards_ready === 1 ? 'reward ready' : 'rewards ready'}
+                        </span>
+                      )}
+                      {points && <p>{card.available_points} points available</p>}
+                      <div className="wallet-progress-copy">
+                        <strong>
+                          {progress} {target > 0 ? ' / ' + target : ''}
+                        </strong>
+                        <span>{points ? 'points' : 'visits'} toward your next reward</span>
+                      </div>
+                      {target > 0 && (
+                        <progress
+                          max={target}
+                          value={Math.min(target, Math.max(0, progress))}
+                          aria-label={`${progress} of ${target} ${points ? 'points' : 'visits'} toward your next reward`}
+                        />
+                      )}
+                    </div>
+                    <span className="wallet-open">
+                      View rewards <AppIcon name="chevron-right" size={20} />
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
         ))}
-      </section>
+
       {!error && !cards.length && (
         <div className="empty-state">
           <strong>No rewards cards yet</strong>

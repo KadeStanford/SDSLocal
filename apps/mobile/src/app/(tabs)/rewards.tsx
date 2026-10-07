@@ -1,3 +1,4 @@
+import { PageHeader } from '@/components/page-header';
 import { personalEventScope } from '@/lib/customer-commitments';
 import { EventsViewSwitch } from '@/components/events-view-switch';
 import { RewardsWalletList } from '@/components/reward-wallet';
@@ -5,8 +6,7 @@ import { EventDirectory } from '@/components/event-directory';
 import { RewardsHeader, FollowingBusinessCard } from '@/components/customer-rewards-ui';
 import { DiscoverySearchBar } from '@/components/discovery-search-bar';
 import { BackPill } from '@/components/back-pill';
-import { CustomerAction } from '@/components/customer-ui';
-import { CustomerBrand } from '@/components/customer-brand';
+
 import { RewardDetails, type RewardWalletCard as WalletCard } from '@/components/reward-wallet';
 import { FollowingFiltersSheet } from '@/components/following-filters-sheet';
 import { CustomerCalendar } from '@/components/customer-calendar';
@@ -298,7 +298,12 @@ export function CalendarScreen() {
 function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalendar?: boolean }) {
   const bottomPadding = useScreenBottomPadding();
   const { session, loading: authLoading } = useAuth();
-  const params = useLocalSearchParams<{ scope?: string; view?: string; eventId?: string; businessId?: string }>();
+  const params = useLocalSearchParams<{
+    scope?: string;
+    view?: string;
+    eventId?: string;
+    businessId?: string;
+  }>();
   const nearbyAlerts = useNearbyAlerts();
   const pathname = usePathname();
   // Native tabs can briefly report a group-prefixed pathname while mounting.
@@ -312,13 +317,17 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
   const [cards, setCards] = useState<WalletCard[]>([]);
   const [reminders, setReminders] = useState<Record<string, ReminderPreference>>({});
   const [followedEvents, setFollowedEvents] = useState<FollowedEvent[]>([]);
-  useEffect(() => { if (params.view === 'following') setView('following'); }, [params.view]);
   const [followingBusinesses, setFollowingBusinesses] = useState<FollowingBusiness[]>([]);
   const [selectedFollowingBusiness, setSelectedFollowingBusiness] =
     useState<FollowingBusiness | null>(null);
   const [view, setView] = useState<'wallet' | 'events' | 'following'>(() =>
-    calendarOnly ? 'events' : 'wallet',
+    calendarOnly ? 'events' : params.view === 'following' ? 'following' : 'wallet',
   );
+  const [previousViewParam, setPreviousViewParam] = useState(params.view);
+  if (previousViewParam !== params.view) {
+    setPreviousViewParam(params.view);
+    if (params.view === 'following') setView('following');
+  }
   // Events belong to the Calendar destination. If a previously mounted
   // Rewards instance still has the old `events` state, keep that state from
   // leaking loyalty UI into the wrong destination.
@@ -352,10 +361,13 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
   const walletRead = useRef(0);
   const walletAlive = useRef(true);
   useEffect(() => {
+    // Capture the request-version ref object used to invalidate pending reads.
+    const walletReadForCleanup = walletRead;
+
     walletAlive.current = true;
     return () => {
       walletAlive.current = false;
-      walletRead.current++;
+      walletReadForCleanup.current++;
     };
   }, []);
   const loadWallet = useCallback(async () => {
@@ -422,7 +434,9 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
         setWalletReadError(
           userMessageFromError(
             firstError,
-            'We could not load your wallet and reminders right now.',
+            calendarOnly
+              ? 'We could not load your events right now.'
+              : 'We could not load your wallet and reminders right now.',
           ),
         );
       } else {
@@ -481,7 +495,7 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
           }
         } else {
           const businessIds = businesses.map((business) => business.id);
-          const savedIds = (eventsResult.data ?? []).map(row => row.event_id);
+          const savedIds = (eventsResult.data ?? []).map((row) => row.event_id);
           if (!personalEventScope(businessIds, savedIds)) {
             setFollowedEvents([]);
           } else {
@@ -543,13 +557,15 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
         setWalletReadError(
           userMessageFromError(
             cause,
-            'We could not refresh your rewards and events. Please retry.',
+            calendarOnly
+              ? 'We could not refresh your events. Please retry.'
+              : 'We could not refresh your rewards and events. Please retry.',
           ),
         );
     } finally {
       if (current()) setLoading(false);
     }
-  }, [allUpcoming, session]);
+  }, [allUpcoming, calendarOnly, session]);
 
   const openedEventRoute = useRef<string | null>(null);
   useEffect(() => {
@@ -849,7 +865,7 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
             contentInsetAdjustmentBehavior="automatic"
             contentContainerStyle={[
               styles.content,
-              !calendarOnly && !upcomingListOnly && { padding: 20, gap: 20 },
+              { padding: 20, gap: 20 },
               { paddingBottom: bottomPadding },
             ]}
             scrollEnabled={!eventImageOpen && !mapInteractionActive}
@@ -861,21 +877,16 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
             }
           >
             {selectedFollowingBusiness && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-                <CustomerAction
-                  label="Back to following"
-                  icon="back"
-                  iconOnly
-                  onPress={() => setSelectedFollowingBusiness(null)}
-                />
-                <CustomerBrand />
-              </View>
+              <PageHeader
+                onBack={() => setSelectedFollowingBusiness(null)}
+                backLabel="Back to following"
+              />
             )}
             {!isDetail &&
               (calendarOnly || upcomingListOnly ? (
                 <>
                   <AppChrome />
-                  <CustomerBrand />
+                  <PageHeader />
                   <View
                     style={calendarOnly || upcomingListOnly ? styles.calendarHero : styles.hero}
                   >
@@ -1142,7 +1153,7 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
                           style={[styles.noticeText, { color: colors.textSecondary }]}
                           type="small"
                         >
-                          Swipe the dates to pick another day, or explore All events.
+                          Pick another date, or explore All events.
                         </ThemedText>
                       </View>
                     )}
@@ -1507,7 +1518,14 @@ function EventDetail({
         }}
       />
       {!!event.description && (
-        <View style={{ gap: 8 }}>
+        <View
+          style={{
+            gap: 8,
+            padding: 16,
+            borderRadius: 20,
+            backgroundColor: colors.backgroundElement,
+          }}
+        >
           <ThemedText type="card">About this event</ThemedText>
           <ThemedText>{event.description}</ThemedText>
         </View>

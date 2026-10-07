@@ -1,0 +1,130 @@
+{
+  "observedAtUtc": "2026-10-06T05:04:31.866Z",
+  "backend": "https://lgddhdexvwclfrnzjtly.supabase.co",
+  "projectRef": "lgddhdexvwclfrnzjtly",
+  "verdict": "12 read-only backend checks pass. Signed-in business/customer workflows and the installed normal-preview app remain Not Tested.",
+  "artifactIdentity": "Normal PREVIEW channel only, excluding billing-diagnostics. Observed Expo OTA group 2217fdae-1e17-48ad-9ff7-2a895a867b46, October 1 11:32:21.851 UTC; runtime 0.1.0, SDK 57, Parish Pass, staging. Installed native build/update IDs and exact dirty OTA source remain unobserved.",
+  "nativeJourneysExecuted": 0,
+  "journeys": [
+    {
+      "flow": "Native public discovery, search and repeat navigation",
+      "layer": "Normal preview staging app journey",
+      "status": "not-tested",
+      "evidence": "API reads pass; no native UI journey executed.",
+      "blocker": "Installed normal-preview Android/iOS device session and applied OTA identity."
+    },
+    {
+      "flow": "Signup and successful email verification",
+      "layer": "Normal preview staging app journey",
+      "status": "not-tested",
+      "evidence": "Server permits signup and requires confirmation; no staging verification consumed.",
+      "blocker": "Dedicated confirmed fixtures or approved plus-alias delivery, native/browser driver and cleanup."
+    },
+    {
+      "flow": "Password recovery and return to account",
+      "layer": "Normal preview staging app journey",
+      "status": "not-tested",
+      "evidence": "No actual staging recovery/password-change/relogin executed.",
+      "blocker": "Dedicated account and native callback/recovery driver; suppress unapproved email."
+    },
+    {
+      "flow": "Sign-out, startup interruption and A/B switching",
+      "layer": "Normal preview staging app journey",
+      "status": "not-tested",
+      "evidence": "Local regression evidence exists; current staging app sequence not executed.",
+      "blocker": "Two dedicated accounts and installed normal-preview native driver."
+    },
+    {
+      "flow": "Google / Apple cancel, callback and returning login",
+      "layer": "Normal preview staging app journey",
+      "status": "not-tested",
+      "evidence": "Provider-enabled settings pass; real provider login unexecuted.",
+      "blocker": "Native device, scoped provider test account and entitlement evidence."
+    },
+    {
+      "flow": "Merchant onboarding, interrupted retry and submission",
+      "layer": "Normal preview staging app journey",
+      "status": "not-tested",
+      "evidence": "Category options are accessible. No complete staging business creation/submission journey executed.",
+      "blocker": "Task-4 realistic dedicated owner/draft fixtures, normal-flow submission and cleanup."
+    },
+    {
+      "flow": "Owner category save, repeat save and invalid-input atomicity",
+      "layer": "Signed-in staging backend + app journey",
+      "status": "not-tested",
+      "evidence": "Migration 20261001000200 installed; anonymous execution denied. Signed-in save is unexecuted.",
+      "blocker": "Task-4 confirmed owner/staff/other-user accounts, draft-business fixture and billing-feature snapshot."
+    },
+    {
+      "flow": "Customer appointment history and cross-customer isolation",
+      "layer": "Signed-in staging backend + app journey",
+      "status": "not-tested",
+      "evidence": "Migration 20261001000300 installed; anonymous execution denied. Signed-in expected history unexecuted.",
+      "blocker": "Task-4 two confirmed customers and ordinary-flow appointments with known expected IDs."
+    },
+    {
+      "flow": "Appointment booking, duplicate/interrupted retry and cancellation",
+      "layer": "Normal preview staging app journey",
+      "status": "not-tested",
+      "evidence": "No signed-in staging booking journey executed.",
+      "blocker": "Controlled service/capacity/customer fixtures with payment/email/push suppressed."
+    },
+    {
+      "flow": "Pickup checkout, payment settlement and refund",
+      "layer": "Normal preview staging app journey",
+      "status": "not-tested",
+      "evidence": "No staging or provider-sandbox transaction executed.",
+      "blocker": "Approved scoped payment sandbox and dedicated inventory; no real/paid transaction."
+    },
+    {
+      "flow": "Rewards earn, staff scan, redemption and replay",
+      "layer": "Normal preview staging app journey",
+      "status": "not-tested",
+      "evidence": "No normal-preview scan/redeem staging journey executed.",
+      "blocker": "Dedicated merchant/staff/customer fixture and native camera/scan driver."
+    },
+    {
+      "flow": "Moderation outcome deep link, ownership and return navigation",
+      "layer": "Normal preview staging app journey",
+      "status": "not-tested",
+      "evidence": "UI owner supplied route contracts; no current staging end-to-end outcome journey executed.",
+      "blocker": "Task-4 outcome fixtures plus integrated web/native source and fresh owner-state read."
+    },
+    {
+      "flow": "Notifications and permission denial / revocation",
+      "layer": "Normal preview staging app journey",
+      "status": "not-tested",
+      "evidence": "No installed native permission or notification delivery journey executed.",
+      "blocker": "Native device driver and controlled notification fixture; no real push."
+    },
+    {
+      "flow": "Account deletion, UGC/storage cleanup and retry",
+      "layer": "Normal preview staging app journey",
+      "status": "not-tested",
+      "evidence": "New deletion SQL is local only; no staging deletion workflow executed.",
+      "blocker": "Task-4 live comparison of separate deletion change and disposable-account/UGC/storage fixtures."
+    },
+    {
+      "flow": "Install / OTA restart, offline recovery and accessibility",
+      "layer": "Normal preview staging app journey",
+      "status": "not-tested",
+      "evidence": "Public OTA metadata observed; launch downloads returned 403 and installed app is unobserved.",
+      "blocker": "Accessible exact normal-preview native artifact/device and installed update/build IDs."
+    },
+    {
+      "flow": "Merchant plan purchase, restore and entitlement refresh",
+      "layer": "Normal preview staging app journey",
+      "status": "not-tested",
+      "evidence": "No native store-sandbox purchase/restore performed.",
+      "blocker": "Scoped store sandbox, native artifact/device and reviewed SKU behavior."
+    }
+  ],
+  "nextSteps": [
+    "P0 — Connect an installed normal-preview native test device/driver and record actual build/update IDs. Current adb/emulator/Appium/Maestro tooling is absent; Windows cannot run iOS Simulator. No native journey has been executed.",
+    "P0 — Task-4 is sole staging writer. Create authorized dedicated confirmed owner/staff/two-customer fixtures and realistic draft-business/appointment records, suppress email/payment/push, execute signed-in category/history tests and record cleanup. No further migration reapplication is needed.",
+    "P1 — Capture business_feature_snapshot dependency definition/ACL and fixture entitlement result. Existing deployed assert_business_feature matches the reviewed baseline; do not change global billing gates.",
+    "P1 — Merge task-2 functional fixes with task-5 presentation and task-4 admin changes using baseline/current hashes, then validate the integrated source and actual staging artifact. Local green counts cannot certify the installed app.",
+    "P1 — Preserve and resolve the genuine local successful-confirmation failure before publication; recovery now passes locally. Execute equivalent staging flows with controlled accounts.",
+    "P2 — Complete scoped native permissions/offline/links/rewards, provider/store sandbox and deletion/retention journeys with dated outcomes. Final source push and OTA/web/store publication require explicit approval."
+  ]
+}

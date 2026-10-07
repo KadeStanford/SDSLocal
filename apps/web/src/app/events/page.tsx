@@ -1,3 +1,7 @@
+import { SurfacePanel } from '@/components/shared-ui';
+import { PageHeader } from '@/components/page-header';
+import { AppIcon } from '@/components/app-icon';
+
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
@@ -125,26 +129,31 @@ export default async function EventDiscoveryPage({ searchParams }: PageProps<'/e
   }
 
   return (
-    <main className="page-shell">
-      <nav className="topbar">
-        <Link className="brand" href="/">
-          Parish Pass
-        </Link>
+    <main className="page-shell events-marketplace">
+      <PageHeader />
+      <nav className="parish-page-links" aria-label="Page links">
         <div className="nav-actions">
-          <Link href="/explore">Explore</Link>
-          {authData.user && <Link href="/following">Following</Link>}
+          <Link href="/explore">
+            <AppIcon name="compass" size={18} />
+            Explore
+          </Link>
+          {authData.user && (
+            <Link href="/following">
+              <AppIcon name="heart" size={18} />
+              Following
+            </Link>
+          )}
           <Link href={authData.user ? '/account' : '/auth'}>
             {authData.user ? 'Your account' : 'Sign in'}
           </Link>
         </div>
       </nav>
       <div className="page-heading compact-heading">
-        <p className="eyebrow">What’s happening locally</p>
-        <h1>Events worth showing up for.</h1>
-        <p>Browse without an account. Sign in when you want a reminder for an event.</p>
+        <h1>Local events</h1>
+        <p>Find something to do near you.</p>
       </div>
 
-      <section className="panel event-filter-panel">
+      <SurfacePanel className="event-filter-panel">
         <EventFilters
           categories={(categoryData ?? []) as { id: number; name: string }[]}
           initial={{
@@ -156,9 +165,15 @@ export default async function EventDiscoveryPage({ searchParams }: PageProps<'/e
             longitude: hasCoordinates ? String(longitude) : '',
           }}
         />
-      </section>
+      </SurfacePanel>
 
       {error && <p className="notice-error">Events could not be loaded: {error.message}</p>}
+      <div className="section-heading events-results-heading">
+        <h2>Coming up</h2>
+        <span className="muted">
+          {events.length} {events.length === 1 ? 'event' : 'events'} on this page
+        </span>
+      </div>
       <section className="event-card-grid" aria-label="Upcoming events">
         {events.map((event) => {
           const imageUrl = event.image_path
@@ -174,6 +189,7 @@ export default async function EventDiscoveryPage({ searchParams }: PageProps<'/e
               )}
               <div className="event-card-body">
                 <p className="event-card-date">
+                  <AppIcon name="calendar-days" size={18} />
                   {formatEventTime(event.starts_at, event.timezone)}
                 </p>
                 <h2>{event.title}</h2>
@@ -195,10 +211,11 @@ export default async function EventDiscoveryPage({ searchParams }: PageProps<'/e
                   {reminderIds.has(event.event_id) && <span>Reminder on</span>}
                 </div>
                 <Link
-                  className="button button-small"
+                  className="button event-card-open"
                   href={`/events/${event.business_slug}/${event.event_slug}`}
                 >
                   View event
+                  <AppIcon name="chevron-right" size={18} />
                 </Link>
               </div>
             </article>

@@ -1,4 +1,5 @@
 'use client';
+import { ActionButton } from '@/components/shared-ui';
 
 import { useState } from 'react';
 
@@ -22,9 +23,9 @@ export function EventShareButton({ title }: { readonly title: string }) {
 
   return (
     <>
-      <button className="button button-secondary" type="button" onClick={() => void share()}>
+      <ActionButton className="button-secondary" type="button" onClick={() => void share()}>
         Share
-      </button>
+      </ActionButton>
       <span className="field-hint" aria-live="polite">
         {message}
       </span>

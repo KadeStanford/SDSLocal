@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 
 import { useTheme } from '@/hooks/use-theme';
 import { PickupNavigationButton } from './pickup-navigation-button';
@@ -34,9 +34,11 @@ export function OfferingSearchResultCard({
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = imageUrl && !imageFailed;
 
-  useEffect(() => {
+  const [previousImageUrl, setPreviousImageUrl] = useState(imageUrl);
+  if (previousImageUrl !== imageUrl) {
+    setPreviousImageUrl(imageUrl);
     setImageFailed(false);
-  }, [imageUrl]);
+  }
 
   return (
     <View

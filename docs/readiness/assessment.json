@@ -1,0 +1,394 @@
+{
+  "observedAtUtc": "2026-10-06T06:24:23.839Z",
+  "verdict": "12 read-only backend checks pass. Signed-in business/customer workflows and the installed normal-preview app remain Not Tested.",
+  "summary": "Current staging evidence consists of dated read-only backend checks and task-4 category/history deployment/denial receipts. All listed complete app journeys remain Not Tested. Local source and isolated workflows are secondary evidence.",
+  "stagingIdentity": "Target: normal PREVIEW build receiving OTA updates, not billing-diagnostics. Expo @kadestanford/sds-local preview → preview. Latest iOS and Android OTA: 2026-10-01 11:32:21.851 UTC, group 2217fdae-1e17-48ad-9ff7-2a895a867b46, runtime 0.1.0, SDK 57, display name Parish Pass, appEnvironment staging. Backend lgddhdexvwclfrnzjtly. The installed phone's exact native build and applied OTA were not inspected.",
+  "sourceIdentity": "GitHub main is 99711716 (September 22); local F:\\BusinessApp HEAD is 79af559 with 410 dirty status entries. OTA metadata names 79af559, but a commit ID cannot identify uncommitted uploaded files. 607 of 640 files match the October 1 preparation checkpoint; 33 changed. That checkpoint explicitly does not attest the distributed artifact. Local failures and passes below therefore remain provisional for the deployed app.",
+  "workflows": [
+    {
+      "flow": "Discover local businesses",
+      "status": "working",
+      "evidence": "Live anonymous staging GET: 10 active businesses returned with required names, slugs and types.",
+      "limit": "API contract passed. Device rendering, search, distance ordering, pagination and maps remain untested."
+    },
+    {
+      "flow": "Open and revisit a business page",
+      "status": "working",
+      "evidence": "Live staging GET and repeat GET returned the same accessible active business contract; name and timezone present.",
+      "limit": "One automatically selected public fixture. Native navigation and offline screen recovery untested."
+    },
+    {
+      "flow": "Browse public categories and offerings",
+      "status": "working",
+      "evidence": "Live staging: 80 active category options; selected business has 1 category, 5 visible sections and 17 visible offering items.",
+      "limit": "Read contracts only. Other business types, inventory and checkout outcomes untested."
+    },
+    {
+      "flow": "Authentication service configuration",
+      "status": "working",
+      "evidence": "Live GoTrue health HTTP 200; signup enabled, email confirmation required; Google and Apple enabled in server settings.",
+      "limit": "Provider enabled does not prove credentials, native entitlement, callback or login completion."
+    },
+    {
+      "flow": "Signup, login recovery, profile save and sign-out",
+      "status": "provisional",
+      "evidence": "Actual local8/8 browser workflows pass at2026-10-06T06:09:37.218Z,0fail/0skip: actual confirmation mail/account/reload/sign-out/reused-link denial/fresh login; recovery/password change; profile; A/B switching; private guards; merchant draft isolation.",
+      "limit": "Local browser/GoTrue/PostgreSQL only. Equivalent staging JWT/native flows remain Not Tested.",
+      "result": "pass",
+      "scope": "Real isolated local browser/GoTrue/PostgreSQL only"
+    },
+    {
+      "flow": "Successful email verification and password reset",
+      "status": "provisional",
+      "result": "pass",
+      "scope": "Actual isolated local browser + GoTrue only",
+      "evidence": "FIXED locally: normalized Next server hostname caused an absolute redirect127.0.0.1 ->localhost, stranding valid cookies. Internal relative Location preserves browser origin; actual confirmation and one-use password recovery pass in complete8/8 browser run. Failure retained in confirmation-host-failure.json.",
+      "limit": "No equivalent staging/native success claim. Browser recovery uses real backend OTP/password update and app login; a web reset form is absent."
+    },
+    {
+      "flow": "Sign-out / account switching during startup",
+      "status": "provisional",
+      "evidence": "FIXED locally:6 provider assertions pass, including all3 stale restoration failures and post-unmount delivery. Complete source rerun passes.",
+      "limit": "Actual provider with deterministic Auth/hooks seams. Real local browser account switching passed; native SDK/device lifecycle and staging source parity remain unverified.",
+      "result": "pass"
+    },
+    {
+      "flow": "Repeated / interrupted confirmation links",
+      "status": "provisional",
+      "evidence": "FIXED locally:4 callback assertions pass, including duplicate URL/initial-URL exchange and late post-unmount delivery failures.",
+      "limit": "Actual callback with Linking/Auth/router seams. Real local browser repeated expired callback passed; normal-preview native deep-link lifecycle unverified.",
+      "result": "pass"
+    },
+    {
+      "flow": "Web post-login destination safety",
+      "status": "provisional",
+      "evidence": "FIXED locally:24/24 web source assertions pass including normalized server hostname regression and internal onboarding/moderation destinations. Actual browser confirmation stays on127.0.0.1; host-escape and repeated expired callbacks pass.",
+      "limit": "Source/action/actual NextResponse contracts. Real local login and already-authenticated redirect passed; published web source not identified.",
+      "result": "pass"
+    },
+    {
+      "flow": "Guest navigation, private guards, role switching",
+      "status": "provisional",
+      "evidence": "4 new RootNavigator scenarios pass plus 47 existing navigation assertions now load after fixture isolation. Includes auth/mode restoration and repeated switches.",
+      "limit": "Source SSR with router seams, not actual native back stack or gesture behavior."
+    },
+    {
+      "flow": "Resume business onboarding after login/restart",
+      "status": "provisional",
+      "evidence": "New tests preserve owner-specific draft, step, provider choice and request ID; consume login intent once and expire old intents. Real browser merchant draft creation, owner-only preview and anonymous/unrelated-account isolation also pass.",
+      "limit": "Browser draft workflow and source resume guards passed separately; native restart/resume and complete submission/media setup remain unverified. Admin owner owns realistic pending-review seeds/submission checks."
+    },
+    {
+      "flow": "Edit business categories",
+      "status": "provisional",
+      "evidence": "INSTALLED in staging by task4: migration20261001000200, 2026-10-06T04:26:22.306064+00:00; exact reviewed SQL, postgres-owned SECURITY DEFINER, empty search_path. Anonymous GET independently resolves401/42501 at2026-10-06T04:29:43.409Z. Real local SQL category/history workflow and private grant fixtures pass.",
+      "limit": "Signed-in staging owner success, invalid/category retry and cross-customer isolation journeys have not been run. Staging ACL is postgres/authenticated only; no PUBLIC/anon or service_role execute. Exact client source in installed normal-preview OTA is unproven.",
+      "scope": "Staging installation + anonymous denial verified; local SQL success; signed-in staging journey unverified",
+      "result": "partial"
+    },
+    {
+      "flow": "View customer appointment history",
+      "status": "provisional",
+      "evidence": "INSTALLED in staging by task4: migration20261001000300, 2026-10-06T04:26:51.29776+00:00; exact reviewed SQL, postgres-owned SECURITY DEFINER, empty search_path. Anonymous GET independently resolves401/42501 at2026-10-06T04:29:43.409Z. Real local SQL category/history workflow and private grant fixtures pass.",
+      "limit": "Signed-in staging owner success, invalid/category retry and cross-customer isolation journeys have not been run. Staging ACL is postgres/authenticated only; no PUBLIC/anon or service_role execute. Exact client source in installed normal-preview OTA is unproven.",
+      "scope": "Staging installation + anonymous denial verified; local SQL success; signed-in staging journey unverified",
+      "result": "partial"
+    },
+    {
+      "flow": "Book, reschedule and cancel appointments",
+      "status": "provisional",
+      "evidence": "square_appointments.sql passed: actual booking/reschedule idempotency, paid cancellation/refund state, resource mapping and private-table/RPC checks.",
+      "limit": "Database/service contracts only; booking UI and real provider sandbox delivery not executed.",
+      "result": "pass",
+      "scope": "Real local PostgreSQL workflow; staging/native unverified"
+    },
+    {
+      "flow": "Pickup cart, changed menu and interrupted payment",
+      "status": "provisional",
+      "evidence": "New source tests pass: separate merchant carts survive restart, changed prices/unavailable items require review, expired quotes rejected, processing state blocks repeat payment.",
+      "limit": "Local contracts only. Live quote/order creation, provider callback, webhook replay and fulfillment untested."
+    },
+    {
+      "flow": "Loyalty earn, redeem and staff scan",
+      "status": "provisional",
+      "evidence": "secure_loyalty.sql passed: replay/cross-business/rapid duplicate denial, eight-stamp earn/redeem and reversal audit.",
+      "limit": "Database workflow only. Native camera/scan, concurrent API/UI and paid points classification unverified.",
+      "result": "pass",
+      "scope": "Real local PostgreSQL workflow; staging/native unverified"
+    },
+    {
+      "flow": "Service request validation and retry",
+      "status": "provisional",
+      "evidence": "New test passes required-form validation and frozen retry argument contract.",
+      "limit": "No request stored, owner response received or duplicate-write prevention verified against SQL."
+    },
+    {
+      "flow": "Business review, reports and moderation",
+      "status": "provisional",
+      "evidence": "Owner review inbox/reply/public summary/initials and report queue tests passed; actual non-admin queue execution denied.",
+      "limit": "Terms-before-posting, all user/content reporting, persistent user blocking and UI moderation need additional contracts/tests; admin owner controls new portal/seeds.",
+      "result": "pass",
+      "scope": "Real local PostgreSQL workflow; staging/native unverified"
+    },
+    {
+      "flow": "Payments, refunds, purchase/restore and subscriptions",
+      "status": "provisional",
+      "evidence": "Actual SquareService + local Supabase/PostgreSQL orchestration passed OAuth replay, catalog/price authority, duplicate/concurrent checkout, guest isolation, signed webhook replay, lifecycle, refund states, capacity, expiration/disconnect. Billing entitlement SQL tests also pass.",
+      "limit": "Provider HTTP is a deterministic fixture. Real Square/Stripe/store sandbox purchase/restore and native UI are not executed.",
+      "result": "pass",
+      "scope": "Real local PostgreSQL workflow; staging/native unverified"
+    },
+    {
+      "flow": "Follow businesses, events and notifications",
+      "status": "provisional",
+      "evidence": "Local attended-event/read grants, RSVP contracts, notifications and nearby-alert fixture files pass.",
+      "limit": "Server contracts only; UI follow/RSVP, push delivery, OS permissions and calendar integration not executed.",
+      "result": "pass",
+      "scope": "Real local PostgreSQL workflow; staging/native unverified"
+    },
+    {
+      "flow": "Account deletion and privacy boundaries",
+      "status": "provisional",
+      "evidence": "Current local candidate256260af7db20d761d660e844c6380ce4eb80282e4c4476981dcfea26d61b968:4/4 combined rollback fixtures using actual baseline roles,2/2 older baseline,7/7 ownership/concurrency workflows including six lock waits; four initial failures preserved. Audit decision/request/state IDs retained, actor/copy text scrubbed, late UGC removed, co-owner set serialized, redacted replay denied.",
+      "limit": "Pending SQL not hosted. Other lock orderings, active obligations, Edge/storage/provider cleanup, real JWT/native and retained financial/contact purposes/time limits remain unverified.",
+      "result": "pass",
+      "scope": "Real local PostgreSQL workflow; staging/native unverified"
+    },
+    {
+      "flow": "Public HTTPS shares and universal links",
+      "status": "unverified",
+      "evidence": "Latest published OTA manifest has empty iOS associatedDomains and Android intentFilters; preview public site/share environment values are absent.",
+      "limit": "Manifest configuration warning, not installed native entitlement proof. No hosted app-web origin identified; local site config is a LAN URL."
+    },
+    {
+      "flow": "Native install/update, offline and accessibility",
+      "status": "unverified",
+      "evidence": "Normal preview native builds exist; compatible OTA runtime published for both platforms. Branding manifest verified.",
+      "limit": "Phone installation/build ID, applied OTA, offline restart, text scaling, reduced motion, screen reader, permissions and store acceptance untested."
+    },
+    {
+      "flow": "Database migrations, RLS and repeat-write safety",
+      "status": "provisional",
+      "evidence": "40/40 real rollback-only local PostgreSQL fixture files pass, including deletion identity/UGC and private recovery RPC grants;105local migration files.",
+      "limit": "Synthetic fixtures/SQL assertions, not provider sandbox or full native UI. No shared staging changes; exact deployed definitions still unverified.",
+      "result": "pass",
+      "scope": "Real isolated local PostgreSQL17"
+    },
+    {
+      "flow": "Build and code validation",
+      "status": "provisional",
+      "evidence": "1405/1405 source assertions across mixed dated receipts; current web24/24,typegen/typecheck/lint and self-contained production web build pass at2026-10-06T06:16:34.417Z. Other source checks retain their earlier dates.",
+      "limit": "Self-contained pnpm11.19.0 install/build and dev preview passed. Native archive/platform/permissions/privacy manifest verification remains incomplete.",
+      "result": "pass",
+      "scope": "Local source checks only; staging unverified"
+    },
+    {
+      "flow": "Anonymous administrator access",
+      "status": "working",
+      "evidence": "Live staging GET of is_platform_admin returned HTTP401; anonymous callers cannot execute the admin membership lookup.",
+      "limit": "SELECT-only negative check. Authenticated admin/non-admin workflows and underlying RLS policies remain untested."
+    }
+  ],
+  "nextSteps": [
+    "P0 — Connect an installed normal-preview native test device/driver and record actual build/update IDs. Existing BlueStacks5/bundled ADB observes0devices; initialization/debugging approval pending. SDK/AVD/Appium/Maestro absent; Windows cannot run iOS Simulator. No native journey has been executed.",
+    "P0 — Task-4 is sole staging writer. Create authorized dedicated confirmed owner/staff/two-customer fixtures and realistic draft-business/appointment records, suppress email/payment/push, execute signed-in category/history tests and record cleanup. No further migration reapplication is needed.",
+    "P1 — Capture business_feature_snapshot dependency definition/ACL and fixture entitlement result. Existing deployed assert_business_feature matches the reviewed baseline; do not change global billing gates.",
+    "P1 — Merge task-2 functional fixes with task-5 presentation and task-4 admin changes using baseline/current hashes, then validate the integrated source and actual staging artifact. Local green counts cannot certify the installed app.",
+    "P1 - Integrate validated auth-confirmation-delta-v1 afterv4 and execute equivalent staged auth/account-switch/recovery with controlled accounts. Local8/8 browser passes; staging JWT remains unexecuted.",
+    "P2 — Complete scoped native permissions/offline/links/rewards, provider/store sandbox and deletion/retention journeys with dated outcomes. Final source push and OTA/web/store publication require explicit approval."
+  ],
+  "evidenceFiles": [
+    {
+      "file": "published-manifests.json",
+      "label": "Published preview OTA manifests"
+    },
+    {
+      "file": "expo-summary.json",
+      "label": "Expo channels and native build inventory"
+    },
+    {
+      "file": "github-source.json",
+      "label": "GitHub versus local source identity"
+    },
+    {
+      "file": "supabase-dashboard.json",
+      "label": "Deployed migration and Edge inventory"
+    },
+    {
+      "file": "staging-readonly.json",
+      "label": "Actual anonymous staging API checks"
+    },
+    {
+      "file": "source-checkpoint-comparison.json",
+      "label": "Preparation checkpoint comparison"
+    },
+    {
+      "file": "source-preservation.json",
+      "label": "Original checkout preservation verification"
+    },
+    {
+      "file": "staging-parity.json",
+      "label": "Shared staging/local/admin parity manifest"
+    },
+    {
+      "file": "dirty-inventory.json",
+      "label": "All410 original dirty entries by category"
+    },
+    {
+      "file": "dirty-inventory.md",
+      "label": "Plain-language dirty feature inventory"
+    },
+    {
+      "file": "admin-handoff.md",
+      "label": "Admin task baseline handoff"
+    },
+    {
+      "file": "staging-rpc-probe.json",
+      "label": "Post-install staging RPC resolution / anonymous denials"
+    },
+    {
+      "file": "staging-access.json",
+      "label": "Earlier administrative API401; task4 authenticated browser route succeeded"
+    },
+    {
+      "file": "clean-build.json",
+      "label": "Actual clean production web build receipt"
+    },
+    {
+      "file": "audit-change-manifest.json",
+      "label": "Exact audit modifications and ownership hashes"
+    },
+    {
+      "file": "local-rpc-resolution.json",
+      "label": "Local private RPC resolution / anonymous denials"
+    },
+    {
+      "file": "STORE-READINESS.md",
+      "label": "Store requirements, actual tests and remaining access"
+    },
+    {
+      "file": "STAGING-RPC-ALIGNMENT.md",
+      "label": "Category/history concrete preflight, risk and rollback plan"
+    },
+    {
+      "file": "staging-category-receipt.json",
+      "label": "Actual staging category migration receipt"
+    },
+    {
+      "file": "staging-history-receipt.json",
+      "label": "Actual staging appointment-history migration receipt"
+    },
+    {
+      "file": "staging-contract-review.json",
+      "label": "Independent comparison of actual deployed feature assertion"
+    },
+    {
+      "file": "format-cleanup.json",
+      "label": "Formatting-only changes and preserved functional snapshot"
+    },
+    {
+      "file": "staging-rpc-live-role-denial.txt",
+      "label": "Actual task-4 staging role-denial verification"
+    },
+    {
+      "file": "native-driver-capability.json",
+      "label": "Native automation tooling availability"
+    },
+    {
+      "file": "staging-fixture-execution-plan.md",
+      "label": "Authorized dedicated staging-fixture execution handoff"
+    },
+    {
+      "file": "staging-admin-trial.json",
+      "label": "Task-4 admin staging DDL/ACL trial — rolled back, not portal acceptance"
+    },
+    {
+      "file": "staging-admin-preservation.json",
+      "label": "Independent staging post-rollback preservation"
+    },
+    {
+      "file": "hosted-web-identity.json",
+      "label": "Hosted Next.js identity — unknown; configuration hints are not deployment proof"
+    },
+    {
+      "file": "staging-sql-role-result.json",
+      "label": "Actual staging SQL-role workflow receipt: 23/23"
+    },
+    {
+      "file": "staging-sql-role-preservation.json",
+      "label": "Independent staging rollback preservation: 18 tables"
+    },
+    {
+      "file": "staging-sql-role-fixture-proof.png",
+      "label": "Staging SQL-role result screenshot"
+    },
+    {
+      "file": "staging-sql-role-fixtures.rollback.sql",
+      "label": "Reviewed executed SQL-role batch (hash guarded)"
+    },
+    {
+      "file": "staging-web-browser.json",
+      "label": "Actual staging-backed browser flows: 2/2"
+    },
+    {
+      "file": "staging-web-source.json",
+      "label": "Staging-backed isolated client source hashes"
+    },
+    {
+      "file": "staging-web-transport-safety.json",
+      "label": "Read-only browser/server transport and scope"
+    },
+    {
+      "file": "staging-web-guest-discovery-search-revisit.png",
+      "label": "Public business/menu browser screenshot"
+    },
+    {
+      "file": "native-preview-build.json",
+      "label": "Fresh normal-preview build metadata / artifact availability"
+    },
+    {
+      "file": "native-apk-inspection.json",
+      "label": "Prepared existing Android APK hash / ABI inspection"
+    },
+    {
+      "file": "native-inventory.json",
+      "label": "Native tool/device inventory"
+    },
+    {
+      "file": "bluestacks-inventory.json",
+      "label": "BlueStacks initialization inventory"
+    },
+    {
+      "file": "native-harness.json",
+      "label": "Native driver inventory: zero connected devices"
+    },
+    {
+      "file": "DELETION-PRIVACY-CANDIDATE.md",
+      "label": "Pending deletion privacy contract and coverage limits"
+    },
+    {
+      "file": "NATIVE-EXECUTION-HANDOFF.md",
+      "label": "Exact native/device/fixture execution handoff"
+    },
+    {
+      "file": "local-auth-confirmation-regression.json",
+      "label": "Actual local confirmation/account/reuse regression:8/8 browser"
+    },
+    {
+      "file": "confirmation-host-failure.json",
+      "label": "Preserved genuine confirmation hostname failure"
+    },
+    {
+      "file": "current-web-build.json",
+      "label": "Current isolated production web build"
+    },
+    {
+      "file": "deletion-concurrency-before-fix.json",
+      "label": "Four genuine simultaneous deletion failures, preserved before correction"
+    },
+    {
+      "file": "deletion004-before-concurrency-fix.sql",
+      "label": "Prior reproduced deletion004 candidate"
+    }
+  ]
+}

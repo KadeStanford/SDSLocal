@@ -65,6 +65,9 @@ export function ServiceOperationsProvider({ children }: PropsWithChildren) {
     }
   }, [userId, mode]);
   useEffect(() => {
+    // Capture the request-version ref object used to invalidate pending reads.
+    const generationForCleanup = generation;
+
     const timer = setTimeout(() => void refresh(), 0);
     const listener = AppState.addEventListener('change', (state) => {
       if (state === 'active') void refresh();
@@ -72,7 +75,7 @@ export function ServiceOperationsProvider({ children }: PropsWithChildren) {
     return () => {
       clearTimeout(timer);
       listener.remove();
-      generation.current++;
+      generationForCleanup.current++;
     };
   }, [refresh]);
   return (

@@ -14,6 +14,7 @@ import { RootNavigator } from './root-navigator';
 import AppTabs from './app-tabs';
 import { initialPickupModule } from '@/lib/pickup-discovery';
 import { guestCanOpenPath } from '@/lib/navigation-policy';
+vi.mock('@/components/native-tab-icons', () => ({ nativeTabIcons: { house: 1, 'calendar-days': 2, gift: 3, store: 4, 'shopping-bag': 5, 'scan-line': 6, 'file-text': 7, 'circle-user-round': 8 } }));
 
 type PressTarget = {
   accessibilityLabel: string;
@@ -108,6 +109,8 @@ vi.mock('expo-router/unstable-native-tabs', () => {
   };
 });
 vi.mock('@/hooks/use-theme', () => ({ useTheme: () => themeColors.light }));
+// Navigation assertions do not mount the native access-recovery UI.
+vi.mock('./business-access-recovery', () => ({ BusinessAccessRecovery: () => null }));
 vi.mock('@/providers/auth-provider', () => ({
   useAuth: () => ({ session: h.signedIn ? { user: { id: 'customer' } } : null, loading: false }),
 }));
@@ -133,7 +136,7 @@ vi.mock('./swipe-back-view', () => ({
   useSwipeBackGestureBlocker: () => ({ beginControlGesture: h.begin, endControlGesture: h.end }),
 }));
 vi.mock('expo-image', () => ({ Image: () => null }));
-vi.mock('expo-symbols', () => ({ SymbolView: () => null }));
+vi.mock('@/components/app-icon', () => ({ AppIcon: () => null }));
 const business: BusinessCardData = {
   id: 'cafe & branch/one',
   name: 'Bayou',

@@ -1,19 +1,17 @@
+import { FocusedHeader, FocusedBookingTime } from '@/components/focused-page-ui';
+import { AppIcon } from '@/components/app-icon';
 import { DateField } from '@/components/date-field';
 import { BackPill } from '@/components/back-pill';
 import { CustomerBrand } from '@/components/customer-brand';
 import { FlowIdentity } from '@/components/flow-layout';
+import { BookingTimeCard } from '@/components/booking-ui';
 import * as Crypto from 'expo-crypto';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import {
-  MerchantButton,
-  MerchantHeading,
-  MerchantSheet,
-  merchantStyles,
-} from '@/components/merchant-ui';
+import { MerchantButton, MerchantHeading, MerchantSheet } from '@/components/merchant-ui';
 import { useMerchantTheme } from '@/hooks/use-merchant-theme';
 import { AppButton } from '@/components/app-button';
 import { AppChrome } from '@/components/app-chrome';
@@ -326,24 +324,24 @@ export default function AppointmentScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
             flexGrow: 1,
-            padding: Spacing.four,
+            padding: 20,
             paddingBottom: bottomPadding,
-            gap: Spacing.four,
+            gap: 20,
           }}
         >
           <View
             style={{
               flex: 1,
-              gap: Spacing.four,
+              gap: 20,
             }}
           >
-            <AppChrome />
-            <CustomerBrand />
-            <BackPill label="Back to business" onPress={() => router.back()} />
-            <MerchantButton label="All my appointments" secondary onPress={() => router.replace('/my-appointments' as never)} />
-          <MerchantHeading
-              title={appointment ? statusLabel(appointment.status) : 'Your appointment'}
-              subtitle={appointment ? 'Your booking status' : 'Checking your booking'}
+            <FocusedHeader
+              title="Your appointment"
+              subtitle={appointment?.service.name ?? 'Checking your booking'}
+              onBack={() =>
+                router.canGoBack() ? router.back() : router.replace('/my-appointments')
+              }
+              backLabel="Back to appointments"
             />
             {loading ? <ThemedText>Checking appointment status…</ThemedText> : null}
             {!!error && <StateNotice kind="error" message={error} />}
@@ -359,8 +357,51 @@ export default function AppointmentScreen() {
                   borderRadius: 22,
                 }}
               >
-                <FlowIdentity name={appointment.service.name} detail="Your upcoming visit" />
-                <ThemedText>{dateTime(appointment.startAt, appointment.timezone)}</ThemedText>
+                <View
+                  accessibilityLiveRegion="polite"
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
+                >
+                  <View
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 14,
+                      backgroundColor: colors.backgroundSelected,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <AppIcon
+                      name={
+                        ['confirmed', 'checked_in', 'in_service', 'completed'].includes(
+                          appointment.status,
+                        )
+                          ? 'circle-check'
+                          : 'calendar-days'
+                      }
+                      size={26}
+                    />
+                  </View>
+                  <ThemedText
+                    accessibilityRole="header"
+                    style={{ flex: 1, fontSize: 23, lineHeight: 29, fontWeight: '700' }}
+                  >
+                    {statusLabel(appointment.status)}
+                  </ThemedText>
+                </View>
+                <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+                  <ThemedText type="smallBold" style={{ flex: 1 }}>
+                    Appointment details
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {appointment.service.durationMinutes} min
+                  </ThemedText>
+                </View>
+                <FocusedBookingTime
+                  startAt={appointment.startAt}
+                  timezone={appointment.timezone}
+                  duration={appointment.service.durationMinutes}
+                />
                 {appointment.resource?.name ? (
                   <ThemedText themeColor="textSecondary">
                     With {appointment.resource.name}
@@ -411,10 +452,32 @@ export default function AppointmentScreen() {
                   </ThemedText>
                 ) : null}
                 {appointment.paymentStatus === 'none' && appointment.totalMinor > 0 ? (
-                  <ThemedText themeColor="textSecondary">
-                    Estimated service total {money(appointment.totalMinor, appointment.currency)}.
-                    Pay the business in person.
-                  </ThemedText>
+                  <View
+                    style={{
+                      paddingTop: 16,
+                      borderTopWidth: 1,
+                      borderColor: colors.divider,
+                      gap: 8,
+                    }}
+                  >
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        flexWrap: 'wrap',
+                        justifyContent: 'space-between',
+                        gap: 12,
+                        alignItems: 'center',
+                      }}
+                    >
+                      <ThemedText themeColor="textSecondary">Estimated service total</ThemedText>
+                      <ThemedText style={{ fontSize: 24, lineHeight: 30, fontWeight: '700' }}>
+                        {money(appointment.totalMinor, appointment.currency)}
+                      </ThemedText>
+                    </View>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      Pay the business in person.
+                    </ThemedText>
+                  </View>
                 ) : null}
                 {appointment.service.publicInstructions ? (
                   <ThemedText themeColor="textSecondary">
@@ -424,16 +487,6 @@ export default function AppointmentScreen() {
               </View>
             ) : null}
             <View style={{ gap: 12 }}>
-              <MerchantButton
-                label="Refresh status"
-                secondary
-
-                disabled={busy}
-                onPress={() => {
-                  setLoading(true);
-                  void refresh();
-                }}
-              />
               {(canCancel || canReschedule) && (
                 <MerchantButton
                   label="Change appointment"
@@ -442,6 +495,20 @@ export default function AppointmentScreen() {
                   onPress={() => setChangesOpen(true)}
                 />
               )}
+              <MerchantButton
+                label="Refresh status"
+                secondary
+                disabled={busy}
+                onPress={() => {
+                  setLoading(true);
+                  void refresh();
+                }}
+              />
+              <MerchantButton
+                label="All my appointments"
+                secondary
+                onPress={() => router.replace('/my-appointments' as never)}
+              />
             </View>
             <MerchantSheet
               visible={changesOpen}
@@ -494,7 +561,18 @@ export default function AppointmentScreen() {
               {rescheduling && appointment ? (
                 <View style={{ gap: Spacing.two }}>
                   <ThemedText type="subtitle">Choose a new time</ThemedText>
-                  <DateField label="New appointment date" required value={scheduleDate} minimumDate={localDateAtZone(new Date(), appointment.timezone)} onChange={next => { setLoadingSlots(true); setError(''); setSlots([]); setScheduleDate(next); }} />
+                  <DateField
+                    label="New appointment date"
+                    required
+                    value={scheduleDate}
+                    minimumDate={localDateAtZone(new Date(), appointment.timezone)}
+                    onChange={(next) => {
+                      setLoadingSlots(true);
+                      setError('');
+                      setSlots([]);
+                      setScheduleDate(next);
+                    }}
+                  />
                   <ThemedText themeColor="textSecondary" type="small">
                     Times are shown in {appointment.timezone}. Your current appointment stays
                     reserved until a new time is confirmed.

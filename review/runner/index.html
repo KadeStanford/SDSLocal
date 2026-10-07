@@ -1,0 +1,12 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Parish Pass local UI review</title><script>
+// Local review fixture only. Keep before/after time-dependent feeds identical.
+const fixtureClock = new URLSearchParams(location.search).get('clock');
+if (fixtureClock === '2026-10-06T16:00:00Z') {
+  const RealDate = Date;
+  const fixtureNow = RealDate.parse(fixtureClock);
+  window.Date = class extends RealDate {
+    constructor(...args) { super(...(args.length ? args : [fixtureNow])); }
+    static now() { return fixtureNow; }
+  };
+}
+</script><style>html,body,#root{margin:0;min-height:100%;font-family:Arial,sans-serif}body{background:#F4F2E9}#root{height:100vh;display:flex;flex-direction:column}*{box-sizing:border-box}button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #176B4D;outline-offset:3px}</style></head><body><div id="root"></div><script type="module" src="/main.tsx"></script></body></html>

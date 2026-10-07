@@ -1,0 +1,15 @@
+const fs=require('node:fs'),path=require('node:path');
+const root=path.resolve(__dirname,'..'),out=__dirname+'/offline';
+const ledger=JSON.parse(fs.readFileSync(__dirname+'/runner/public/coverage.json'));
+ledger.results=ledger.results.filter(r=>r.url.startsWith('file:'));
+fs.writeFileSync(__dirname+'/runner/public/coverage.json',JSON.stringify(ledger,null,2));
+fs.writeFileSync(out+'/coverage.json',JSON.stringify(ledger,null,2));
+let html=fs.readFileSync(__dirname+'/runner/dashboard.html','utf8');
+html=html.replace('<script type="module">',()=>'<script>window.__COVERAGE__='+JSON.stringify(ledger).replaceAll('<','\\u003c')+';</script><script type="module">');
+html=html.replace("const link=(s,t)=>{const u=new URL(s.url);u.searchParams.set('theme',t);return u.href}","const link=(s,t)=>{const u=new URL('mobile.html',location.href);u.search=new URL(s.url).search;u.searchParams.set('theme',t);return u.href}");
+html=html.replaceAll('src="/${esc(r.top)}"','src="../runner/public/${esc(r.top)}"').replaceAll('href="/${esc(x.top)}"','href="../runner/public/${esc(x.top)}"').replaceAll('href="/${esc(x.bottom)}"','href="../runner/public/${esc(x.bottom)}"').replaceAll('href="/${esc(x.full)}"','href="../runner/public/${esc(x.full)}"');
+html=html.replace('href="/coverage.json"','href="coverage.json"');
+html=html.replace("ledger=await fetch('/coverage.json?t='+Date.now()).then(r=>r.json());","ledger=window.__COVERAGE__;");
+html=html.replace('await load();setInterval(load,10000);','await load();');
+fs.writeFileSync(out+'/dashboard.html',html);
+console.log(JSON.stringify({dashboard:out+'/dashboard.html',url:require('node:url').pathToFileURL(out+'/dashboard.html').href,rendered:ledger.results.filter(r=>r.status==='rendered').length,blocked:ledger.results.filter(r=>r.status==='blocked').length,remaining:ledger.specs.length*2-ledger.results.length}));

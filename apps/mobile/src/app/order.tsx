@@ -450,6 +450,7 @@ function OrderFlow({
                     {step === 'contact' && (
                       <View style={{ gap: 12 }}>
                         <PickupContactFields
+                          pickup={flow.slot}
                           name={flow.name}
                           phone={flow.phone}
                           onName={flow.setName}

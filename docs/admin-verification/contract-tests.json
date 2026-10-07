@@ -1,0 +1,181 @@
+{
+  "generated_at": "2026-10-07T05:32:00.209Z",
+  "scope": "Isolated reduced PGlite schema contract; not staging/Supabase-stack readiness",
+  "concurrency_limit": "PGlite serializes its single backend; competing requests tested, real multi-session lock contention requires full PostgreSQL integration.",
+  "passed": 43,
+  "total": 43,
+  "results": [
+    {
+      "name": "Moderation installs against the original and live staging business-status enum without invented values",
+      "passed": true
+    },
+    {
+      "name": "Synthetic fixtures cover all four queues and every content target",
+      "passed": true
+    },
+    {
+      "name": "Unauthenticated, merchant and customer cannot list, inspect or decide",
+      "passed": true
+    },
+    {
+      "name": "Revoked admins immediately lose read and decision access; clients cannot self-grant membership",
+      "passed": true
+    },
+    {
+      "name": "Anonymous execution, private projection, legacy writes and audit tampering denied",
+      "passed": true
+    },
+    {
+      "name": "Owner cannot bypass moderation via direct business status update",
+      "passed": true
+    },
+    {
+      "name": "Search, literal wildcard search, pagination and empty states are correct",
+      "passed": true
+    },
+    {
+      "name": "Required reasons, readiness failures and unsupported destructive actions rejected",
+      "passed": true
+    },
+    {
+      "name": "Audit insertion failure rolls back the underlying decision",
+      "passed": true
+    },
+    {
+      "name": "Competing decisions reject stale state; retries are idempotent and audited once",
+      "passed": true
+    },
+    {
+      "name": "Business approval is reversible; information requests remain owner-visible",
+      "passed": true
+    },
+    {
+      "name": "Business rejected to editable draft and safely reopened",
+      "passed": true
+    },
+    {
+      "name": "Content reports reviewing, resolve, dismiss and reopen preserve reported content",
+      "passed": true
+    },
+    {
+      "name": "Pickup review hide/restore/dismiss/reopen are reversible and centrally audited",
+      "passed": true
+    },
+    {
+      "name": "Event reviews use the same reversible manual moderation contract",
+      "passed": true
+    },
+    {
+      "name": "Signals detect missing data, structured duplicates, spam and activity with manual fallback",
+      "passed": true
+    },
+    {
+      "name": "Recommendation evaluation is deterministic and makes no data or audit change",
+      "passed": true
+    },
+    {
+      "name": "Synthetic runtime fails closed for production/staging/hosted configurations",
+      "passed": true
+    },
+    {
+      "name": "Default demo submissions are complete and use the validated submission RPC",
+      "passed": true
+    },
+    {
+      "name": "Original review submission/report methods enforce eligibility, bounds and self-report protections",
+      "passed": true
+    },
+    {
+      "name": "Normal content report payload and RLS require a valid reason, caller identity and open status",
+      "passed": true
+    },
+    {
+      "name": "Client submission gate fails closed for missing checks, non-owner, non-draft and repeat taps",
+      "passed": true
+    },
+    {
+      "name": "Server submission rejects each missing requirement without changing the pending fixture",
+      "passed": true
+    },
+    {
+      "name": "Direct owner submission is blocked; complete owner RPC submission succeeds once",
+      "passed": true
+    },
+    {
+      "name": "Pending profile, category, hours and photo edits return the business to draft",
+      "passed": true
+    },
+    {
+      "name": "Guidance explains evidence, conditional action, public effect, alternatives and reversal",
+      "passed": true
+    },
+    {
+      "name": "Business outcome alerts target active owners, retain public feedback, and exclude private data",
+      "passed": true
+    },
+    {
+      "name": "Repeated decision and notification-helper retry cannot duplicate the outcome alert",
+      "passed": true
+    },
+    {
+      "name": "Inbox owners can mark read but cannot rewrite outcomes, delivery state or recipients",
+      "passed": true
+    },
+    {
+      "name": "Wrong user, expired session and forged quick-action reads fail without mutations",
+      "passed": true
+    },
+    {
+      "name": "Reversal alerts supersede queued push and old quick actions use current item state",
+      "passed": true
+    },
+    {
+      "name": "Review hide and restoration alert the review author, never the reporting merchant",
+      "passed": true
+    },
+    {
+      "name": "Content and event-review outcomes target owners/authors and reveal no allegations",
+      "passed": true
+    },
+    {
+      "name": "Notification write failure rolls back the decision and its audit",
+      "passed": true
+    },
+    {
+      "name": "Disabled push preference still creates an immediately readable in-app outcome",
+      "passed": true
+    },
+    {
+      "name": "Removed ownership blocks inbox access, dispatch and new outcomes atomically",
+      "passed": true
+    },
+    {
+      "name": "Outbox claim/retry uses one durable row; fake transport contains no private or public reason",
+      "passed": true
+    },
+    {
+      "name": "Missing owned review makes historical outcome unavailable without item disclosure",
+      "passed": true
+    },
+    {
+      "name": "Guest proof allows a normal pickup review; moderation is reversible and records no-account notification",
+      "passed": true
+    },
+    {
+      "name": "Event review with a removed author can still be moderated without inventing a recipient",
+      "passed": true
+    },
+    {
+      "name": "Absent push activation gate preserves inbox while keeping the legacy dispatcher from claiming outcomes",
+      "passed": true
+    },
+    {
+      "name": "Anonymized or scrubbed audit history cannot be mistaken for an identical actor retry",
+      "passed": true
+    },
+    {
+      "name": "Privacy-redacted history cannot replay a substituted marker as a complete decision result",
+      "passed": true
+    }
+  ]
+}

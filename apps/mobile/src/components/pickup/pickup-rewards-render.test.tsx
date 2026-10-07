@@ -35,8 +35,8 @@ vi.mock('react-native-svg', () => ({
     createElement('svg', props, children),
   Path: (props: object) => createElement('path', props),
 }));
-vi.mock('expo-symbols', async () => ({
-  SymbolView: (await import('../../test/visual-symbol')).VisualSymbol,
+vi.mock('@/components/app-icon', async () => ({
+  AppIcon: (await import('../../test/visual-symbol')).VisualSymbol,
 }));
 vi.mock('expo-image', () => ({
   Image: ({ source, style }: { source: { uri: string }; style: object }) =>

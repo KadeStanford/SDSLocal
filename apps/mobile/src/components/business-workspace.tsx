@@ -1,3 +1,5 @@
+import { PageHeader, PageHeaderScope } from '@/components/page-header';
+import { AppIcon } from '@/components/app-icon';
 import { BusinessCategoryEditor } from './business-category-editor';
 import { inputPresets } from '@/lib/input-presets';
 import { BusinessFeatureGate } from '@/components/business-feature-gate';
@@ -40,7 +42,7 @@ import { useMerchantTheme } from '@/hooks/use-merchant-theme';
 import { AppButton } from '@/components/app-button';
 import { OrderingPanel } from '@/components/ordering-panel';
 import { AppointmentWorkspace } from '@/components/appointment-workspace';
-import { StateNotice } from '@/components/data-state';
+import { StateNotice, ListLoading } from '@/components/data-state';
 import { Image } from 'expo-image';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { DateTimePicker } from '@expo/ui/community/datetime-picker';
@@ -98,7 +100,7 @@ import {
 } from '@/lib/business-workspace-config';
 import { parseMenuImport, type MenuImportRow } from '@/lib/menu-import';
 import { BottomTabInset, Brand, Colors, Radius, Spacing } from '@/constants/theme';
-import { readableTextColor } from '@/lib/color-contrast';
+
 import { haptics } from '@/lib/haptics';
 import { businessPublicUrl } from '@/lib/share-links';
 import {
@@ -112,6 +114,7 @@ import { userMessageFromError } from '@/lib/user-error';
 import { useAuth } from '@/providers/auth-provider';
 import { usePickupWorkspace } from '@/providers/pickup-workspace-provider';
 import {
+  canSubmitBusinessForReview,
   calculateBusinessProfileCompleteness,
   formatMinorCurrency,
   getBusinessStatusLabel,
@@ -372,7 +375,7 @@ function BusinessWorkspaceContent({
   const [categoriesDirty, setCategoriesDirty] = useState(false);
   const [checkingReadiness, setCheckingReadiness] = useState(false);
   const [readinessError, setReadinessError] = useState(false);
-  const [unavailableSections, setUnavailableSections] = useState<BusinessSection[]>([]);
+  const [, setUnavailableSections] = useState<BusinessSection[]>([]);
   const [readiness, setReadiness] = useState<ReadinessResult | null>(null);
   const [hours, setHours] = useState<WorkspaceHour[]>([]);
   const [locationStops, setLocationStops] = useState<LocationStopRecord[]>([]);
@@ -563,8 +566,15 @@ function BusinessWorkspaceContent({
       const result = await supabase.rpc('get_business_readiness', { p_business_id: businessId });
       if (result.error) throw result.error;
       setReadiness(result.data as ReadinessResult);
-      const status = await supabase.from('businesses').select('status, review_feedback').eq('id', businessId).maybeSingle();
-      if (status.data) setBusiness(current => current?.id === businessId ? { ...current, ...status.data } : current);
+      const status = await supabase
+        .from('businesses')
+        .select('status, review_feedback')
+        .eq('id', businessId)
+        .maybeSingle();
+      if (status.data)
+        setBusiness((current) =>
+          current?.id === businessId ? { ...current, ...status.data } : current,
+        );
     } catch {
       setReadiness(null);
       setReadinessError(true);
@@ -869,18 +879,7 @@ function BusinessWorkspaceContent({
     if (!business) return [];
     const check = (key: string) =>
       readiness?.checks.find((item) => item.key === key)?.complete ?? false;
-    const hasReadyPhoto = (role: 'logo' | 'cover') =>
-      photos.some(
-        (photo) => photo.role === role && firstMediaAsset(photo.media_assets)?.status === 'ready',
-      );
-    const locationComplete =
-      serviceAreaType === 'cities'
-        ? serviceCities.length > 0
-        : serviceAreaType === 'statewide'
-          ? Boolean(region)
-          : serviceAreaType === 'custom'
-            ? Boolean(customServiceArea.trim())
-            : Boolean(addressLine1.trim() && city.trim() && region);
+
     return [
       {
         key: 'profile' as const,
@@ -910,22 +909,7 @@ function BusinessWorkspaceContent({
         complete: check('logo') && check('cover'),
       },
     ];
-  }, [
-    addressLine1,
-    business,
-    city,
-    customServiceArea,
-    description,
-    isMenuBusiness,
-    locationStops.length,
-    photos,
-    readiness,
-    region,
-    serviceAreaType,
-    serviceCities.length,
-    visibleOfferingCount,
-    weeklyHoursComplete,
-  ]);
+  }, [business, readiness]);
   const todayHoursLabel = useMemo(() => {
     const row = hours.find(
       (candidate) => candidate.day_of_week === clockDay && candidate.interval_number === 1,
@@ -950,7 +934,8 @@ function BusinessWorkspaceContent({
     setPhotoUploadOpen(false);
     setSelectedPhotoId(null);
     setHubReturnOffset(hubScrollOffset.current);
-    setHoursDirty(false); setCategoriesDirty(false);
+    setHoursDirty(false);
+    setCategoriesDirty(false);
     setSection(nextSection);
     if (nextSection === 'review') void refreshReadiness();
     requestAnimationFrame(() => scrollRef.current?.scrollTo({ y: 0, animated: false }));
@@ -2420,7 +2405,9 @@ function BusinessWorkspaceContent({
 
   async function submitForReview() {
     if (!canEdit || !business) return;
-    if (!readiness?.ready) {
+    if (
+      !canSubmitBusinessForReview({ isOwner: canEdit, status: business.status, saving, readiness })
+    ) {
       setError('Complete every publishing checklist item before submitting.');
       return;
     }
@@ -2436,7 +2423,7 @@ function BusinessWorkspaceContent({
       return;
     }
     setBusiness({ ...business, status: 'pending_review' });
-    setNotice('Submitted for SDS review.');
+    setNotice('Submitted for Parish Pass review.');
   }
 
   async function updateOffering(
@@ -3137,1366 +3124,1616 @@ function BusinessWorkspaceContent({
 
   if (authLoading || loading) {
     return (
-      <SwipeBackView onSwipeBack={onBack}>
-        <ThemedView style={styles.center}>
-          <ActivityIndicator color={Brand.primary} />
-        </ThemedView>
-      </SwipeBackView>
+      <PageHeaderScope>
+        {
+          <SwipeBackView onSwipeBack={onBack}>
+            <ThemedView style={styles.container}>
+              <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+                <View style={{ padding: 20 }}>
+                  <PageHeader onBack={onBack} />
+                </View>
+                <View style={styles.center}>
+                  <ListLoading label="Loading business" />
+                </View>
+              </SafeAreaView>
+            </ThemedView>
+          </SwipeBackView>
+        }
+      </PageHeaderScope>
     );
   }
 
   return (
-    <SwipeBackView
-      enabled={!businessViewerOpen && !mapInteractionActive && !identityEditorOpen}
-      onSwipeBack={businessWorkspaceBackTarget(section) === 'hub' ? leaveEditor : onBack}
-      underlay={
-        section && business ? (
-          <BusinessDestinationUnderlay
-            accent={workspaceAccent}
-            attention={attention}
-            business={business}
-            canEdit={canEdit}
-            colors={colors}
-            logoUri={logoUri}
-            scrollOffset={hubReturnOffset}
-            setupItems={setupItems}
-            summaryFor={hubSummary}
-          />
-        ) : (
-          exitUnderlay
-        )
-      }
-    >
-      <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.container} edges={['top']}>
-          <ScrollView
-            ref={scrollRef}
-            contentInsetAdjustmentBehavior="automatic"
-            contentContainerStyle={[styles.content, { paddingBottom: bottomPadding }]}
-            keyboardDismissMode="interactive"
-            keyboardShouldPersistTaps="handled"
-            scrollEnabled={!businessViewerOpen && !mapInteractionActive}
-            scrollEventThrottle={16}
-            onScroll={rememberHubScroll}
-            refreshControl={
-              <RefreshControl
-                refreshing={pullRefresh.refreshing}
-                onRefresh={pullRefresh.onRefresh}
+    <PageHeaderScope>
+      {
+        <SwipeBackView
+          enabled={!businessViewerOpen && !mapInteractionActive && !identityEditorOpen}
+          onSwipeBack={businessWorkspaceBackTarget(section) === 'hub' ? leaveEditor : onBack}
+          underlay={
+            section && business ? (
+              <BusinessDestinationUnderlay
+                accent={workspaceAccent}
+                attention={attention}
+                business={business}
+                canEdit={canEdit}
+                colors={colors}
+                logoUri={logoUri}
+                scrollOffset={hubReturnOffset}
+                setupItems={setupItems}
+                summaryFor={hubSummary}
               />
-            }
-          >
-            <BusinessFeatureGate
-              businessId={businessId}
-              operation={section ? workspaceFeatureOperation[section] : undefined}
-              recovery={
-                <AppButton
-                  label="Back to business overview"
-                  variant="secondary"
-                  onPress={leaveEditor}
-                />
-              }
-            >
-              {section === 'offerings' ? (
-                <MenuSetupHeader
-                  services={!isMenuBusiness}
-                  businessName={business?.name ?? ''}
-                  canEdit={canEdit}
-                  disabled={saving || photoUploading}
-                  onBack={leaveEditor}
-                  onAdd={() => {
-                    setError(null);
-                    setNewOfferingSectionId(newOfferingSectionId || offerSections[0]?.id || '');
-                    setMenuEditorPanel('item');
-                  }}
-                />
-              ) : section ? (
-                <BusinessEditorHeader
-                  title={
-                    section === 'events' && newEventOpen
-                      ? 'Create event'
-                      : section === 'events' && editingEventId
-                        ? 'Edit event'
-                        : sectionTitle
-                  }
-                  subtitle={sectionDescriptions[section]}
-                  onBack={
-                    section === 'events' && (selectedEvent || newEventOpen)
-                      ? closeEventView
-                      : leaveEditor
-                  }
-                  backLabel={
-                    section === 'events' && (selectedEvent || newEventOpen)
-                      ? 'Back to events'
-                      : 'Back to business overview'
-                  }
-                  disabled={saving || photoUploading}
-                />
-              ) : (
-                <View style={{ gap: 12 }}>
-                  <ParishBusinessBrand />
-                  <View style={styles.compactWorkspaceHeader}>
-                    <BackPill label="All businesses" onPress={onBack} />
-                    <ThemedText themeColor="textSecondary" type="small">
-                      {canEdit ? 'Owner access' : 'Staff access'}
-                    </ThemedText>
-                  </View>
-                </View>
-              )}
-
-              {error && <Notice kind="error" message={error} />}
-              {notice && <Notice kind="success" message={notice} />}
-              {!canEdit && section && section !== 'preview' && (
-                <Notice
-                  kind="info"
-                  message="Staff access is view-only here. Owners can make changes."
-                />
-              )}
-
-              {!section && business && (
-                <View style={{ gap: Spacing.four }}>
-                  <BusinessHub
-                    showBrand={false}
-                    accent={workspaceAccent}
-                    attention={attention}
-                    setupItems={setupItems}
-                    business={business}
-                    canEdit={canEdit}
-                    colors={colors}
-                    logoUri={logoUri}
-                    onOpen={handleWorkspaceAction}
-                    onRequests={
-                      business.business_type === 'services'
-                        ? () =>
-                            router.push({
-                              pathname: '/service-requests',
-                              params: { businessId: business.id },
-                            } as never)
-                        : undefined
-                    }
-                    onOrders={
-                      pickupWorkspace.businesses.some((b) => b.id === business.id)
-                        ? () =>
-                            router.navigate({
-                              pathname: '/pickup-orders',
-                              params: { businessId: business.id },
-                            })
-                        : undefined
-                    }
-                    onPreview={() => openEditor('preview')}
-                    summaryFor={(destination) => hubSummary(destination)}
+            ) : (
+              exitUnderlay
+            )
+          }
+        >
+          <ThemedView style={styles.container}>
+            <SafeAreaView style={styles.container} edges={['top']}>
+              <ScrollView
+                ref={scrollRef}
+                contentInsetAdjustmentBehavior="automatic"
+                contentContainerStyle={[styles.content, { paddingBottom: bottomPadding }]}
+                keyboardDismissMode="interactive"
+                keyboardShouldPersistTaps="handled"
+                scrollEnabled={!businessViewerOpen && !mapInteractionActive}
+                scrollEventThrottle={16}
+                onScroll={rememberHubScroll}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={pullRefresh.refreshing}
+                    onRefresh={pullRefresh.onRefresh}
                   />
-
-                  {canEdit && business.status === 'active' && (
+                }
+              >
+                <BusinessFeatureGate
+                  businessId={businessId}
+                  operation={section ? workspaceFeatureOperation[section] : undefined}
+                  recovery={
                     <AppButton
-                      label="Customer reviews"
+                      label="Back to business overview"
                       variant="secondary"
-                      onPress={() =>
-                        router.push({
-                          pathname: '/business-reviews',
-                          params: { businessId: business.id },
-                        } as never)
+                      onPress={leaveEditor}
+                    />
+                  }
+                >
+                  {section === 'offerings' ? (
+                    <MenuSetupHeader
+                      services={!isMenuBusiness}
+                      businessName={business?.name ?? ''}
+                      canEdit={canEdit}
+                      disabled={saving || photoUploading}
+                      onBack={leaveEditor}
+                      onAdd={() => {
+                        setError(null);
+                        setNewOfferingSectionId(newOfferingSectionId || offerSections[0]?.id || '');
+                        setMenuEditorPanel('item');
+                      }}
+                    />
+                  ) : section ? (
+                    <BusinessEditorHeader
+                      title={
+                        section === 'events' && newEventOpen
+                          ? 'Create event'
+                          : section === 'events' && editingEventId
+                            ? 'Edit event'
+                            : sectionTitle
                       }
+                      subtitle={sectionDescriptions[section]}
+                      onBack={
+                        section === 'events' && (selectedEvent || newEventOpen)
+                          ? closeEventView
+                          : leaveEditor
+                      }
+                      backLabel={
+                        section === 'events' && (selectedEvent || newEventOpen)
+                          ? 'Back to events'
+                          : 'Back to business overview'
+                      }
+                      disabled={saving || photoUploading}
+                    />
+                  ) : (
+                    <View style={{ gap: 12 }}>
+                      <PageHeader onBack={onBack} backLabel="All businesses" />
+                      <ThemedText themeColor="textSecondary" type="small">
+                        {canEdit ? 'Owner access' : 'Staff access'}
+                      </ThemedText>
+                    </View>
+                  )}
+
+                  {error && <Notice kind="error" message={error} />}
+                  {notice && <Notice kind="success" message={notice} />}
+                  {!canEdit && section && section !== 'preview' && (
+                    <Notice
+                      kind="info"
+                      message="Staff access is view-only here. Owners can make changes."
                     />
                   )}
-                  {canEdit && business.status === 'active' && (
-                    <BusinessFeatureGate businessId={business.id} operation="view_analytics">
-                      <BusinessAnalyticsCard businessId={business.id} />
-                    </BusinessFeatureGate>
-                  )}
-                </View>
-              )}
 
-              {section && (
-                <>
-                  {section === 'preview' && business && (
-                    <View style={styles.cardList}>
-                      {canEdit && (
-                        <View style={styles.shareCard}>
-                          <View style={styles.shareCardCopy}>
-                            <ThemedText type="smallBold">QR poster</ThemedText>
-                            <ThemedText themeColor="textSecondary" type="small">
-                              Customers can scan the code to open your business page.
-                            </ThemedText>
-                          </View>
-                          <SecondaryButton
-                            label="Print QR poster"
-                            onPress={() => setQrPosterOpen(true)}
+                  {!section && business && (
+                    <View style={{ gap: Spacing.four }}>
+                      <BusinessHub
+                        showBrand={false}
+                        accent={workspaceAccent}
+                        attention={attention}
+                        setupItems={setupItems}
+                        business={business}
+                        canEdit={canEdit}
+                        colors={colors}
+                        logoUri={logoUri}
+                        onOpen={handleWorkspaceAction}
+                        onRequests={
+                          business.business_type === 'services'
+                            ? () =>
+                                router.push({
+                                  pathname: '/service-requests',
+                                  params: { businessId: business.id },
+                                } as never)
+                            : undefined
+                        }
+                        onOrders={
+                          pickupWorkspace.businesses.some((b) => b.id === business.id)
+                            ? () =>
+                                router.navigate({
+                                  pathname: '/pickup-orders',
+                                  params: { businessId: business.id },
+                                })
+                            : undefined
+                        }
+                        onPreview={() => openEditor('preview')}
+                        summaryFor={(destination) => hubSummary(destination)}
+                      />
+
+                      {canEdit && business.status === 'active' && (
+                        <AppButton
+                          label="Customer reviews"
+                          variant="secondary"
+                          onPress={() =>
+                            router.push({
+                              pathname: '/business-reviews',
+                              params: { businessId: business.id },
+                            } as never)
+                          }
+                        />
+                      )}
+                      {canEdit && business.status === 'active' && (
+                        <BusinessFeatureGate businessId={business.id} operation="view_analytics">
+                          <BusinessAnalyticsCard businessId={business.id} />
+                        </BusinessFeatureGate>
+                      )}
+                    </View>
+                  )}
+
+                  {section && (
+                    <>
+                      {section === 'preview' && business && (
+                        <View style={styles.cardList}>
+                          {canEdit && (
+                            <View style={styles.shareCard}>
+                              <View style={styles.shareCardCopy}>
+                                <ThemedText type="smallBold">QR poster</ThemedText>
+                                <ThemedText themeColor="textSecondary" type="small">
+                                  Customers can scan the code to open your business page.
+                                </ThemedText>
+                              </View>
+                              <SecondaryButton
+                                label="Print QR poster"
+                                onPress={() => setQrPosterOpen(true)}
+                              />
+                            </View>
+                          )}
+                          <PublicBusinessPageContent
+                            businessId={business.id}
+                            onViewerChange={setBusinessViewerOpen}
+                            onMapInteractionChange={setMapInteractionActive}
+                            preview
+                          />
+                          <BusinessQrPoster
+                            business={{
+                              name: business.name,
+                              slug: business.slug,
+                              primaryColor: business.primary_color,
+                              accentColor: business.accent_color,
+                            }}
+                            logoUri={logoUri}
+                            onClose={() => setQrPosterOpen(false)}
+                            visible={qrPosterOpen}
                           />
                         </View>
                       )}
-                      <PublicBusinessPageContent
-                        businessId={business.id}
-                        onViewerChange={setBusinessViewerOpen}
-                        onMapInteractionChange={setMapInteractionActive}
-                        preview
-                      />
-                      <BusinessQrPoster
-                        business={{
-                          name: business.name,
-                          slug: business.slug,
-                          primaryColor: business.primary_color,
-                          accentColor: business.accent_color,
-                        }}
-                        logoUri={logoUri}
-                        onClose={() => setQrPosterOpen(false)}
-                        visible={qrPosterOpen}
-                      />
-                    </View>
-                  )}
 
-                  {section === 'qr' && business && (
-                    <View style={styles.cardList}>
-                      <View style={styles.formCard}>
-                        <FormSectionDescription description="Print a code customers can scan to open your page." />
-                        <PrimaryButton
-                          loading={saving}
-                          disabled={false}
-                          label="Open QR poster"
-                          onPress={() => setQrPosterOpen(true)}
-                        />
-                      </View>
-                      <BusinessQrPoster
-                        business={{
-                          name: business.name,
-                          slug: business.slug,
-                          primaryColor: business.primary_color,
-                          accentColor: business.accent_color,
-                        }}
-                        logoUri={logoUri}
-                        onClose={() => setQrPosterOpen(false)}
-                        visible={qrPosterOpen}
-                      />
-                    </View>
-                  )}
-
-                  {section === 'sharing' && business && (
-                    <View style={styles.formCard}>
-                      <FormSectionDescription description="Share the page link from your phone." />
-                      <PrimaryButton
-                        loading={saving}
-                        disabled={false}
-                        label="Share page"
-                        onPress={() => void shareBusinessPage()}
-                      />
-                    </View>
-                  )}
-
-                  {(section === 'profile' ||
-                    section === 'contact' ||
-                    section === 'location' ||
-                    section === 'mobile-location') &&
-                    business && (
-                      <View style={styles.cardList}>
-                        {section === 'profile' && (
-                          <View style={{ gap: 16 }}>
-                            <WorkspaceDetailsOverview
-                              title="Profile and branding"
-                              rows={[
-                                { label: 'Business name', value: business.name },
-                                {
-                                  label: 'Business type',
-                                  value: business.business_type.replaceAll('_', ' '),
-                                },
-                                { label: 'Description', value: business.description },
-                                {
-                                  label: 'Brand colors',
-                                  value: `${business.primary_color} · ${business.accent_color}`,
-                                },
-                              ]}
-                              {...(canEdit
-                                ? {
-                                    onEdit: () => {
-                                      setError(null);
-                                      setIdentityEditorOpen(true);
-                                    },
-                                  }
-                                : {})}
+                      {section === 'qr' && business && (
+                        <View style={styles.cardList}>
+                          <View style={styles.formCard}>
+                            <FormSectionDescription description="Print a code customers can scan to open your page." />
+                            <PrimaryButton
+                              loading={saving}
+                              disabled={false}
+                              label="Open QR poster"
+                              onPress={() => setQrPosterOpen(true)}
                             />
-                            <MerchantSheet
-                              visible={identityEditorOpen && canEdit}
-                              title="Edit profile and branding"
-                              onClose={closeIdentityEditor}
-                              blocked={saving || photoUploading}
-                            >
-                              {error && <StateNotice kind="error" message={error} />}
-                              {notice && (
-                                <ThemedText type="small" themeColor="textSecondary">
-                                  {notice}
-                                </ThemedText>
-                              )}
-
-                              <FormSectionDescription description="The business identity customers recognize across Parish Pass." />
-                              <Field
-                                label="Business name"
-                                value={name}
-                                onChangeText={setName}
-                                colors={colors}
-                                editable={canEdit}
-                              />
-                              <Field
-                                label="Description"
-                                value={description}
-                                onChangeText={setDescription}
-                                colors={colors}
-                                editable={canEdit}
-                                multiline
-                                style={styles.multiline}
-                              />
-                              <ChoicePicker
-                                disabled={!canEdit}
-                                label="Business type"
-                                options={[
-                                  { value: 'food_drink', label: 'Food & drink' },
-                                  { value: 'services', label: 'Services' },
-                                  { value: 'retail', label: 'Retail' },
-                                  { value: 'entertainment_venue', label: 'Entertainment & venue' },
-                                  { value: 'mobile', label: 'Mobile business' },
-                                  { value: 'general', label: 'Other local business' },
-                                ]}
-                                value={businessType}
-                                onChange={setBusinessType}
-                              />
-                              <BusinessCategoryEditor
-                                businessId={business.id}
-                                businessType={business.business_type}
-                                disabled={!canEdit || saving}
-                                onDirtyChange={setCategoriesDirty}
-                                onSaved={() => {
-                                  void refreshReadiness();
-                                  setNotice('Categories saved.');
-                                }}
-                              />
-                              <BrandColorPicker
-                                label="Primary brand color"
-                                value={primaryColor}
-                                onChange={setPrimaryColor}
-                                disabled={!canEdit}
-                              />
-                              <BrandColorPicker
-                                label="Accent brand color"
-                                value={accentColor}
-                                onChange={setAccentColor}
-                                disabled={!canEdit}
-                              />
-                              {canEdit && (
-                                <View style={styles.inlineActions}>
-                                  <SecondaryButton
-                                    disabled={photoUploading}
-                                    label={logoUri ? 'Replace logo' : 'Add logo'}
-                                    onPress={() => void pickAndUploadPhoto('logo')}
-                                  />
-                                  <SecondaryButton
-                                    disabled={photoUploading}
-                                    label={
-                                      photos.some((photo) => photo.role === 'cover')
-                                        ? 'Replace cover'
-                                        : 'Add cover'
-                                    }
-                                    onPress={() => void pickAndUploadPhoto('cover')}
-                                  />
-                                </View>
-                              )}
-                              {canEdit && (
-                                <PrimaryButton
-                                  loading={saving}
-                                  disabled={saving}
-                                  label={saving ? 'Saving…' : 'Save profile'}
-                                  onPress={() => void saveProfile()}
-                                />
-                              )}
-                            </MerchantSheet>
                           </View>
-                        )}
-                        {section === 'contact' && (
-                          <View style={{ gap: 16 }}>
-                            <WorkspaceDetailsOverview
-                              title="Contact information"
-                              rows={[
-                                { label: 'Phone', value: business.phone ?? '' },
-                                { label: 'Email', value: business.email ?? '' },
-                                { label: 'Website', value: business.website_url ?? '' },
-                              ]}
-                              {...(canEdit
-                                ? {
-                                    onEdit: () => {
-                                      setError(null);
-                                      setIdentityEditorOpen(true);
-                                    },
-                                  }
-                                : {})}
-                            />
-                            <MerchantSheet
-                              visible={identityEditorOpen && canEdit}
-                              title="Edit contact information"
-                              onClose={closeIdentityEditor}
-                              blocked={saving || photoUploading}
-                            >
-                              {error && <StateNotice kind="error" message={error} />}
-                              {notice && (
-                                <ThemedText type="small" themeColor="textSecondary">
-                                  {notice}
-                                </ThemedText>
-                              )}
+                          <BusinessQrPoster
+                            business={{
+                              name: business.name,
+                              slug: business.slug,
+                              primaryColor: business.primary_color,
+                              accentColor: business.accent_color,
+                            }}
+                            logoUri={logoUri}
+                            onClose={() => setQrPosterOpen(false)}
+                            visible={qrPosterOpen}
+                          />
+                        </View>
+                      )}
 
-                              <FormSectionDescription description="Give customers a reliable way to reach you." />
-                              <Field
-                                label="Phone"
-                                {...inputPresets.phone}
-                                value={phone}
-                                onChangeText={setPhone}
-                                colors={colors}
-                                editable={canEdit}
-                                keyboardType="phone-pad"
-                              />
-                              <Field
-                                label="Email"
-                                {...inputPresets.email}
-                                value={email}
-                                onChangeText={setEmail}
-                                colors={colors}
-                                editable={canEdit}
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                              />
-                              <Field
-                                label="Website"
-                                {...inputPresets.url}
-                                value={website}
-                                onChangeText={setWebsite}
-                                colors={colors}
-                                editable={canEdit}
-                                autoCapitalize="none"
-                              />
-                              {canEdit && (
-                                <PrimaryButton
-                                  loading={saving}
-                                  disabled={saving}
-                                  label={saving ? 'Saving…' : 'Save contact information'}
-                                  onPress={() => void saveContact()}
+                      {section === 'sharing' && business && (
+                        <View style={styles.formCard}>
+                          <FormSectionDescription description="Share the page link from your phone." />
+                          <PrimaryButton
+                            loading={saving}
+                            disabled={false}
+                            label="Share page"
+                            onPress={() => void shareBusinessPage()}
+                          />
+                        </View>
+                      )}
+
+                      {(section === 'profile' ||
+                        section === 'contact' ||
+                        section === 'location' ||
+                        section === 'mobile-location') &&
+                        business && (
+                          <View style={styles.cardList}>
+                            {section === 'profile' && (
+                              <View style={{ gap: 16 }}>
+                                <WorkspaceDetailsOverview
+                                  title="Profile and branding"
+                                  rows={[
+                                    { label: 'Business name', value: business.name },
+                                    {
+                                      label: 'Business type',
+                                      value: business.business_type.replaceAll('_', ' '),
+                                    },
+                                    { label: 'Description', value: business.description },
+                                    {
+                                      label: 'Brand colors',
+                                      value: `${business.primary_color} · ${business.accent_color}`,
+                                    },
+                                  ]}
+                                  {...(canEdit
+                                    ? {
+                                        onEdit: () => {
+                                          setError(null);
+                                          setIdentityEditorOpen(true);
+                                        },
+                                      }
+                                    : {})}
                                 />
-                              )}
-                            </MerchantSheet>
-                          </View>
-                        )}
-                        {section === 'location' && (
-                          <View style={{ gap: 16 }}>
-                            <WorkspaceDetailsOverview
-                              title="Service area"
-                              rows={[
-                                {
-                                  label: 'Coverage',
-                                  value:
-                                    serviceAreaTypes.find(
-                                      (item) => item.value === business.service_area_type,
-                                    )?.label ?? business.service_area_type,
-                                },
-                                {
-                                  label: 'Address',
-                                  value: [
-                                    business.address_line_1,
-                                    business.city,
-                                    business.region_code,
-                                    business.postal_code,
-                                  ]
-                                    .filter(Boolean)
-                                    .join(', '),
-                                },
-                                ...(business.service_area_type === 'cities'
-                                  ? [
-                                      {
-                                        label: 'Cities',
-                                        value: business.service_area_regions.join(', '),
-                                      },
-                                    ]
-                                  : []),
-                                ...(business.service_area_type === 'radius'
-                                  ? [
-                                      {
-                                        label: 'Radius',
-                                        value: `${business.service_radius_miles ?? 25} miles`,
-                                      },
-                                    ]
-                                  : []),
-                                ...(business.service_area_type === 'custom'
-                                  ? [
-                                      {
-                                        label: 'Coverage description',
-                                        value: business.service_area ?? '',
-                                      },
-                                    ]
-                                  : []),
-                              ]}
-                              {...(canEdit
-                                ? {
-                                    onEdit: () => {
-                                      setError(null);
-                                      setIdentityEditorOpen(true);
-                                    },
-                                  }
-                                : {})}
-                            />
-                            <MerchantSheet
-                              visible={identityEditorOpen && canEdit}
-                              title="Edit service area"
-                              onClose={closeIdentityEditor}
-                              blocked={saving || photoUploading}
-                            >
-                              {error && <StateNotice kind="error" message={error} />}
-                              {notice && (
-                                <ThemedText type="small" themeColor="textSecondary">
-                                  {notice}
-                                </ThemedText>
-                              )}
+                                <MerchantSheet
+                                  visible={identityEditorOpen && canEdit}
+                                  title="Edit profile and branding"
+                                  onClose={closeIdentityEditor}
+                                  blocked={saving || photoUploading}
+                                >
+                                  {error && <StateNotice kind="error" message={error} />}
+                                  {notice && (
+                                    <ThemedText type="small" themeColor="textSecondary">
+                                      {notice}
+                                    </ThemedText>
+                                  )}
 
-                              <FormSectionDescription description="Tell customers where you work. Choose one clear coverage option." />
-                              <ThemedText type="smallBold">How do you serve customers?</ThemedText>
-                              <View style={styles.choiceRow}>
-                                {serviceAreaTypes.map((item) => (
-                                  <ChoiceButton
-                                    key={item.value}
-                                    label={item.label}
-                                    selected={serviceAreaType === item.value}
-                                    onPress={() => canEdit && setServiceAreaType(item.value)}
+                                  <FormSectionDescription description="The business identity customers recognize across Parish Pass." />
+                                  <Field
+                                    label="Business name"
+                                    value={name}
+                                    onChangeText={setName}
+                                    colors={colors}
+                                    editable={canEdit}
                                   />
-                                ))}
+                                  <Field
+                                    label="Description"
+                                    value={description}
+                                    onChangeText={setDescription}
+                                    colors={colors}
+                                    editable={canEdit}
+                                    multiline
+                                    style={styles.multiline}
+                                  />
+                                  <ChoicePicker
+                                    disabled={!canEdit}
+                                    label="Business type"
+                                    options={[
+                                      { value: 'food_drink', label: 'Food & drink' },
+                                      { value: 'services', label: 'Services' },
+                                      { value: 'retail', label: 'Retail' },
+                                      {
+                                        value: 'entertainment_venue',
+                                        label: 'Entertainment & venue',
+                                      },
+                                      { value: 'mobile', label: 'Mobile business' },
+                                      { value: 'general', label: 'Other local business' },
+                                    ]}
+                                    value={businessType}
+                                    onChange={setBusinessType}
+                                  />
+                                  <BusinessCategoryEditor
+                                    businessId={business.id}
+                                    businessType={business.business_type}
+                                    disabled={!canEdit || saving}
+                                    onDirtyChange={setCategoriesDirty}
+                                    onSaved={() => {
+                                      void refreshReadiness();
+                                      setNotice('Categories saved.');
+                                    }}
+                                  />
+                                  <BrandColorPicker
+                                    label="Primary brand color"
+                                    value={primaryColor}
+                                    onChange={setPrimaryColor}
+                                    disabled={!canEdit}
+                                  />
+                                  <BrandColorPicker
+                                    label="Accent brand color"
+                                    value={accentColor}
+                                    onChange={setAccentColor}
+                                    disabled={!canEdit}
+                                  />
+                                  {canEdit && (
+                                    <View style={styles.inlineActions}>
+                                      <SecondaryButton
+                                        disabled={photoUploading}
+                                        label={logoUri ? 'Replace logo' : 'Add logo'}
+                                        onPress={() => void pickAndUploadPhoto('logo')}
+                                      />
+                                      <SecondaryButton
+                                        disabled={photoUploading}
+                                        label={
+                                          photos.some((photo) => photo.role === 'cover')
+                                            ? 'Replace cover'
+                                            : 'Add cover'
+                                        }
+                                        onPress={() => void pickAndUploadPhoto('cover')}
+                                      />
+                                    </View>
+                                  )}
+                                  {canEdit && (
+                                    <PrimaryButton
+                                      loading={saving}
+                                      disabled={saving}
+                                      label={saving ? 'Saving…' : 'Save profile'}
+                                      onPress={() => void saveProfile()}
+                                    />
+                                  )}
+                                </MerchantSheet>
                               </View>
-                              {business.business_type !== 'mobile' &&
-                                (serviceAreaType === 'at_location' ||
-                                  serviceAreaType === 'radius') && (
-                                  <Field
-                                    label="Street address (required)"
-                                    {...inputPresets.street}
-                                    value={addressLine1}
-                                    onChangeText={setAddressLine1}
-                                    colors={colors}
-                                    editable={canEdit}
-                                  />
-                                )}
-                              {serviceAreaType !== 'custom' && serviceAreaType !== 'cities' && (
-                                <Field
-                                  label={
-                                    serviceAreaType === 'statewide'
-                                      ? 'Primary city (optional)'
-                                      : business.business_type === 'mobile'
-                                        ? 'Home base city (optional)'
-                                        : 'City (required)'
-                                  }
-                                  value={city}
-                                  {...inputPresets.city}
-                                  onChangeText={setCity}
-                                  colors={colors}
-                                  editable={canEdit}
+                            )}
+                            {section === 'contact' && (
+                              <View style={{ gap: 16 }}>
+                                <WorkspaceDetailsOverview
+                                  title="Contact information"
+                                  rows={[
+                                    { label: 'Phone', value: business.phone ?? '' },
+                                    { label: 'Email', value: business.email ?? '' },
+                                    { label: 'Website', value: business.website_url ?? '' },
+                                  ]}
+                                  {...(canEdit
+                                    ? {
+                                        onEdit: () => {
+                                          setError(null);
+                                          setIdentityEditorOpen(true);
+                                        },
+                                      }
+                                    : {})}
                                 />
-                              )}
-                              <ChoicePicker
-                                disabled={!canEdit}
-                                label={`State${serviceAreaType === 'statewide' ? ' (required)' : ' (optional)'}`}
-                                options={stateCodes.map((code) => ({ value: code, label: code }))}
-                                placeholder="Choose a state"
-                                value={region || null}
-                                onChange={setRegion}
-                              />
-                              {business.business_type !== 'mobile' &&
-                                (serviceAreaType === 'at_location' ||
-                                  serviceAreaType === 'radius') && (
+                                <MerchantSheet
+                                  visible={identityEditorOpen && canEdit}
+                                  title="Edit contact information"
+                                  onClose={closeIdentityEditor}
+                                  blocked={saving || photoUploading}
+                                >
+                                  {error && <StateNotice kind="error" message={error} />}
+                                  {notice && (
+                                    <ThemedText type="small" themeColor="textSecondary">
+                                      {notice}
+                                    </ThemedText>
+                                  )}
+
+                                  <FormSectionDescription description="Give customers a reliable way to reach you." />
                                   <Field
-                                    label="Postal code (optional)"
-                                    {...inputPresets.postal}
-                                    value={postalCode}
-                                    onChangeText={setPostalCode}
+                                    label="Phone"
+                                    {...inputPresets.phone}
+                                    value={phone}
+                                    onChangeText={setPhone}
                                     colors={colors}
                                     editable={canEdit}
+                                    keyboardType="phone-pad"
                                   />
-                                )}
-                              {serviceAreaType === 'radius' && (
-                                <>
+                                  <Field
+                                    label="Email"
+                                    {...inputPresets.email}
+                                    value={email}
+                                    onChangeText={setEmail}
+                                    colors={colors}
+                                    editable={canEdit}
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                  />
+                                  <Field
+                                    label="Website"
+                                    {...inputPresets.url}
+                                    value={website}
+                                    onChangeText={setWebsite}
+                                    colors={colors}
+                                    editable={canEdit}
+                                    autoCapitalize="none"
+                                  />
+                                  {canEdit && (
+                                    <PrimaryButton
+                                      loading={saving}
+                                      disabled={saving}
+                                      label={saving ? 'Saving…' : 'Save contact information'}
+                                      onPress={() => void saveContact()}
+                                    />
+                                  )}
+                                </MerchantSheet>
+                              </View>
+                            )}
+                            {section === 'location' && (
+                              <View style={{ gap: 16 }}>
+                                <WorkspaceDetailsOverview
+                                  title="Service area"
+                                  rows={[
+                                    {
+                                      label: 'Coverage',
+                                      value:
+                                        serviceAreaTypes.find(
+                                          (item) => item.value === business.service_area_type,
+                                        )?.label ?? business.service_area_type,
+                                    },
+                                    {
+                                      label: 'Address',
+                                      value: [
+                                        business.address_line_1,
+                                        business.city,
+                                        business.region_code,
+                                        business.postal_code,
+                                      ]
+                                        .filter(Boolean)
+                                        .join(', '),
+                                    },
+                                    ...(business.service_area_type === 'cities'
+                                      ? [
+                                          {
+                                            label: 'Cities',
+                                            value: business.service_area_regions.join(', '),
+                                          },
+                                        ]
+                                      : []),
+                                    ...(business.service_area_type === 'radius'
+                                      ? [
+                                          {
+                                            label: 'Radius',
+                                            value: `${business.service_radius_miles ?? 25} miles`,
+                                          },
+                                        ]
+                                      : []),
+                                    ...(business.service_area_type === 'custom'
+                                      ? [
+                                          {
+                                            label: 'Coverage description',
+                                            value: business.service_area ?? '',
+                                          },
+                                        ]
+                                      : []),
+                                  ]}
+                                  {...(canEdit
+                                    ? {
+                                        onEdit: () => {
+                                          setError(null);
+                                          setIdentityEditorOpen(true);
+                                        },
+                                      }
+                                    : {})}
+                                />
+                                <MerchantSheet
+                                  visible={identityEditorOpen && canEdit}
+                                  title="Edit service area"
+                                  onClose={closeIdentityEditor}
+                                  blocked={saving || photoUploading}
+                                >
+                                  {error && <StateNotice kind="error" message={error} />}
+                                  {notice && (
+                                    <ThemedText type="small" themeColor="textSecondary">
+                                      {notice}
+                                    </ThemedText>
+                                  )}
+
+                                  <FormSectionDescription description="Tell customers where you work. Choose one clear coverage option." />
                                   <ThemedText type="smallBold">
-                                    Service radius (required)
+                                    How do you serve customers?
                                   </ThemedText>
                                   <View style={styles.choiceRow}>
-                                    {radiusChoices.map((miles) => (
+                                    {serviceAreaTypes.map((item) => (
                                       <ChoiceButton
-                                        key={miles}
-                                        label={`${miles} mi`}
-                                        selected={serviceRadiusMiles === miles}
-                                        onPress={() => canEdit && setServiceRadiusMiles(miles)}
+                                        key={item.value}
+                                        label={item.label}
+                                        selected={serviceAreaType === item.value}
+                                        onPress={() => canEdit && setServiceAreaType(item.value)}
                                       />
                                     ))}
                                   </View>
-                                </>
-                              )}
-                              {serviceAreaType === 'cities' && (
-                                <View style={styles.field}>
-                                  <ThemedText type="smallBold">
-                                    Service cities (at least one required)
-                                  </ThemedText>
-                                  <View style={styles.addRow}>
-                                    <TextInput
+                                  {business.business_type !== 'mobile' &&
+                                    (serviceAreaType === 'at_location' ||
+                                      serviceAreaType === 'radius') && (
+                                      <Field
+                                        label="Street address (required)"
+                                        {...inputPresets.street}
+                                        value={addressLine1}
+                                        onChangeText={setAddressLine1}
+                                        colors={colors}
+                                        editable={canEdit}
+                                      />
+                                    )}
+                                  {serviceAreaType !== 'custom' && serviceAreaType !== 'cities' && (
+                                    <Field
+                                      label={
+                                        serviceAreaType === 'statewide'
+                                          ? 'Primary city (optional)'
+                                          : business.business_type === 'mobile'
+                                            ? 'Home base city (optional)'
+                                            : 'City (required)'
+                                      }
+                                      value={city}
+                                      {...inputPresets.city}
+                                      onChangeText={setCity}
+                                      colors={colors}
                                       editable={canEdit}
-                                      onChangeText={setServiceCityDraft}
-                                      onSubmitEditing={addServiceCity}
-                                      placeholder="Add a city"
-                                      placeholderTextColor={colors.textSecondary}
-                                      returnKeyType="done"
-                                      style={[
-                                        styles.input,
-                                        styles.addInput,
-                                        {
-                                          color: colors.text,
-                                          backgroundColor: colors.background,
-                                          borderColor: colors.inputBorder,
-                                        },
-                                      ]}
-                                      value={serviceCityDraft}
                                     />
-                                    <Pressable
-                                      disabled={!canEdit}
-                                      onPress={addServiceCity}
-                                      style={styles.addButton}
-                                    >
-                                      <ThemedText style={styles.primaryButtonText} type="smallBold">
-                                        Add
+                                  )}
+                                  <ChoicePicker
+                                    disabled={!canEdit}
+                                    label={`State${serviceAreaType === 'statewide' ? ' (required)' : ' (optional)'}`}
+                                    options={stateCodes.map((code) => ({
+                                      value: code,
+                                      label: code,
+                                    }))}
+                                    placeholder="Choose a state"
+                                    value={region || null}
+                                    onChange={setRegion}
+                                  />
+                                  {business.business_type !== 'mobile' &&
+                                    (serviceAreaType === 'at_location' ||
+                                      serviceAreaType === 'radius') && (
+                                      <Field
+                                        label="Postal code (optional)"
+                                        {...inputPresets.postal}
+                                        value={postalCode}
+                                        onChangeText={setPostalCode}
+                                        colors={colors}
+                                        editable={canEdit}
+                                      />
+                                    )}
+                                  {serviceAreaType === 'radius' && (
+                                    <>
+                                      <ThemedText type="smallBold">
+                                        Service radius (required)
                                       </ThemedText>
-                                    </Pressable>
-                                  </View>
-                                  <View style={styles.choiceRow}>
-                                    {serviceCities.map((serviceCity) => (
-                                      <Pressable
-                                        key={serviceCity}
-                                        disabled={!canEdit}
-                                        onPress={() =>
-                                          setServiceCities((current) =>
-                                            current.filter((item) => item !== serviceCity),
-                                          )
-                                        }
-                                        style={styles.cityChip}
-                                      >
-                                        <ThemedText type="smallBold">
-                                          {serviceCity}
-                                          {canEdit ? ' ×' : ''}
-                                        </ThemedText>
-                                      </Pressable>
-                                    ))}
-                                  </View>
-                                </View>
-                              )}
-                              {serviceAreaType === 'custom' && (
-                                <Field
-                                  label="Describe the service area (required)"
-                                  value={customServiceArea}
-                                  onChangeText={setCustomServiceArea}
-                                  colors={colors}
-                                  editable={canEdit}
-                                  multiline
-                                  style={styles.multiline}
-                                />
-                              )}
-                              {canEdit && (
-                                <PrimaryButton
-                                  loading={saving}
-                                  disabled={saving}
-                                  label={saving ? 'Saving…' : 'Save location'}
-                                  onPress={() => void saveLocation()}
-                                />
-                              )}
-                            </MerchantSheet>
-                          </View>
-                        )}
-                        {section === 'mobile-location' && business.business_type === 'mobile' && (
-                          <View style={{ gap: 16 }}>
-                            {!stopEditorOpen &&
-                              !locationStops.some((stop) => stop.id === selectedStopId) && (
-                                <MobileStopInbox
-                                  key={business.id}
-                                  stops={locationStops}
-                                  now={clockNow}
-                                  canEdit={canEdit}
-                                  onCreate={() => {
-                                    setError(null);
-                                    setNotice(null);
-                                    setStopEditorOpen(true);
-                                  }}
-                                  onSelect={setSelectedStopId}
-                                />
-                              )}
-                            {(stopEditorOpen ||
-                              locationStops.some((stop) => stop.id === selectedStopId)) && (
-                              <BackPill
-                                label="Back to stops"
-                                disabled={saving || stopGeocoding}
-                                onPress={() =>
-                                  stopEditorOpen ? closeStopEditor() : setSelectedStopId(null)
-                                }
-                              />
-                            )}
-                            {stopEditorOpen && (
-                              <MerchantHeading
-                                title="Add scheduled stop"
-                                subtitle="Save a draft, then review and publish it."
-                              />
-                            )}
-                            {locationStops
-                              .filter((stop) => stop.id === selectedStopId)
-                              .map((stop) => (
-                                <View key={stop.id} style={styles.locationStopCard}>
-                                  <FlowSection title="Scheduled stop">
-                                    <View style={styles.rowText}>
-                                      <ThemedText type="smallBold">{stop.title}</ThemedText>
-                                      <ThemedText themeColor="textSecondary" type="small">
-                                        {mobileStopTime(stop)}
+                                      <View style={styles.choiceRow}>
+                                        {radiusChoices.map((miles) => (
+                                          <ChoiceButton
+                                            key={miles}
+                                            label={`${miles} mi`}
+                                            selected={serviceRadiusMiles === miles}
+                                            onPress={() => canEdit && setServiceRadiusMiles(miles)}
+                                          />
+                                        ))}
+                                      </View>
+                                    </>
+                                  )}
+                                  {serviceAreaType === 'cities' && (
+                                    <View style={styles.field}>
+                                      <ThemedText type="smallBold">
+                                        Service cities (at least one required)
                                       </ThemedText>
-                                      <ThemedText themeColor="textSecondary" type="small">
-                                        {stop.address_text || 'Map pin set'}
-                                      </ThemedText>
+                                      <View style={styles.addRow}>
+                                        <TextInput
+                                          editable={canEdit}
+                                          onChangeText={setServiceCityDraft}
+                                          onSubmitEditing={addServiceCity}
+                                          placeholder="Add a city"
+                                          placeholderTextColor={colors.textSecondary}
+                                          returnKeyType="done"
+                                          style={[
+                                            styles.input,
+                                            styles.addInput,
+                                            {
+                                              color: colors.text,
+                                              backgroundColor: colors.background,
+                                              borderColor: colors.inputBorder,
+                                            },
+                                          ]}
+                                          value={serviceCityDraft}
+                                        />
+                                        <Pressable
+                                          disabled={!canEdit}
+                                          onPress={addServiceCity}
+                                          style={styles.addButton}
+                                        >
+                                          <ThemedText
+                                            style={styles.primaryButtonText}
+                                            type="smallBold"
+                                          >
+                                            Add
+                                          </ThemedText>
+                                        </Pressable>
+                                      </View>
+                                      <View style={styles.choiceRow}>
+                                        {serviceCities.map((serviceCity) => (
+                                          <Pressable
+                                            key={serviceCity}
+                                            disabled={!canEdit}
+                                            onPress={() =>
+                                              setServiceCities((current) =>
+                                                current.filter((item) => item !== serviceCity),
+                                              )
+                                            }
+                                            style={styles.cityChip}
+                                          >
+                                            <ThemedText type="smallBold">
+                                              {serviceCity}
+                                              {canEdit ? ' ×' : ''}
+                                            </ThemedText>
+                                          </Pressable>
+                                        ))}
+                                      </View>
                                     </View>
-                                  </FlowSection>
-                                  <View style={styles.inlineActions}>
-                                    <LabeledSwitch
-                                      label={stop.is_published ? 'Published' : 'Draft'}
-                                      disabled={!canEdit}
-                                      value={stop.is_published}
-                                      onValueChange={(value) =>
-                                        void toggleLocationStop(stop, value)
+                                  )}
+                                  {serviceAreaType === 'custom' && (
+                                    <Field
+                                      label="Describe the service area (required)"
+                                      value={customServiceArea}
+                                      onChangeText={setCustomServiceArea}
+                                      colors={colors}
+                                      editable={canEdit}
+                                      multiline
+                                      style={styles.multiline}
+                                    />
+                                  )}
+                                  {canEdit && (
+                                    <PrimaryButton
+                                      loading={saving}
+                                      disabled={saving}
+                                      label={saving ? 'Saving…' : 'Save location'}
+                                      onPress={() => void saveLocation()}
+                                    />
+                                  )}
+                                </MerchantSheet>
+                              </View>
+                            )}
+                            {section === 'mobile-location' &&
+                              business.business_type === 'mobile' && (
+                                <View style={{ gap: 16 }}>
+                                  {!stopEditorOpen &&
+                                    !locationStops.some((stop) => stop.id === selectedStopId) && (
+                                      <MobileStopInbox
+                                        key={business.id}
+                                        stops={locationStops}
+                                        now={clockNow}
+                                        canEdit={canEdit}
+                                        onCreate={() => {
+                                          setError(null);
+                                          setNotice(null);
+                                          setStopEditorOpen(true);
+                                        }}
+                                        onSelect={setSelectedStopId}
+                                      />
+                                    )}
+                                  {(stopEditorOpen ||
+                                    locationStops.some((stop) => stop.id === selectedStopId)) && (
+                                    <BackPill
+                                      label="Back to stops"
+                                      disabled={saving || stopGeocoding}
+                                      onPress={() =>
+                                        stopEditorOpen ? closeStopEditor() : setSelectedStopId(null)
                                       }
                                     />
-                                    {canEdit && (
-                                      <MerchantButton
-                                        label="Remove stop"
-                                        destructive
-                                        onPress={() => removeLocationStop(stop)}
+                                  )}
+                                  {stopEditorOpen && (
+                                    <MerchantHeading
+                                      title="Add scheduled stop"
+                                      subtitle="Save a draft, then review and publish it."
+                                    />
+                                  )}
+                                  {locationStops
+                                    .filter((stop) => stop.id === selectedStopId)
+                                    .map((stop) => (
+                                      <View key={stop.id} style={styles.locationStopCard}>
+                                        <FlowSection title="Scheduled stop">
+                                          <View style={styles.rowText}>
+                                            <ThemedText type="smallBold">{stop.title}</ThemedText>
+                                            <ThemedText themeColor="textSecondary" type="small">
+                                              {mobileStopTime(stop)}
+                                            </ThemedText>
+                                            <ThemedText themeColor="textSecondary" type="small">
+                                              {stop.address_text || 'Map pin set'}
+                                            </ThemedText>
+                                          </View>
+                                        </FlowSection>
+                                        <View style={styles.inlineActions}>
+                                          <LabeledSwitch
+                                            label={stop.is_published ? 'Published' : 'Draft'}
+                                            disabled={!canEdit}
+                                            value={stop.is_published}
+                                            onValueChange={(value) =>
+                                              void toggleLocationStop(stop, value)
+                                            }
+                                          />
+                                          {canEdit && (
+                                            <MerchantButton
+                                              label="Remove stop"
+                                              destructive
+                                              onPress={() => removeLocationStop(stop)}
+                                            />
+                                          )}
+                                        </View>
+                                      </View>
+                                    ))}
+                                  {canEdit && stopEditorOpen && (
+                                    <>
+                                      <FlowSection title="Where you’ll be">
+                                        <Field
+                                          label="Stop name (required)"
+                                          value={newStopTitle}
+                                          onChangeText={setNewStopTitle}
+                                          colors={colors}
+                                          placeholder="Downtown lunch service"
+                                        />
+                                        <Field
+                                          label="Address or landmark"
+                                          value={newStopAddress}
+                                          onChangeText={handleNewStopAddressChange}
+                                          colors={colors}
+                                          placeholder="Market Square"
+                                        />
+                                      </FlowSection>
+                                      <SecondaryButton
+                                        disabled={stopGeocoding || !newStopAddress.trim()}
+                                        label={
+                                          stopGeocoding
+                                            ? 'Placing address…'
+                                            : 'Place address on map'
+                                        }
+                                        onPress={() => void placeAddressOnMap()}
                                       />
+                                      <ThemedText themeColor="textSecondary" type="small">
+                                        An address is optional when you drop a pin directly on the
+                                        map.
+                                      </ThemedText>
+                                      <FlowSection title="Date & service times">
+                                        <StopPickerField
+                                          label="Date (required)"
+                                          value={
+                                            newStopDate ? formatStopDateForDisplay(newStopDate) : ''
+                                          }
+                                          placeholder="Choose a date"
+                                          colors={colors}
+                                          onPress={() => setStopPickerTarget('date')}
+                                        />
+                                        <View style={styles.stackFields}>
+                                          <StopPickerField
+                                            label="Starts (required)"
+                                            value={
+                                              newStopStart
+                                                ? formatStopTimeForDisplay(newStopStart)
+                                                : ''
+                                            }
+                                            placeholder="Choose start time"
+                                            colors={colors}
+                                            onPress={() => setStopPickerTarget('start')}
+                                          />
+                                          <StopPickerField
+                                            label="Ends (required)"
+                                            value={
+                                              newStopEnd ? formatStopTimeForDisplay(newStopEnd) : ''
+                                            }
+                                            placeholder="Choose end time"
+                                            colors={colors}
+                                            onPress={() => setStopPickerTarget('end')}
+                                          />
+                                        </View>
+                                      </FlowSection>
+                                      <FlowSection title="Confirm the map pin">
+                                        <BusinessLocationMap
+                                          stops={locationStops}
+                                          draftTitle={newStopTitle.trim() || 'New stop'}
+                                          {...(newStopLatitude.trim() && newStopLongitude.trim()
+                                            ? {
+                                                draftCoordinate: {
+                                                  latitude: Number(newStopLatitude),
+                                                  longitude: Number(newStopLongitude),
+                                                },
+                                              }
+                                            : {})}
+                                          onCoordinateSelect={(coordinate) =>
+                                            void handleStopMapCoordinate(coordinate)
+                                          }
+                                          onInteractionChange={setMapInteractionActive}
+                                        />
+                                      </FlowSection>
+                                      <ThemedText themeColor="textSecondary" type="small">
+                                        Enter an address and place it on the map, or tap the map to
+                                        drop a pin. The address and pin stay together when you save
+                                        the stop.
+                                      </ThemedText>
+                                      <PrimaryButton
+                                        loading={saving}
+                                        disabled={
+                                          saving ||
+                                          (stopGeocoding &&
+                                            !(newStopLatitude.trim() && newStopLongitude.trim()))
+                                        }
+                                        label={saving ? 'Saving…' : 'Save scheduled stop'}
+                                        onPress={() => void createLocationStop()}
+                                      />
+                                    </>
+                                  )}
+                                </View>
+                              )}
+                            {section === 'mobile-location' && stopPickerTarget && (
+                              <BusinessWorkspaceSheet
+                                visible
+                                onClose={() => setStopPickerTarget(null)}
+                                closeAccessibilityLabel="Close date and time picker"
+                                title={
+                                  stopPickerTarget === 'date'
+                                    ? 'Choose a date'
+                                    : stopPickerTarget === 'start'
+                                      ? 'Choose a start time'
+                                      : 'Choose an end time'
+                                }
+                                description={
+                                  stopPickerTarget === 'date'
+                                    ? 'Use the calendar to schedule this stop.'
+                                    : 'Use the native time picker for the stop hours.'
+                                }
+                                backgroundColor={colors.backgroundElement}
+                                headerCopyGap={Spacing.one}
+                                maxHeight="78%"
+                              >
+                                <DateTimePicker
+                                  value={stopPickerValue(stopPickerTarget)}
+                                  mode={stopPickerTarget === 'date' ? 'date' : 'time'}
+                                  display={
+                                    stopPickerTarget === 'date'
+                                      ? 'inline'
+                                      : Platform.OS === 'ios'
+                                        ? 'spinner'
+                                        : 'default'
+                                  }
+                                  presentation="inline"
+                                  is24Hour={false}
+                                  accentColor={Brand.primary}
+                                  themeVariant={scheme === 'dark' ? 'dark' : 'light'}
+                                  timeZoneName="America/Chicago"
+                                  onValueChange={(_, value) =>
+                                    handleStopPickerChange(stopPickerTarget, value)
+                                  }
+                                />
+                              </BusinessWorkspaceSheet>
+                            )}
+                          </View>
+                        )}
+
+                      {section === 'ordering' && canEdit && business && (
+                        <OrderingPanel
+                          businessId={businessId}
+                          {...(initialOrderingProvider
+                            ? { initialProvider: initialOrderingProvider }
+                            : {})}
+                          isMobile={business.business_type === 'mobile'}
+                          onDirtyChange={setOrderingDirty}
+                        />
+                      )}
+                      {section === 'appointments' &&
+                        canEdit &&
+                        business?.business_type === 'services' && (
+                          <AppointmentWorkspace
+                            businessId={businessId}
+                            businessTimezone={business.timezone}
+                            onDirtyChange={setAppointmentsDirty}
+                          />
+                        )}
+                      {section === 'appointments' &&
+                        canEdit &&
+                        business &&
+                        business.business_type !== 'services' && (
+                          <View style={{ gap: 16 }}>
+                            <StateNotice message="Appointments are available for service businesses. This business does not use appointment booking." />
+                            <AppButton
+                              label="Back to business overview"
+                              variant="secondary"
+                              onPress={leaveEditor}
+                            />
+                          </View>
+                        )}
+                      {section === 'hours' && (
+                        <HoursEditor
+                          onDirtyChange={setHoursDirty}
+                          accent={workspaceAccent}
+                          canEdit={canEdit}
+                          colors={colors}
+                          hours={hours}
+                          onSave={saveHours}
+                          saving={saving}
+                        />
+                      )}
+
+                      {section === 'offerings' && (
+                        <View style={{ gap: 20 }}>
+                          <View style={{ flexDirection: 'row', gap: 10 }}>
+                            {[
+                              {
+                                label: isMenuBusiness ? 'Items' : 'Services',
+                                value: offerings.length,
+                              },
+                              { label: 'Visible', value: visibleOfferingCount },
+                              { label: 'Featured', value: featuredOfferingCount },
+                            ].map((stat) => (
+                              <View
+                                key={stat.label}
+                                style={{
+                                  flex: 1,
+                                  padding: 14,
+                                  gap: 4,
+                                  borderRadius: 14,
+                                  backgroundColor: colors.backgroundElement,
+                                  borderWidth: 1,
+                                  borderColor: colors.border,
+                                }}
+                              >
+                                <ThemedText type="subtitle">{stat.value}</ThemedText>
+                                <ThemedText type="small" themeColor="textSecondary">
+                                  {stat.label}
+                                </ThemedText>
+                              </View>
+                            ))}
+                          </View>
+                          <>
+                            <MenuSetupSearch
+                              services={!isMenuBusiness}
+                              value={inventorySearch}
+                              onChange={setInventorySearch}
+                              canEdit={canEdit}
+                              onTools={() => setInventoryTools(true)}
+                            />
+                            <MenuCategoryActions
+                              canEdit={canEdit}
+                              disabled={saving || photoUploading}
+                              onAdd={() => {
+                                setError(null);
+                                setMenuEditorPanel('section');
+                              }}
+                            />
+                            <MenuSetupTabs
+                              value={inventoryCategory}
+                              onChange={setInventoryCategory}
+                              options={[
+                                { value: 'all', label: 'All categories' },
+                                ...offerSections.map((g) => ({ value: g.id, label: g.name })),
+                              ]}
+                            />
+                            <MenuSetupTabs
+                              underline
+                              value={inventoryStatus}
+                              onChange={setInventoryStatus}
+                              options={[
+                                { value: 'all', label: 'All items' },
+                                { value: 'available', label: 'Available' },
+                                {
+                                  value: 'sold-out',
+                                  label: isMenuBusiness ? 'Sold out' : 'Unavailable',
+                                },
+                                { value: 'hidden', label: 'Hidden' },
+                              ]}
+                            />
+                          </>
+                          {inventoryReorder && (
+                            <View style={{ gap: 8 }}>
+                              <ThemedText type="small">
+                                Reorder mode · arrows change the public menu order.
+                              </ThemedText>
+                              <MerchantButton
+                                label="Done reordering"
+                                secondary
+                                onPress={() => setInventoryReorder(false)}
+                              />
+                            </View>
+                          )}
+                          {offerSections
+                            .filter(
+                              (g) => inventoryCategory === 'all' || inventoryCategory === g.id,
+                            )
+                            .map((group, groupIndex) => {
+                              const groupItems = offerings.filter(
+                                (item) => item.section_id === group.id,
+                              );
+                              const matched = groupItems.filter(
+                                (item) =>
+                                  menuStockMatches(item, inventoryStatus) &&
+                                  [item.name, item.description]
+                                    .join(' ')
+                                    .toLocaleLowerCase()
+                                    .includes(inventorySearch.trim().toLocaleLowerCase()),
+                              );
+                              if (
+                                !matched.length &&
+                                (inventorySearch.trim() || inventoryStatus !== 'all')
+                              )
+                                return null;
+                              return (
+                                <View key={group.id} style={{ gap: 8 }}>
+                                  <View
+                                    style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+                                  >
+                                    <ThemedText
+                                      type="smallBold"
+                                      style={{ color: inventoryColors.text, flex: 1 }}
+                                    >
+                                      {group.name} · {matched.length}
+                                    </ThemedText>
+                                    {canEdit && inventoryReorder && (
+                                      <View style={{ flexDirection: 'row', gap: 8 }}>
+                                        <MerchantButton
+                                          label="Move up"
+                                          iconOnly
+                                          icon={
+                                            <AppIcon
+                                              name="chevron-up"
+                                              size={18}
+                                              tintColor={colors.text}
+                                            />
+                                          }
+                                          secondary
+                                          disabled={saving || offerSections.indexOf(group) === 0}
+                                          onPress={() => void moveOfferingSection(group, 'up')}
+                                          accessibilityLabel={`Move ${group.name} up`}
+                                        />
+                                        <MerchantButton
+                                          label="Move down"
+                                          iconOnly
+                                          icon={
+                                            <AppIcon
+                                              name="chevron-down"
+                                              size={18}
+                                              tintColor={colors.text}
+                                            />
+                                          }
+                                          secondary
+                                          disabled={
+                                            saving ||
+                                            offerSections.indexOf(group) ===
+                                              offerSections.length - 1
+                                          }
+                                          onPress={() => void moveOfferingSection(group, 'down')}
+                                          accessibilityLabel={`Move ${group.name} down`}
+                                        />
+                                      </View>
+                                    )}
+                                  </View>
+                                  <View style={{ gap: 11 }}>
+                                    {matched.map((item) => (
+                                      <View key={item.id}>
+                                        <MenuSetupItem
+                                          services={!isMenuBusiness}
+                                          name={item.name}
+                                          category={group.name}
+                                          price={formatPrice(item)}
+                                          photo={offeringImageUrl(item)}
+                                          visible={item.is_visible}
+                                          available={item.is_available}
+                                          featured={item.is_featured}
+                                          disabled={!canEdit || saving || photoUploading}
+                                          onPress={() => beginOfferingEdit(item)}
+                                        />
+
+                                        {canEdit && inventoryReorder && (
+                                          <View
+                                            style={{ flexDirection: 'row', gap: 8, padding: 12 }}
+                                          >
+                                            <MerchantButton
+                                              label="Move up"
+                                              secondary
+                                              disabled={saving || groupItems.indexOf(item) === 0}
+                                              onPress={() => void moveOfferingItem(item, 'up')}
+                                            />
+                                            <MerchantButton
+                                              label="Move down"
+                                              secondary
+                                              disabled={
+                                                saving ||
+                                                groupItems.indexOf(item) === groupItems.length - 1
+                                              }
+                                              onPress={() => void moveOfferingItem(item, 'down')}
+                                            />
+                                          </View>
+                                        )}
+                                      </View>
+                                    ))}
+                                    {!matched.length && (
+                                      <ThemedText
+                                        type="small"
+                                        style={{ padding: 16, color: inventoryColors.secondary }}
+                                      >
+                                        No items in this category.
+                                      </ThemedText>
                                     )}
                                   </View>
                                 </View>
-                              ))}
-                            {canEdit && stopEditorOpen && (
-                              <>
-                                <FlowSection title="Where you’ll be">
-                                  <Field
-                                    label="Stop name (required)"
-                                    value={newStopTitle}
-                                    onChangeText={setNewStopTitle}
-                                    colors={colors}
-                                    placeholder="Downtown lunch service"
-                                  />
-                                  <Field
-                                    label="Address or landmark"
-                                    value={newStopAddress}
-                                    onChangeText={handleNewStopAddressChange}
-                                    colors={colors}
-                                    placeholder="Market Square"
-                                  />
-                                </FlowSection>
-                                <SecondaryButton
-                                  disabled={stopGeocoding || !newStopAddress.trim()}
-                                  label={
-                                    stopGeocoding ? 'Placing address…' : 'Place address on map'
-                                  }
-                                  onPress={() => void placeAddressOnMap()}
-                                />
-                                <ThemedText themeColor="textSecondary" type="small">
-                                  An address is optional when you drop a pin directly on the map.
-                                </ThemedText>
-                                <FlowSection title="Date & service times">
-                                  <StopPickerField
-                                    label="Date (required)"
-                                    value={newStopDate ? formatStopDateForDisplay(newStopDate) : ''}
-                                    placeholder="Choose a date"
-                                    colors={colors}
-                                    onPress={() => setStopPickerTarget('date')}
-                                  />
-                                  <View style={styles.stackFields}>
-                                    <StopPickerField
-                                      label="Starts (required)"
-                                      value={
-                                        newStopStart ? formatStopTimeForDisplay(newStopStart) : ''
-                                      }
-                                      placeholder="Choose start time"
-                                      colors={colors}
-                                      onPress={() => setStopPickerTarget('start')}
-                                    />
-                                    <StopPickerField
-                                      label="Ends (required)"
-                                      value={newStopEnd ? formatStopTimeForDisplay(newStopEnd) : ''}
-                                      placeholder="Choose end time"
-                                      colors={colors}
-                                      onPress={() => setStopPickerTarget('end')}
-                                    />
-                                  </View>
-                                </FlowSection>
-                                <FlowSection title="Confirm the map pin">
-                                  <BusinessLocationMap
-                                    stops={locationStops}
-                                    draftTitle={newStopTitle.trim() || 'New stop'}
-                                    {...(newStopLatitude.trim() && newStopLongitude.trim()
-                                      ? {
-                                          draftCoordinate: {
-                                            latitude: Number(newStopLatitude),
-                                            longitude: Number(newStopLongitude),
-                                          },
-                                        }
-                                      : {})}
-                                    onCoordinateSelect={(coordinate) =>
-                                      void handleStopMapCoordinate(coordinate)
-                                    }
-                                    onInteractionChange={setMapInteractionActive}
-                                  />
-                                </FlowSection>
-                                <ThemedText themeColor="textSecondary" type="small">
-                                  Enter an address and place it on the map, or tap the map to drop a
-                                  pin. The address and pin stay together when you save the stop.
-                                </ThemedText>
-                                <PrimaryButton
-                                  loading={saving}
-                                  disabled={
-                                    saving ||
-                                    (stopGeocoding &&
-                                      !(newStopLatitude.trim() && newStopLongitude.trim()))
-                                  }
-                                  label={saving ? 'Saving…' : 'Save scheduled stop'}
-                                  onPress={() => void createLocationStop()}
-                                />
-                              </>
-                            )}
-                          </View>
-                        )}
-                        {section === 'mobile-location' && stopPickerTarget && (
-                          <BusinessWorkspaceSheet
-                            visible
-                            onClose={() => setStopPickerTarget(null)}
-                            closeAccessibilityLabel="Close date and time picker"
-                            title={
-                              stopPickerTarget === 'date'
-                                ? 'Choose a date'
-                                : stopPickerTarget === 'start'
-                                  ? 'Choose a start time'
-                                  : 'Choose an end time'
-                            }
-                            description={
-                              stopPickerTarget === 'date'
-                                ? 'Use the calendar to schedule this stop.'
-                                : 'Use the native time picker for the stop hours.'
-                            }
-                            backgroundColor={colors.backgroundElement}
-                            headerCopyGap={Spacing.one}
-                            maxHeight="78%"
-                          >
-                            <DateTimePicker
-                              value={stopPickerValue(stopPickerTarget)}
-                              mode={stopPickerTarget === 'date' ? 'date' : 'time'}
-                              display={
-                                stopPickerTarget === 'date'
-                                  ? 'inline'
-                                  : Platform.OS === 'ios'
-                                    ? 'spinner'
-                                    : 'default'
-                              }
-                              presentation="inline"
-                              is24Hour={false}
-                              accentColor={Brand.primary}
-                              themeVariant={scheme === 'dark' ? 'dark' : 'light'}
-                              timeZoneName="America/Chicago"
-                              onValueChange={(_, value) =>
-                                handleStopPickerChange(stopPickerTarget, value)
-                              }
-                            />
-                          </BusinessWorkspaceSheet>
-                        )}
-                      </View>
-                    )}
-
-                  {section === 'ordering' && canEdit && business && (
-                    <OrderingPanel
-                      businessId={businessId}
-                      {...(initialOrderingProvider
-                        ? { initialProvider: initialOrderingProvider }
-                        : {})}
-                      isMobile={business.business_type === 'mobile'}
-                      onDirtyChange={setOrderingDirty}
-                    />
-                  )}
-                  {section === 'appointments' &&
-                    canEdit &&
-                    business?.business_type === 'services' && (
-                      <AppointmentWorkspace
-                        businessId={businessId}
-                        businessTimezone={business.timezone}
-                        onDirtyChange={setAppointmentsDirty}
-                      />
-                    )}
-                  {section === 'appointments' &&
-                    canEdit &&
-                    business &&
-                    business.business_type !== 'services' && (
-                      <View style={{ gap: 16 }}>
-                        <StateNotice message="Appointments are available for service businesses. This business does not use appointment booking." />
-                        <AppButton
-                          label="Back to business overview"
-                          variant="secondary"
-                          onPress={leaveEditor}
-                        />
-                      </View>
-                    )}
-                  {section === 'hours' && (
-                    <HoursEditor
-                      onDirtyChange={setHoursDirty}
-                      accent={workspaceAccent}
-                      canEdit={canEdit}
-                      colors={colors}
-                      hours={hours}
-                      onSave={saveHours}
-                      saving={saving}
-                    />
-                  )}
-
-                  {section === 'offerings' && (
-                    <View style={{ gap: 20 }}>
-                      <View style={{ flexDirection: 'row', gap: 10 }}>
-                        {[
-                          { label: isMenuBusiness ? 'Items' : 'Services', value: offerings.length },
-                          { label: 'Visible', value: visibleOfferingCount },
-                          { label: 'Featured', value: featuredOfferingCount },
-                        ].map((stat) => (
-                          <View
-                            key={stat.label}
-                            style={{
-                              flex: 1,
-                              padding: 14,
-                              gap: 4,
-                              borderRadius: 14,
-                              backgroundColor: colors.backgroundElement,
-                              borderWidth: 1,
-                              borderColor: colors.border,
-                            }}
-                          >
-                            <ThemedText type="subtitle">{stat.value}</ThemedText>
-                            <ThemedText type="small" themeColor="textSecondary">
-                              {stat.label}
-                            </ThemedText>
-                          </View>
-                        ))}
-                      </View>
-                      <>
-                        <MenuSetupSearch
-                          services={!isMenuBusiness}
-                          value={inventorySearch}
-                          onChange={setInventorySearch}
-                          canEdit={canEdit}
-                          onTools={() => setInventoryTools(true)}
-                        />
-                        <MenuCategoryActions
-                          canEdit={canEdit}
-                          disabled={saving || photoUploading}
-                          onAdd={() => {
-                            setError(null);
-                            setMenuEditorPanel('section');
-                          }}
-                        />
-                        <MenuSetupTabs
-                          value={inventoryCategory}
-                          onChange={setInventoryCategory}
-                          options={[
-                            { value: 'all', label: 'All categories' },
-                            ...offerSections.map((g) => ({ value: g.id, label: g.name })),
-                          ]}
-                        />
-                        <MenuSetupTabs
-                          underline
-                          value={inventoryStatus}
-                          onChange={setInventoryStatus}
-                          options={[
-                            { value: 'all', label: 'All items' },
-                            { value: 'available', label: 'Available' },
-                            {
-                              value: 'sold-out',
-                              label: isMenuBusiness ? 'Sold out' : 'Unavailable',
-                            },
-                            { value: 'hidden', label: 'Hidden' },
-                          ]}
-                        />
-                      </>
-                      {inventoryReorder && (
-                        <View style={{ gap: 8 }}>
-                          <ThemedText type="small">
-                            Reorder mode · arrows change the public menu order.
-                          </ThemedText>
-                          <MerchantButton
-                            label="Done reordering"
-                            secondary
-                            onPress={() => setInventoryReorder(false)}
-                          />
-                        </View>
-                      )}
-                      {offerSections
-                        .filter((g) => inventoryCategory === 'all' || inventoryCategory === g.id)
-                        .map((group, groupIndex) => {
-                          const groupItems = offerings.filter(
-                            (item) => item.section_id === group.id,
-                          );
-                          const matched = groupItems.filter(
+                              );
+                            })}
+                          {!offerings.some(
                             (item) =>
+                              (inventoryCategory === 'all' ||
+                                item.section_id === inventoryCategory) &&
                               menuStockMatches(item, inventoryStatus) &&
                               [item.name, item.description]
                                 .join(' ')
                                 .toLocaleLowerCase()
                                 .includes(inventorySearch.trim().toLocaleLowerCase()),
-                          );
-                          if (
-                            !matched.length &&
-                            (inventorySearch.trim() || inventoryStatus !== 'all')
-                          )
-                            return null;
-                          return (
-                            <View key={group.id} style={{ gap: 8 }}>
-                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                <ThemedText
-                                  type="smallBold"
-                                  style={{ color: inventoryColors.text, flex: 1 }}
-                                >
-                                  {group.name} · {matched.length}
-                                </ThemedText>
-                                {canEdit && inventoryReorder && (
-                                  <View style={{ flexDirection: 'row', gap: 8 }}>
-                                    <MerchantButton
-                                      label="↑"
-                                      secondary
-                                      disabled={saving || offerSections.indexOf(group) === 0}
-                                      onPress={() => void moveOfferingSection(group, 'up')}
-                                      accessibilityLabel={`Move ${group.name} up`}
-                                    />
-                                    <MerchantButton
-                                      label="↓"
-                                      secondary
-                                      disabled={
-                                        saving ||
-                                        offerSections.indexOf(group) === offerSections.length - 1
-                                      }
-                                      onPress={() => void moveOfferingSection(group, 'down')}
-                                      accessibilityLabel={`Move ${group.name} down`}
-                                    />
-                                  </View>
-                                )}
-                              </View>
-                              <View style={{ gap: 11 }}>
-                                {matched.map((item) => (
-                                  <View key={item.id}>
-                                    <MenuSetupItem
-                                      services={!isMenuBusiness}
-                                      name={item.name}
-                                      category={group.name}
-                                      price={formatPrice(item)}
-                                      photo={offeringImageUrl(item)}
-                                      visible={item.is_visible}
-                                      available={item.is_available}
-                                      featured={item.is_featured}
-                                      disabled={!canEdit || saving || photoUploading}
-                                      onPress={() => beginOfferingEdit(item)}
-                                    />
-
-                                    {canEdit && inventoryReorder && (
-                                      <View style={{ flexDirection: 'row', gap: 8, padding: 12 }}>
-                                        <MerchantButton
-                                          label="Move up"
-                                          secondary
-                                          disabled={saving || groupItems.indexOf(item) === 0}
-                                          onPress={() => void moveOfferingItem(item, 'up')}
-                                        />
-                                        <MerchantButton
-                                          label="Move down"
-                                          secondary
-                                          disabled={
-                                            saving ||
-                                            groupItems.indexOf(item) === groupItems.length - 1
-                                          }
-                                          onPress={() => void moveOfferingItem(item, 'down')}
-                                        />
-                                      </View>
-                                    )}
-                                  </View>
-                                ))}
-                                {!matched.length && (
-                                  <ThemedText
-                                    type="small"
-                                    style={{ padding: 16, color: inventoryColors.secondary }}
-                                  >
-                                    No items in this category.
-                                  </ThemedText>
-                                )}
-                              </View>
-                            </View>
-                          );
-                        })}
-                      {!offerings.some(
-                        (item) =>
-                          (inventoryCategory === 'all' || item.section_id === inventoryCategory) &&
-                          menuStockMatches(item, inventoryStatus) &&
-                          [item.name, item.description]
-                            .join(' ')
-                            .toLocaleLowerCase()
-                            .includes(inventorySearch.trim().toLocaleLowerCase()),
-                      ) && (
-                        <EmptyState
-                          title={offerings.length ? 'No matching items' : 'Your inventory is empty'}
-                          message={
-                            offerings.length
-                              ? 'Try another category or search.'
-                              : 'Add a category, then add your first item.'
-                          }
-                        />
-                      )}
-                      <MerchantSheet
-                        visible={inventoryTools}
-                        title="Inventory tools"
-                        onClose={() => setInventoryTools(false)}
-                      >
-                        <MerchantButton
-                          label="Add category"
-                          secondary
-                          onPress={() => {
-                            setInventoryTools(false);
-                            setError(null);
-                            setMenuEditorPanel('section');
-                          }}
-                        />
-                        <MerchantButton
-                          label="Reorder categories and items"
-                          secondary
-                          onPress={() => {
-                            setInventoryTools(false);
-                            setInventorySearch('');
-                            setInventoryCategory('all');
-                            setInventoryStatus('all');
-                            setInventoryReorder(true);
-                          }}
-                        />
-                        {isMenuBusiness && (
-                          <>
-                            <ThemedText type="small">
-                              Import adds new entries. Repeating a file can create duplicates.
-                              Photos and Square modifiers are not copied.
-                            </ThemedText>
+                          ) && (
+                            <EmptyState
+                              title={
+                                offerings.length ? 'No matching items' : 'Your inventory is empty'
+                              }
+                              message={
+                                offerings.length
+                                  ? 'Try another category or search.'
+                                  : 'Add a category, then add your first item.'
+                              }
+                            />
+                          )}
+                          <MerchantSheet
+                            visible={inventoryTools}
+                            title="Inventory tools"
+                            onClose={() => setInventoryTools(false)}
+                          >
                             <MerchantButton
-                              label="Import menu file"
+                              label="Add category"
                               secondary
                               onPress={() => {
                                 setInventoryTools(false);
-                                void pickMenuImport();
+                                setError(null);
+                                setMenuEditorPanel('section');
                               }}
                             />
-                          </>
-                        )}
-                      </MerchantSheet>
-                      <BusinessWorkspaceSheet
-                        visible={menuImportOpen}
-                        onClose={() => setMenuImportOpen(false)}
-                        closeAccessibilityLabel="Close menu import"
-                        title="Import menu"
-                        description={
-                          menuImportFileName || 'Import a Square Dashboard CSV or menu file'
-                        }
-                        closeLabel="Close"
-                        backgroundColor={colors.backgroundElement}
-                        headerCopyGap={Spacing.one}
-                        maxHeight="78%"
-                      >
-                        {menuImportError ? (
-                          <Notice kind="error" message={menuImportError} />
-                        ) : menuImportRows.length ? (
-                          <>
-                            <ThemedText themeColor="textSecondary" type="small">
-                              Ready to add {menuImportRows.length} item
-                              {menuImportRows.length === 1 ? '' : 's'} across{' '}
-                              {new Set(menuImportRows.map((row) => row.category)).size} categor
-                              {new Set(menuImportRows.map((row) => row.category)).size === 1
-                                ? 'y'
-                                : 'ies'}
-                              .
-                            </ThemedText>
-                            <ThemedText themeColor="textSecondary" type="small">
-                              Square modifiers and photos are not copied. Review prices and
-                              availability in Parish Pass before accepting online orders.
-                            </ThemedText>
-                            <ScrollView style={styles.menuImportPreview}>
-                              {menuImportRows.slice(0, 12).map((row, index) => (
-                                <View key={`${row.name}-${index}`} style={styles.menuImportRow}>
-                                  <View style={styles.rowText}>
-                                    <ThemedText type="smallBold">{row.name}</ThemedText>
-                                    <ThemedText themeColor="textSecondary" type="small">
-                                      {row.category} · {row.priceText || row.price || 'No price'}
-                                    </ThemedText>
-                                  </View>
-                                  <ThemedText themeColor="textSecondary" type="small">
-                                    {row.visible ? 'Visible' : 'Hidden'}
-                                  </ThemedText>
-                                </View>
-                              ))}
-                              {menuImportRows.length > 12 && (
-                                <ThemedText themeColor="textSecondary" type="small">
-                                  + {menuImportRows.length - 12} more items
-                                </ThemedText>
-                              )}
-                            </ScrollView>
-                            <PrimaryButton
-                              loading={saving}
-                              disabled={saving}
-                              label={saving ? 'Importing…' : 'Add items to menu'}
-                              onPress={() => void importMenuRows()}
-                            />
-                          </>
-                        ) : (
-                          <>
-                            <FlowSection title="Import from Square" collapsible>
-                              <ThemedText themeColor="textSecondary">
-                                In Square Dashboard, go to Items & services → Items → Item library →
-                                Actions → Export Library → CSV. Then choose that CSV here. Parish
-                                Pass imports item names, categories, descriptions, prices, and
-                                variations. Review modifiers, images, and location availability
-                                after import.
-                              </ThemedText>
-                            </FlowSection>
-                            <FlowSection title="Prepare a CSV or JSON file" collapsible>
-                              <ThemedText themeColor="textSecondary">
-                                Supported CSV columns: category, name, description, price,
-                                price_text, featured, visible. JSON accepts the same fields. PDFs
-                                and spreadsheets are reference files only. Variable-price items need
-                                a fixed price before they can be ordered online.
-                              </ThemedText>
-                            </FlowSection>
-                            <SecondaryButton
-                              label="Choose another file"
-                              onPress={() => void pickMenuImport()}
-                            />
-                          </>
-                        )}
-                      </BusinessWorkspaceSheet>
-                      <MerchantSheet
-                        visible={!!editingOffering && canEdit}
-                        title={isMenuBusiness ? 'Edit menu item' : 'Edit service'}
-                        blocked={saving || photoUploading}
-                        onClose={closeOfferingEditor}
-                        footer={
-                          editingOffering ? (
                             <MerchantButton
-                              brand
-                              label="Save changes"
-                              loading={saving}
-                              disabled={photoUploading || !editOfferingName.trim()}
-                              onPress={() => void saveOfferingEdit(editingOffering)}
+                              label="Reorder categories and items"
+                              secondary
+                              onPress={() => {
+                                setInventoryTools(false);
+                                setInventorySearch('');
+                                setInventoryCategory('all');
+                                setInventoryStatus('all');
+                                setInventoryReorder(true);
+                              }}
                             />
-                          ) : undefined
-                        }
-                      >
-                        {error && <Notice kind="error" message={error} />}
-                        {editingOffering && (
-                          <>
                             {isMenuBusiness && (
-                              <View style={styles.menuPhotoField}>
-                                <View style={styles.menuPhotoPreview}>
-                                  {offeringImageUrl(editingOffering) ? (
-                                    <Image
-                                      accessibilityLabel={`${editingOffering.name} image preview`}
-                                      contentFit="cover"
-                                      source={{ uri: offeringImageUrl(editingOffering)! }}
-                                      style={styles.menuPhotoImage}
-                                      transition={180}
-                                    />
-                                  ) : (
-                                    <ThemedText themeColor="textSecondary" type="smallBold">
-                                      No image
-                                    </ThemedText>
-                                  )}
-                                </View>
-                                <View style={styles.rowText}>
-                                  <ThemedText type="smallBold">Item image</ThemedText>
-                                  <ThemedText themeColor="textSecondary" type="small">
-                                    Optional. Shown beside this item on your public menu.
-                                  </ThemedText>
-                                  <SecondaryButton
-                                    disabled={photoUploading}
-                                    label={
-                                      photoUploading
-                                        ? 'Uploading…'
-                                        : editingOffering.media_asset_id
-                                          ? 'Replace image'
-                                          : 'Add image'
-                                    }
-                                    onPress={() =>
-                                      void pickAndUploadPhoto(
-                                        'offering',
-                                        editingOffering.id,
-                                        editingOffering.name,
-                                      )
-                                    }
-                                  />
-                                </View>
-                              </View>
-                            )}
-                            {isMenuBusiness && (
-                              <MenuSetupTabs
-                                underline
-                                value={menuItemTab}
-                                onChange={setMenuItemTab}
-                                options={[
-                                  { value: 'details', label: 'Details' },
-                                  { value: 'options', label: 'Options' },
-                                  { value: 'availability', label: 'Availability' },
-                                ]}
-                              />
-                            )}
-                            {isMenuBusiness && menuItemTab === 'options' && (
-                              <View style={{ gap: 16 }}>
-                                <ThemedText type="smallBold">Online order options</ThemedText>
-                                <ThemedText type="small" themeColor="textSecondary">
-                                  Sizes, extras and required choices are managed in your connected
-                                  ordering catalog. Save any item edits before opening ordering
-                                  settings.
+                              <>
+                                <ThemedText type="small">
+                                  Import adds new entries. Repeating a file can create duplicates.
+                                  Photos and Square modifiers are not copied.
                                 </ThemedText>
                                 <MerchantButton
-                                  brand
-                                  label="Manage ordering options"
-                                  disabled={saving || photoUploading || offeringEditorIsDirty()}
+                                  label="Import menu file"
+                                  secondary
                                   onPress={() => {
-                                    setEditingOfferingId(null);
-                                    openEditor('ordering');
+                                    setInventoryTools(false);
+                                    void pickMenuImport();
                                   }}
                                 />
-                              </View>
+                              </>
                             )}
-                            {(!isMenuBusiness || menuItemTab === 'details') && (
-                              <View style={styles.editForm}>
-                                <ChoicePicker
-                                  label="Category"
-                                  value={editOfferingSectionId}
-                                  options={offerSections.map((g) => ({
-                                    value: g.id,
-                                    label: g.name,
-                                  }))}
-                                  onChange={setEditOfferingSectionId}
-                                  disabled={saving || photoUploading}
+                          </MerchantSheet>
+                          <BusinessWorkspaceSheet
+                            visible={menuImportOpen}
+                            onClose={() => setMenuImportOpen(false)}
+                            closeAccessibilityLabel="Close menu import"
+                            title="Import menu"
+                            description={
+                              menuImportFileName || 'Import a Square Dashboard CSV or menu file'
+                            }
+                            closeLabel="Close"
+                            backgroundColor={colors.backgroundElement}
+                            headerCopyGap={Spacing.one}
+                            maxHeight="78%"
+                          >
+                            {menuImportError ? (
+                              <Notice kind="error" message={menuImportError} />
+                            ) : menuImportRows.length ? (
+                              <>
+                                <ThemedText themeColor="textSecondary" type="small">
+                                  Ready to add {menuImportRows.length} item
+                                  {menuImportRows.length === 1 ? '' : 's'} across{' '}
+                                  {new Set(menuImportRows.map((row) => row.category)).size} categor
+                                  {new Set(menuImportRows.map((row) => row.category)).size === 1
+                                    ? 'y'
+                                    : 'ies'}
+                                  .
+                                </ThemedText>
+                                <ThemedText themeColor="textSecondary" type="small">
+                                  Square modifiers and photos are not copied. Review prices and
+                                  availability in Parish Pass before accepting online orders.
+                                </ThemedText>
+                                <ScrollView style={styles.menuImportPreview}>
+                                  {menuImportRows.slice(0, 12).map((row, index) => (
+                                    <View key={`${row.name}-${index}`} style={styles.menuImportRow}>
+                                      <View style={styles.rowText}>
+                                        <ThemedText type="smallBold">{row.name}</ThemedText>
+                                        <ThemedText themeColor="textSecondary" type="small">
+                                          {row.category} ·{' '}
+                                          {row.priceText || row.price || 'No price'}
+                                        </ThemedText>
+                                      </View>
+                                      <ThemedText themeColor="textSecondary" type="small">
+                                        {row.visible ? 'Visible' : 'Hidden'}
+                                      </ThemedText>
+                                    </View>
+                                  ))}
+                                  {menuImportRows.length > 12 && (
+                                    <ThemedText themeColor="textSecondary" type="small">
+                                      + {menuImportRows.length - 12} more items
+                                    </ThemedText>
+                                  )}
+                                </ScrollView>
+                                <PrimaryButton
+                                  loading={saving}
+                                  disabled={saving}
+                                  label={saving ? 'Importing…' : 'Add items to menu'}
+                                  onPress={() => void importMenuRows()}
                                 />
-                                <FlowSection title="Item details" inset>
-                                  <Field
-                                    editable={!saving && !photoUploading}
-                                    label="Name (required)"
-                                    value={editOfferingName}
-                                    onChangeText={setEditOfferingName}
-                                    colors={colors}
-                                  />
-                                  <Field
-                                    editable={!saving && !photoUploading}
-                                    label="Description (optional)"
-                                    value={editOfferingDescription}
-                                    onChangeText={setEditOfferingDescription}
-                                    colors={colors}
-                                    multiline
-                                    style={styles.multiline}
-                                  />
+                              </>
+                            ) : (
+                              <>
+                                <FlowSection title="Import from Square" collapsible>
+                                  <ThemedText themeColor="textSecondary">
+                                    In Square Dashboard, go to Items & services → Items → Item
+                                    library → Actions → Export Library → CSV. Then choose that CSV
+                                    here. Parish Pass imports item names, categories, descriptions,
+                                    prices, and variations. Review modifiers, images, and location
+                                    availability after import.
+                                  </ThemedText>
                                 </FlowSection>
+                                <FlowSection title="Prepare a CSV or JSON file" collapsible>
+                                  <ThemedText themeColor="textSecondary">
+                                    Supported CSV columns: category, name, description, price,
+                                    price_text, featured, visible. JSON accepts the same fields.
+                                    PDFs and spreadsheets are reference files only. Variable-price
+                                    items need a fixed price before they can be ordered online.
+                                  </ThemedText>
+                                </FlowSection>
+                                <SecondaryButton
+                                  label="Choose another file"
+                                  onPress={() => void pickMenuImport()}
+                                />
+                              </>
+                            )}
+                          </BusinessWorkspaceSheet>
+                          <MerchantSheet
+                            visible={!!editingOffering && canEdit}
+                            title={isMenuBusiness ? 'Edit menu item' : 'Edit service'}
+                            blocked={saving || photoUploading}
+                            onClose={closeOfferingEditor}
+                            footer={
+                              editingOffering ? (
+                                <MerchantButton
+                                  brand
+                                  label="Save changes"
+                                  loading={saving}
+                                  disabled={photoUploading || !editOfferingName.trim()}
+                                  onPress={() => void saveOfferingEdit(editingOffering)}
+                                />
+                              ) : undefined
+                            }
+                          >
+                            {error && <Notice kind="error" message={error} />}
+                            {editingOffering && (
+                              <>
+                                {isMenuBusiness && (
+                                  <View style={styles.menuPhotoField}>
+                                    <View style={styles.menuPhotoPreview}>
+                                      {offeringImageUrl(editingOffering) ? (
+                                        <Image
+                                          accessibilityLabel={`${editingOffering.name} image preview`}
+                                          contentFit="cover"
+                                          source={{ uri: offeringImageUrl(editingOffering)! }}
+                                          style={styles.menuPhotoImage}
+                                          transition={180}
+                                        />
+                                      ) : (
+                                        <ThemedText themeColor="textSecondary" type="smallBold">
+                                          No image
+                                        </ThemedText>
+                                      )}
+                                    </View>
+                                    <View style={styles.rowText}>
+                                      <ThemedText type="smallBold">Item image</ThemedText>
+                                      <ThemedText themeColor="textSecondary" type="small">
+                                        Optional. Shown beside this item on your public menu.
+                                      </ThemedText>
+                                      <SecondaryButton
+                                        disabled={photoUploading}
+                                        label={
+                                          photoUploading
+                                            ? 'Uploading…'
+                                            : editingOffering.media_asset_id
+                                              ? 'Replace image'
+                                              : 'Add image'
+                                        }
+                                        onPress={() =>
+                                          void pickAndUploadPhoto(
+                                            'offering',
+                                            editingOffering.id,
+                                            editingOffering.name,
+                                          )
+                                        }
+                                      />
+                                    </View>
+                                  </View>
+                                )}
+                                {isMenuBusiness && (
+                                  <MenuSetupTabs
+                                    underline
+                                    value={menuItemTab}
+                                    onChange={setMenuItemTab}
+                                    options={[
+                                      { value: 'details', label: 'Details' },
+                                      { value: 'options', label: 'Options' },
+                                      { value: 'availability', label: 'Availability' },
+                                    ]}
+                                  />
+                                )}
+                                {isMenuBusiness && menuItemTab === 'options' && (
+                                  <View style={{ gap: 16 }}>
+                                    <ThemedText type="smallBold">Online order options</ThemedText>
+                                    <ThemedText type="small" themeColor="textSecondary">
+                                      Sizes, extras and required choices are managed in your
+                                      connected ordering catalog. Save any item edits before opening
+                                      ordering settings.
+                                    </ThemedText>
+                                    <MerchantButton
+                                      brand
+                                      label="Manage ordering options"
+                                      disabled={saving || photoUploading || offeringEditorIsDirty()}
+                                      onPress={() => {
+                                        setEditingOfferingId(null);
+                                        openEditor('ordering');
+                                      }}
+                                    />
+                                  </View>
+                                )}
+                                {(!isMenuBusiness || menuItemTab === 'details') && (
+                                  <View style={styles.editForm}>
+                                    <ChoicePicker
+                                      label="Category"
+                                      value={editOfferingSectionId}
+                                      options={offerSections.map((g) => ({
+                                        value: g.id,
+                                        label: g.name,
+                                      }))}
+                                      onChange={setEditOfferingSectionId}
+                                      disabled={saving || photoUploading}
+                                    />
+                                    <FlowSection title="Item details" inset>
+                                      <Field
+                                        editable={!saving && !photoUploading}
+                                        label="Name (required)"
+                                        value={editOfferingName}
+                                        onChangeText={setEditOfferingName}
+                                        colors={colors}
+                                      />
+                                      <Field
+                                        editable={!saving && !photoUploading}
+                                        label="Description (optional)"
+                                        value={editOfferingDescription}
+                                        onChangeText={setEditOfferingDescription}
+                                        colors={colors}
+                                        multiline
+                                        style={styles.multiline}
+                                      />
+                                    </FlowSection>
+                                    <Field
+                                      editable={!saving && !photoUploading}
+                                      label="Price (optional)"
+                                      value={editOfferingPrice}
+                                      onChangeText={setEditOfferingPrice}
+                                      colors={colors}
+                                      keyboardType="decimal-pad"
+                                      placeholder="$25.00"
+                                    />
+                                    {isMenuBusiness && (
+                                      <Field
+                                        editable={!saving && !photoUploading}
+                                        label="Menu price label (optional)"
+                                        value={editOfferingPriceText}
+                                        onChangeText={setEditOfferingPriceText}
+                                        colors={colors}
+                                        placeholder="Market price, From $8, or 2 for $10"
+                                      />
+                                    )}
+                                  </View>
+                                )}
+                                {(!isMenuBusiness || menuItemTab === 'availability') && (
+                                  <View style={{ gap: 12 }}>
+                                    <ThemedText type="smallBold">Availability & display</ThemedText>
+                                    <LabeledSwitch
+                                      label="Available"
+                                      disabled={saving || photoUploading}
+                                      value={editingOffering.is_available}
+                                      onValueChange={(v) =>
+                                        void updateOffering(editingOffering, { is_available: v })
+                                      }
+                                    />
+                                    <LabeledSwitch
+                                      label="Visible on public page"
+                                      disabled={saving || photoUploading}
+                                      value={editingOffering.is_visible}
+                                      onValueChange={(v) =>
+                                        void updateOffering(editingOffering, { is_visible: v })
+                                      }
+                                    />
+                                    {isMenuBusiness && (
+                                      <LabeledSwitch
+                                        label="Featured"
+                                        disabled={saving || photoUploading}
+                                        value={editingOffering.is_featured}
+                                        onValueChange={(v) =>
+                                          void updateOffering(editingOffering, { is_featured: v })
+                                        }
+                                      />
+                                    )}
+                                    <ThemedText type="small" themeColor="textSecondary">
+                                      Availability and display changes save immediately.
+                                    </ThemedText>
+                                    <MerchantButton
+                                      label="Archive item"
+                                      secondary
+                                      disabled={saving || photoUploading}
+                                      onPress={() =>
+                                        Alert.alert(
+                                          'Archive this item?',
+                                          editingOffering.name +
+                                            ' will be removed from your public offerings. Existing orders are retained.',
+                                          [
+                                            { text: 'Keep item', style: 'cancel' },
+                                            {
+                                              text: 'Archive',
+                                              style: 'destructive',
+                                              onPress: () => void archiveOffering(editingOffering),
+                                            },
+                                          ],
+                                        )
+                                      }
+                                    />
+                                  </View>
+                                )}
+                              </>
+                            )}
+                          </MerchantSheet>
+                          <MerchantSheet
+                            visible={menuEditorPanel === 'item' && canEdit}
+                            title={`Add ${offeringTerminology.item}`}
+                            blocked={saving || photoUploading || choosingOfferingImage}
+                            footer={
+                              <PrimaryButton
+                                loading={saving || photoUploading}
+                                disabled={
+                                  saving ||
+                                  photoUploading ||
+                                  choosingOfferingImage ||
+                                  !newOfferingName.trim() ||
+                                  !newOfferingSectionId
+                                }
+                                label={`Add ${offeringTerminology.item}`}
+                                onPress={() => void createOffering()}
+                              />
+                            }
+                            onClose={() => setMenuEditorPanel(null)}
+                          >
+                            {error && <Notice kind="error" message={error} />}
+                            {!offerSections.length && (
+                              <>
+                                <ThemedText type="small">
+                                  Create a category before adding your first item.
+                                </ThemedText>
+                                <MerchantButton
+                                  label="Create category"
+                                  secondary
+                                  onPress={() => setMenuEditorPanel('section')}
+                                />
+                              </>
+                            )}
+                            <View style={styles.menuEditorForm}>
+                              <FlowSection
+                                title="Photo"
+                                description="Optional. Help customers recognize this item."
+                              >
+                                {newOfferingImage ? (
+                                  <>
+                                    <Image
+                                      source={{ uri: newOfferingImage.uri }}
+                                      contentFit="cover"
+                                      style={{ width: '100%', aspectRatio: 1.8, borderRadius: 12 }}
+                                      accessibilityLabel="Selected item photo"
+                                    />
+                                    <View style={{ flexDirection: 'row', gap: 12 }}>
+                                      <MerchantButton
+                                        label="Change photo"
+                                        secondary
+                                        disabled={choosingOfferingImage || saving || photoUploading}
+                                        onPress={() => void chooseOfferingImage()}
+                                      />
+                                      <MerchantButton
+                                        label="Remove"
+                                        secondary
+                                        disabled={choosingOfferingImage || saving || photoUploading}
+                                        onPress={() => setNewOfferingImage(null)}
+                                      />
+                                    </View>
+                                  </>
+                                ) : (
+                                  <MerchantButton
+                                    label={choosingOfferingImage ? 'Opening photos…' : 'Add photo'}
+                                    secondary
+                                    disabled={choosingOfferingImage || saving || photoUploading}
+                                    onPress={() => void chooseOfferingImage()}
+                                  />
+                                )}
+                              </FlowSection>
+                              <FlowSection title="Category">
+                                <ThemedText type="smallBold">
+                                  {offeringTerminology.section.replace(/^./, (letter) =>
+                                    letter.toUpperCase(),
+                                  )}{' '}
+                                  (required)
+                                </ThemedText>
+                                <View style={styles.choiceRow}>
+                                  {offerSections.map((item) => (
+                                    <ChoiceButton
+                                      key={item.id}
+                                      label={item.name}
+                                      selected={newOfferingSectionId === item.id}
+                                      onPress={() => setNewOfferingSectionId(item.id)}
+                                    />
+                                  ))}
+                                </View>
+                              </FlowSection>
+                              <FlowSection title="Item details">
+                                <Field
+                                  editable={!saving && !photoUploading}
+                                  label="Name (required)"
+                                  value={newOfferingName}
+                                  onChangeText={setNewOfferingName}
+                                  colors={colors}
+                                />
+                                <Field
+                                  editable={!saving && !photoUploading}
+                                  label="Description (optional)"
+                                  value={newOfferingDescription}
+                                  onChangeText={setNewOfferingDescription}
+                                  colors={colors}
+                                  multiline
+                                  style={styles.multiline}
+                                />
+                              </FlowSection>
+                              <FlowSection
+                                title="Pricing"
+                                description="Leave blank for contact-for-price items."
+                              >
                                 <Field
                                   editable={!saving && !photoUploading}
                                   label="Price (optional)"
-                                  value={editOfferingPrice}
-                                  onChangeText={setEditOfferingPrice}
+                                  value={newOfferingPrice}
+                                  onChangeText={setNewOfferingPrice}
                                   colors={colors}
                                   keyboardType="decimal-pad"
                                   placeholder="$25.00"
@@ -4505,1338 +4742,1069 @@ function BusinessWorkspaceContent({
                                   <Field
                                     editable={!saving && !photoUploading}
                                     label="Menu price label (optional)"
-                                    value={editOfferingPriceText}
-                                    onChangeText={setEditOfferingPriceText}
+                                    value={newOfferingPriceText}
+                                    onChangeText={setNewOfferingPriceText}
                                     colors={colors}
-                                    placeholder="Market price, From $8, or 2 for $10"
+                                    placeholder="Market price"
+                                    hint="Use a label such as From $8 or 2 for $10 instead of a fixed price."
                                   />
                                 )}
-                              </View>
-                            )}
-                            {(!isMenuBusiness || menuItemTab === 'availability') && (
-                              <View style={{ gap: 12 }}>
-                                <ThemedText type="smallBold">Availability & display</ThemedText>
-                                <LabeledSwitch
-                                  label="Available"
-                                  disabled={saving || photoUploading}
-                                  value={editingOffering.is_available}
-                                  onValueChange={(v) =>
-                                    void updateOffering(editingOffering, { is_available: v })
-                                  }
-                                />
-                                <LabeledSwitch
-                                  label="Visible on public page"
-                                  disabled={saving || photoUploading}
-                                  value={editingOffering.is_visible}
-                                  onValueChange={(v) =>
-                                    void updateOffering(editingOffering, { is_visible: v })
-                                  }
-                                />
-                                {isMenuBusiness && (
-                                  <LabeledSwitch
-                                    label="Featured"
-                                    disabled={saving || photoUploading}
-                                    value={editingOffering.is_featured}
-                                    onValueChange={(v) =>
-                                      void updateOffering(editingOffering, { is_featured: v })
-                                    }
-                                  />
-                                )}
-                                <ThemedText type="small" themeColor="textSecondary">
-                                  Availability and display changes save immediately.
-                                </ThemedText>
-                                <MerchantButton
-                                  label="Archive item"
-                                  secondary
-                                  disabled={saving || photoUploading}
-                                  onPress={() =>
-                                    Alert.alert(
-                                      'Archive this item?',
-                                      editingOffering.name +
-                                        ' will be removed from your public offerings. Existing orders are retained.',
-                                      [
-                                        { text: 'Keep item', style: 'cancel' },
-                                        {
-                                          text: 'Archive',
-                                          style: 'destructive',
-                                          onPress: () => void archiveOffering(editingOffering),
-                                        },
-                                      ],
-                                    )
-                                  }
-                                />
-                              </View>
-                            )}
-                          </>
-                        )}
-                      </MerchantSheet>
-                      <MerchantSheet
-                        visible={menuEditorPanel === 'item' && canEdit}
-                        title={`Add ${offeringTerminology.item}`}
-                        blocked={saving || photoUploading || choosingOfferingImage}
-                        footer={
-                          <PrimaryButton
-                            loading={saving || photoUploading}
-                            disabled={
-                              saving ||
-                              photoUploading ||
-                              choosingOfferingImage ||
-                              !newOfferingName.trim() ||
-                              !newOfferingSectionId
-                            }
-                            label={`Add ${offeringTerminology.item}`}
-                            onPress={() => void createOffering()}
-                          />
-                        }
-                        onClose={() => setMenuEditorPanel(null)}
-                      >
-                        {error && <Notice kind="error" message={error} />}
-                        {!offerSections.length && (
-                          <>
-                            <ThemedText type="small">
-                              Create a category before adding your first item.
-                            </ThemedText>
-                            <MerchantButton
-                              label="Create category"
-                              secondary
-                              onPress={() => setMenuEditorPanel('section')}
-                            />
-                          </>
-                        )}
-                        <View style={styles.menuEditorForm}>
-                          <FlowSection
-                            title="Photo"
-                            description="Optional. Help customers recognize this item."
-                          >
-                            {newOfferingImage ? (
-                              <>
-                                <Image
-                                  source={{ uri: newOfferingImage.uri }}
-                                  contentFit="cover"
-                                  style={{ width: '100%', aspectRatio: 1.8, borderRadius: 12 }}
-                                  accessibilityLabel="Selected item photo"
-                                />
-                                <View style={{ flexDirection: 'row', gap: 12 }}>
-                                  <MerchantButton
-                                    label="Change photo"
-                                    secondary
-                                    disabled={choosingOfferingImage || saving || photoUploading}
-                                    onPress={() => void chooseOfferingImage()}
-                                  />
-                                  <MerchantButton
-                                    label="Remove"
-                                    secondary
-                                    disabled={choosingOfferingImage || saving || photoUploading}
-                                    onPress={() => setNewOfferingImage(null)}
-                                  />
-                                </View>
-                              </>
-                            ) : (
-                              <MerchantButton
-                                label={choosingOfferingImage ? 'Opening photos…' : 'Add photo'}
-                                secondary
-                                disabled={choosingOfferingImage || saving || photoUploading}
-                                onPress={() => void chooseOfferingImage()}
-                              />
-                            )}
-                          </FlowSection>
-                          <FlowSection title="Category">
-                            <ThemedText type="smallBold">
-                              {offeringTerminology.section.replace(/^./, (letter) =>
-                                letter.toUpperCase(),
-                              )}{' '}
-                              (required)
-                            </ThemedText>
-                            <View style={styles.choiceRow}>
-                              {offerSections.map((item) => (
-                                <ChoiceButton
-                                  key={item.id}
-                                  label={item.name}
-                                  selected={newOfferingSectionId === item.id}
-                                  onPress={() => setNewOfferingSectionId(item.id)}
-                                />
-                              ))}
+                              </FlowSection>
                             </View>
-                          </FlowSection>
-                          <FlowSection title="Item details">
-                            <Field
-                              editable={!saving && !photoUploading}
-                              label="Name (required)"
-                              value={newOfferingName}
-                              onChangeText={setNewOfferingName}
-                              colors={colors}
-                            />
-                            <Field
-                              editable={!saving && !photoUploading}
-                              label="Description (optional)"
-                              value={newOfferingDescription}
-                              onChangeText={setNewOfferingDescription}
-                              colors={colors}
-                              multiline
-                              style={styles.multiline}
-                            />
-                          </FlowSection>
-                          <FlowSection
-                            title="Pricing"
-                            description="Leave blank for contact-for-price items."
+                          </MerchantSheet>
+                          <MerchantSheet
+                            visible={menuEditorPanel === 'section' && canEdit}
+                            title="Add category"
+                            blocked={saving}
+                            onClose={() => setMenuEditorPanel(null)}
                           >
-                            <Field
-                              editable={!saving && !photoUploading}
-                              label="Price (optional)"
-                              value={newOfferingPrice}
-                              onChangeText={setNewOfferingPrice}
-                              colors={colors}
-                              keyboardType="decimal-pad"
-                              placeholder="$25.00"
-                            />
-                            {isMenuBusiness && (
+                            {error && <Notice kind="error" message={error} />}
+                            <View style={styles.menuEditorForm}>
+                              {isMenuBusiness && (
+                                <View style={styles.menuPresetRow}>
+                                  {['Breakfast', 'Lunch', 'Drinks', 'Desserts'].map((preset) => (
+                                    <ChoiceButton
+                                      key={preset}
+                                      label={`+ ${preset}`}
+                                      selected={
+                                        newSectionName.trim().toLowerCase() === preset.toLowerCase()
+                                      }
+                                      onPress={() => setNewSectionName(preset)}
+                                    />
+                                  ))}
+                                </View>
+                              )}
                               <Field
                                 editable={!saving && !photoUploading}
-                                label="Menu price label (optional)"
-                                value={newOfferingPriceText}
-                                onChangeText={setNewOfferingPriceText}
+                                label={`${offeringTerminology.section.replace(/^./, (letter) => letter.toUpperCase())} name (required)`}
+                                value={newSectionName}
+                                onChangeText={setNewSectionName}
                                 colors={colors}
-                                placeholder="Market price"
-                                hint="Use a label such as From $8 or 2 for $10 instead of a fixed price."
-                              />
-                            )}
-                          </FlowSection>
-                        </View>
-                      </MerchantSheet>
-                      <MerchantSheet
-                        visible={menuEditorPanel === 'section' && canEdit}
-                        title="Add category"
-                        blocked={saving}
-                        onClose={() => setMenuEditorPanel(null)}
-                      >
-                        {error && <Notice kind="error" message={error} />}
-                        <View style={styles.menuEditorForm}>
-                          {isMenuBusiness && (
-                            <View style={styles.menuPresetRow}>
-                              {['Breakfast', 'Lunch', 'Drinks', 'Desserts'].map((preset) => (
-                                <ChoiceButton
-                                  key={preset}
-                                  label={`+ ${preset}`}
-                                  selected={
-                                    newSectionName.trim().toLowerCase() === preset.toLowerCase()
-                                  }
-                                  onPress={() => setNewSectionName(preset)}
-                                />
-                              ))}
-                            </View>
-                          )}
-                          <Field
-                            editable={!saving && !photoUploading}
-                            label={`${offeringTerminology.section.replace(/^./, (letter) => letter.toUpperCase())} name (required)`}
-                            value={newSectionName}
-                            onChangeText={setNewSectionName}
-                            colors={colors}
-                            returnKeyType="next"
-                          />
-                          <Field
-                            editable={!saving && !photoUploading}
-                            label="Section description (optional)"
-                            value={newSectionDescription}
-                            onChangeText={setNewSectionDescription}
-                            colors={colors}
-                          />
-                          <PrimaryButton
-                            loading={saving}
-                            disabled={saving || !newSectionName.trim()}
-                            label={`Create ${offeringTerminology.section}`}
-                            onPress={() => void createOfferingSection()}
-                          />
-                        </View>
-                      </MerchantSheet>
-                    </View>
-                  )}
-
-                  {section === 'events' && (
-                    <View style={styles.cardList}>
-                      {!selectedEvent && !newEventOpen && (
-                        <EventInbox
-                          events={events.map((item) => ({
-                            id: item.id,
-                            title: item.title,
-                            startsAt: item.starts_at,
-                            timezone: business?.timezone || 'America/Chicago',
-                            photo: (() => {
-                              const a = firstMediaAsset(item.media_assets);
-                              return a?.status === 'ready'
-                                ? storagePublicUrl(a.storage_path)
-                                : null;
-                            })(),
-                            published: item.is_published,
-                            publishAt: item.publish_at,
-                            attending: eventRsvpCounts[item.id]?.going ?? 0,
-                            waitlisted: eventRsvpCounts[item.id]?.waitlist ?? 0,
-                          }))}
-                          disabled={saving || photoUploading}
-                          onOpen={setSelectedEventId}
-                          {...(canEdit ? { onCreate: () => setNewEventOpen(true) } : {})}
-                        />
-                      )}
-                      {selectedEvent &&
-                        (events.length === 0 ? (
-                          <EmptyState
-                            title="No events yet"
-                            message="Add a date, location and details to help customers plan a visit."
-                          />
-                        ) : (
-                          events
-                            .filter((item) => item.id === selectedEventId)
-                            .map((item) => (
-                              <View
-                                key={item.id}
-                                style={
-                                  editingEventId === item.id ? { gap: 20 } : styles.settingRowCard
-                                }
-                              >
-                                {editingEventId === item.id ? (
-                                  <View style={styles.editForm}>
-                                    <FlowSection title="The essentials">
-                                      <Field
-                                        label="Event title (required)"
-                                        value={editEventTitle}
-                                        onChangeText={setEditEventTitle}
-                                        colors={colors}
-                                      />
-                                      <Field
-                                        label="Description (optional)"
-                                        value={editEventDescription}
-                                        onChangeText={setEditEventDescription}
-                                        colors={colors}
-                                        multiline
-                                        style={styles.multiline}
-                                      />
-                                    </FlowSection>
-                                    <FlowSection title="When & where">
-                                      <View style={styles.stackFields}>
-                                        <StopPickerField
-                                          label="Date (required)"
-                                          value={
-                                            editEventDate
-                                              ? formatStopDateForDisplay(editEventDate)
-                                              : ''
-                                          }
-                                          placeholder="Choose a date"
-                                          colors={colors}
-                                          onPress={() => setEventPickerTarget('edit-date')}
-                                        />
-                                        <StopPickerField
-                                          label="Start time (required)"
-                                          value={
-                                            editEventTime
-                                              ? formatStopTimeForDisplay(editEventTime)
-                                              : ''
-                                          }
-                                          placeholder="Choose a time"
-                                          colors={colors}
-                                          onPress={() => setEventPickerTarget('edit-time')}
-                                        />
-                                      </View>
-                                      <Field
-                                        label="Location (optional)"
-                                        value={editEventLocation}
-                                        onChangeText={setEditEventLocation}
-                                        colors={colors}
-                                      />
-                                      <Field
-                                        label="RSVP capacity (optional)"
-                                        value={editEventRsvpLimit}
-                                        onChangeText={setEditEventRsvpLimit}
-                                        colors={colors}
-                                        keyboardType="number-pad"
-                                        placeholder="No limit"
-                                        hint="Leave blank for unlimited guests. Enter 0 for waitlist only."
-                                      />
-                                    </FlowSection>
-                                    <ThemedText themeColor="textSecondary" type="small">
-                                      {eventRsvpCounts[item.id]?.going ?? 0} people attending ·{' '}
-                                      {eventRsvpCounts[item.id]?.waitlist ?? 0} groups waitlisted
-                                    </ThemedText>
-                                    <FlowSection
-                                      title="Photos"
-                                      description="Cover image and gallery"
-                                      collapsible
-                                    >
-                                      <ThemedText type="smallBold">Event photos</ThemedText>
-                                      <ThemedText themeColor="textSecondary" type="small">
-                                        Add one cover image and up to {mediaLimits.maxGalleryImages}{' '}
-                                        gallery images. Images are optimized before upload.
-                                      </ThemedText>
-                                      {(() => {
-                                        const cover = firstMediaAsset(item.media_assets);
-                                        return cover?.status === 'ready' ? (
-                                          <Image
-                                            accessibilityLabel={
-                                              cover.alt_text ?? `${item.title} cover`
-                                            }
-                                            contentFit="cover"
-                                            source={{ uri: storagePublicUrl(cover.storage_path) }}
-                                            style={styles.eventCoverPreview}
-                                            transition={180}
-                                          />
-                                        ) : (
-                                          <ThemedText themeColor="textSecondary" type="small">
-                                            No cover image yet.
-                                          </ThemedText>
-                                        );
-                                      })()}
-                                      <Field
-                                        label="Event photo description (optional)"
-                                        value={eventPhotoAltText}
-                                        onChangeText={setEventPhotoAltText}
-                                        colors={colors}
-                                        editable={!photoUploading}
-                                      />
-                                      <Field
-                                        label="Gallery caption (optional)"
-                                        value={eventPhotoCaption}
-                                        onChangeText={setEventPhotoCaption}
-                                        colors={colors}
-                                        editable={!photoUploading}
-                                      />
-                                      <View style={styles.inlineActions}>
-                                        <SecondaryButton
-                                          disabled={photoUploading}
-                                          label={
-                                            photoUploading ? 'Uploading…' : 'Add / replace cover'
-                                          }
-                                          onPress={() => void pickAndUploadPhoto('event', item.id)}
-                                        />
-                                        <SecondaryButton
-                                          disabled={
-                                            photoUploading ||
-                                            (item.event_photos?.length ?? 0) >=
-                                              mediaLimits.maxGalleryImages
-                                          }
-                                          label={
-                                            photoUploading ? 'Uploading…' : 'Add gallery image'
-                                          }
-                                          onPress={() =>
-                                            void pickAndUploadPhoto('event_gallery', item.id)
-                                          }
-                                        />
-                                      </View>
-                                      {!!item.event_photos?.length && (
-                                        <View style={styles.eventGalleryList}>
-                                          {item.event_photos
-                                            .slice()
-                                            .sort((a, b) => a.display_order - b.display_order)
-                                            .map((photo, photoIndex, ordered) => {
-                                              const asset = firstMediaAsset(photo.media_assets);
-                                              return (
-                                                <View key={photo.id} style={styles.eventGalleryRow}>
-                                                  {asset?.status === 'ready' && (
-                                                    <Image
-                                                      accessibilityLabel={
-                                                        asset.alt_text ?? photo.caption ?? ''
-                                                      }
-                                                      contentFit="cover"
-                                                      source={{
-                                                        uri: storagePublicUrl(asset.storage_path),
-                                                      }}
-                                                      style={styles.eventGalleryThumb}
-                                                      transition={180}
-                                                    />
-                                                  )}
-                                                  <View style={styles.rowText}>
-                                                    <ThemedText type="smallBold">
-                                                      {photo.caption ||
-                                                        asset?.alt_text ||
-                                                        'No caption'}
-                                                    </ThemedText>
-                                                    <View style={styles.inlineActions}>
-                                                      <Pressable
-                                                        onPress={() => beginEventPhotoEdit(photo)}
-                                                        style={{
-                                                          minHeight: 44,
-                                                          minWidth: 44,
-                                                          justifyContent: 'center',
-                                                        }}
-                                                      >
-                                                        <ThemedText type="smallBold">
-                                                          Caption
-                                                        </ThemedText>
-                                                      </Pressable>
-                                                      <Pressable
-                                                        disabled={photoIndex === 0}
-                                                        onPress={() =>
-                                                          void moveEventPhoto(item, photo, -1)
-                                                        }
-                                                        style={photoIndex === 0 && styles.disabled}
-                                                      >
-                                                        <ThemedText type="smallBold">Up</ThemedText>
-                                                      </Pressable>
-                                                      <Pressable
-                                                        disabled={photoIndex === ordered.length - 1}
-                                                        onPress={() =>
-                                                          void moveEventPhoto(item, photo, 1)
-                                                        }
-                                                        style={
-                                                          photoIndex === ordered.length - 1 &&
-                                                          styles.disabled
-                                                        }
-                                                      >
-                                                        <ThemedText type="smallBold">
-                                                          Down
-                                                        </ThemedText>
-                                                      </Pressable>
-                                                      <Pressable
-                                                        onPress={() =>
-                                                          removeEventPhoto(item, photo)
-                                                        }
-                                                        style={{
-                                                          minHeight: 44,
-                                                          minWidth: 44,
-                                                          justifyContent: 'center',
-                                                        }}
-                                                      >
-                                                        <ThemedText
-                                                          style={styles.destructiveText}
-                                                          type="smallBold"
-                                                        >
-                                                          Remove
-                                                        </ThemedText>
-                                                      </Pressable>
-                                                    </View>
-                                                  </View>
-                                                </View>
-                                              );
-                                            })}
-                                        </View>
-                                      )}
-                                      {editingPhotoId &&
-                                        item.event_photos?.some(
-                                          (photo) => photo.id === editingPhotoId,
-                                        ) && (
-                                          <View style={styles.editForm}>
-                                            <ThemedText type="smallBold">
-                                              Edit gallery caption
-                                            </ThemedText>
-                                            <TextInput
-                                              accessibilityLabel="Event gallery caption"
-                                              editable={canEdit}
-                                              onChangeText={setEventPhotoCaption}
-                                              placeholder="Describe this image for customers"
-                                              placeholderTextColor={colors.textSecondary}
-                                              style={[
-                                                styles.input,
-                                                {
-                                                  color: colors.text,
-                                                  backgroundColor: colors.background,
-                                                  borderColor: colors.inputBorder,
-                                                },
-                                              ]}
-                                              value={eventPhotoCaption}
-                                            />
-                                            <View style={styles.inlineActions}>
-                                              <PrimaryButton
-                                                loading={saving}
-                                                disabled={!canEdit}
-                                                label="Save caption"
-                                                onPress={() => {
-                                                  const photo = item.event_photos?.find(
-                                                    (candidate) => candidate.id === editingPhotoId,
-                                                  );
-                                                  if (photo)
-                                                    void saveEventPhotoCaption(item, photo);
-                                                }}
-                                              />
-                                              <SecondaryButton
-                                                label="Cancel"
-                                                onPress={() => setEditingPhotoId(null)}
-                                              />
-                                            </View>
-                                          </View>
-                                        )}
-                                    </FlowSection>
-                                    <ThemedText type="smallBold">Publishing</ThemedText>
-                                    <View style={styles.choiceRow}>
-                                      <ChoiceButton
-                                        label="Draft"
-                                        selected={editEventSaveMode === 'draft'}
-                                        onPress={() => setEditEventSaveMode('draft')}
-                                      />
-                                      <ChoiceButton
-                                        label="Publish now"
-                                        selected={editEventSaveMode === 'publish'}
-                                        onPress={() => setEditEventSaveMode('publish')}
-                                      />
-                                      <ChoiceButton
-                                        label="Schedule"
-                                        selected={editEventSaveMode === 'schedule'}
-                                        onPress={() => setEditEventSaveMode('schedule')}
-                                      />
-                                    </View>
-                                    {editEventSaveMode === 'schedule' && (
-                                      <View style={styles.stackFields}>
-                                        <StopPickerField
-                                          label="Publish date (required)"
-                                          value={
-                                            editEventPublishDate
-                                              ? formatStopDateForDisplay(editEventPublishDate)
-                                              : ''
-                                          }
-                                          placeholder="Choose a date"
-                                          colors={colors}
-                                          onPress={() => setEventPickerTarget('edit-publish-date')}
-                                        />
-                                        <StopPickerField
-                                          label="Publish time (required)"
-                                          value={
-                                            editEventPublishTime
-                                              ? formatStopTimeForDisplay(editEventPublishTime)
-                                              : ''
-                                          }
-                                          placeholder="Choose a time"
-                                          colors={colors}
-                                          onPress={() => setEventPickerTarget('edit-publish-time')}
-                                        />
-                                      </View>
-                                    )}
-                                    <View style={styles.inlineActions}>
-                                      <PrimaryButton
-                                        loading={saving}
-                                        disabled={
-                                          saving ||
-                                          !editEventTitle.trim() ||
-                                          !editEventDate ||
-                                          !editEventTime
-                                        }
-                                        label="Save changes"
-                                        onPress={() => void saveEventEdit(item)}
-                                      />
-                                      <SecondaryButton
-                                        label="Cancel"
-                                        onPress={() => closeEventView(false)}
-                                      />
-                                    </View>
-                                  </View>
-                                ) : (
-                                  <ManagedEventOverview
-                                    title={item.title}
-                                    startsAt={item.starts_at}
-                                    timezone={business?.timezone || 'America/Chicago'}
-                                    location={item.address_text}
-                                    photo={(() => {
-                                      const a = firstMediaAsset(item.media_assets);
-                                      return a?.status === 'ready'
-                                        ? storagePublicUrl(a.storage_path)
-                                        : null;
-                                    })()}
-                                    published={item.is_published}
-                                    publishAt={item.publish_at}
-                                    attending={eventRsvpCounts[item.id]?.going ?? 0}
-                                    capacity={item.rsvp_limit}
-                                    waitlisted={eventRsvpCounts[item.id]?.waitlist ?? 0}
-                                    canEdit={canEdit}
-                                    disabled={saving || photoUploading}
-                                    publishingControl={
-                                      <LabeledSwitch
-                                        label="Visible to customers"
-                                        disabled={!canEdit || saving || photoUploading}
-                                        value={item.is_published}
-                                        onValueChange={(value) => void updateEvent(item, value)}
-                                      />
-                                    }
-                                    onEdit={() => beginEventEdit(item)}
-                                    onArchive={() => archiveEvent(item)}
-                                    onAttendees={() =>
-                                      router.push({
-                                        pathname: '/event-attendees' as never,
-                                        params: { eventId: item.id },
-                                      } as never)
-                                    }
-                                  />
-                                )}
-                              </View>
-                            ))
-                        ))}
-                      {canEdit && newEventOpen && (
-                        <View style={{ gap: 20 }}>
-                          <ThemedText themeColor="textSecondary" type="small">
-                            Required fields are labeled. Choose whether this saves as a draft or
-                            publishes now.
-                          </ThemedText>
-                          <ThemedText themeColor="textSecondary" type="small">
-                            After creating the event, tap Edit to add its cover and gallery photos.
-                          </ThemedText>
-                          <FlowSection title="The essentials">
-                            <Field
-                              label="Event title (required)"
-                              value={newEventTitle}
-                              onChangeText={setNewEventTitle}
-                              colors={colors}
-                            />
-                            <Field
-                              label="Description (optional)"
-                              value={newEventDescription}
-                              onChangeText={setNewEventDescription}
-                              colors={colors}
-                              multiline
-                              style={styles.multiline}
-                            />
-                          </FlowSection>
-                          <FlowSection title="When & where">
-                            <View style={styles.stackFields}>
-                              <StopPickerField
-                                label="Date (required)"
-                                value={newEventDate ? formatStopDateForDisplay(newEventDate) : ''}
-                                placeholder="Choose a date"
-                                colors={colors}
-                                onPress={() => setEventPickerTarget('new-date')}
-                              />
-                              <StopPickerField
-                                label="Start time (required)"
-                                value={newEventTime ? formatStopTimeForDisplay(newEventTime) : ''}
-                                placeholder="Choose a time"
-                                colors={colors}
-                                onPress={() => setEventPickerTarget('new-time')}
-                              />
-                            </View>
-                            <Field
-                              label="Location (optional)"
-                              value={newEventLocation}
-                              onChangeText={setNewEventLocation}
-                              colors={colors}
-                            />
-                            <Field
-                              label="RSVP capacity (optional)"
-                              value={newEventRsvpLimit}
-                              onChangeText={setNewEventRsvpLimit}
-                              colors={colors}
-                              keyboardType="number-pad"
-                              placeholder="No limit"
-                              hint="Leave blank for unlimited guests. Enter 0 for waitlist only."
-                            />
-                          </FlowSection>
-                          <ThemedText type="smallBold">When should customers see it?</ThemedText>
-                          <View style={styles.choiceRow}>
-                            <ChoiceButton
-                              label="Save draft"
-                              selected={eventSaveMode === 'draft'}
-                              onPress={() => setEventSaveMode('draft')}
-                            />
-                            <ChoiceButton
-                              label="Publish now"
-                              selected={eventSaveMode === 'publish'}
-                              onPress={() => setEventSaveMode('publish')}
-                            />
-                            <ChoiceButton
-                              label="Schedule"
-                              selected={eventSaveMode === 'schedule'}
-                              onPress={() => setEventSaveMode('schedule')}
-                            />
-                          </View>
-                          {eventSaveMode === 'schedule' && (
-                            <View style={styles.stackFields}>
-                              <StopPickerField
-                                label="Publish date (required)"
-                                value={
-                                  newEventPublishDate
-                                    ? formatStopDateForDisplay(newEventPublishDate)
-                                    : ''
-                                }
-                                placeholder="Choose a date"
-                                colors={colors}
-                                onPress={() => setEventPickerTarget('new-publish-date')}
-                              />
-                              <StopPickerField
-                                label="Publish time (required)"
-                                value={
-                                  newEventPublishTime
-                                    ? formatStopTimeForDisplay(newEventPublishTime)
-                                    : ''
-                                }
-                                placeholder="Choose a time"
-                                colors={colors}
-                                onPress={() => setEventPickerTarget('new-publish-time')}
-                              />
-                            </View>
-                          )}
-                          <PrimaryButton
-                            loading={saving}
-                            disabled={
-                              saving ||
-                              !newEventTitle.trim() ||
-                              !newEventDate ||
-                              !newEventTime ||
-                              (eventSaveMode === 'schedule' &&
-                                (!newEventPublishDate || !newEventPublishTime))
-                            }
-                            label={
-                              eventSaveMode === 'publish'
-                                ? 'Create and publish'
-                                : eventSaveMode === 'schedule'
-                                  ? 'Create and schedule'
-                                  : 'Save as draft'
-                            }
-                            onPress={() => void createEvent()}
-                          />
-                        </View>
-                      )}
-                    </View>
-                  )}
-
-                  {section === 'events' && eventPickerTarget && (
-                    <BusinessWorkspaceSheet
-                      visible
-                      onClose={() => setEventPickerTarget(null)}
-                      closeAccessibilityLabel="Close event date and time picker"
-                      title={eventPickerTarget.endsWith('date') ? 'Choose a date' : 'Choose a time'}
-                      description="Choose when this event takes place."
-                      backgroundColor={colors.backgroundElement}
-                      headerCopyGap={Spacing.one}
-                      maxHeight="78%"
-                    >
-                      <DateTimePicker
-                        value={eventPickerValue(eventPickerTarget)}
-                        mode={eventPickerTarget.endsWith('date') ? 'date' : 'time'}
-                        display={
-                          eventPickerTarget.endsWith('date')
-                            ? 'inline'
-                            : Platform.OS === 'ios'
-                              ? 'spinner'
-                              : 'default'
-                        }
-                        presentation="inline"
-                        is24Hour={false}
-                        accentColor={Brand.primary}
-                        themeVariant={scheme === 'dark' ? 'dark' : 'light'}
-                        onValueChange={(_, value) =>
-                          handleEventPickerChange(eventPickerTarget, value)
-                        }
-                      />
-                    </BusinessWorkspaceSheet>
-                  )}
-
-                  {section === 'updates' && (
-                    <View style={{ gap: 16 }}>
-                      <WorkspaceSectionToolbar
-                        subtitle={updates.length + ' sent updates'}
-                        action={
-                          canEdit ? (
-                            <MerchantButton
-                              label="New update"
-                              secondary
-                              disabled={saving}
-                              onPress={() => setContentPanel('update')}
-                            />
-                          ) : undefined
-                        }
-                      />
-                      <MerchantSearch
-                        value={contentQuery}
-                        onChange={setContentQuery}
-                        placeholder="Search updates"
-                      />
-                      <View style={[merchantStyles.list, { borderColor: inventoryColors.border }]}>
-                        {updates
-                          .filter((update) =>
-                            (update.title + ' ' + update.body)
-                              .toLowerCase()
-                              .includes(contentQuery.trim().toLowerCase()),
-                          )
-                          .map((update) => (
-                            <MerchantRow
-                              key={update.id}
-                              title={update.title}
-                              detail={update.body}
-                              subtitle={new Date(update.created_at).toLocaleDateString(undefined, {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                              })}
-                              status={
-                                <MerchantStatus
-                                  label={update.update_type === 'deal' ? 'Offer' : 'Announcement'}
-                                />
-                              }
-                              onPress={() => setSelectedUpdateId(update.id)}
-                            />
-                          ))}
-                      </View>
-                      {!updates.length && (
-                        <EmptyState
-                          title="No updates yet"
-                          message="Announcements and offers you send will appear here."
-                        />
-                      )}
-                      {!!updates.length &&
-                        !updates.some((update) =>
-                          (update.title + ' ' + update.body)
-                            .toLowerCase()
-                            .includes(contentQuery.trim().toLowerCase()),
-                        ) && <StateNotice message="No updates match your search." />}
-                      <MerchantSheet
-                        visible={contentPanel === 'update' && canEdit}
-                        title="New follower update"
-                        blocked={saving}
-                        onClose={() => setContentPanel(null)}
-                      >
-                        {error && <Notice kind="error" message={error} />}
-                        {notice && <Notice kind="success" message={notice} />}
-                        <View style={styles.formCard}>
-                          <FormSectionDescription description="Reach followers who enabled General updates. New published events send their own event alert." />
-                          <ThemedText type="smallBold">Update type</ThemedText>
-                          <View style={styles.choiceRow}>
-                            <ChoiceButton
-                              label="Announcement"
-                              selected={newUpdateType === 'announcement'}
-                              onPress={() => setNewUpdateType('announcement')}
-                            />
-                            <ChoiceButton
-                              label="Special offer"
-                              selected={newUpdateType === 'deal'}
-                              onPress={() => setNewUpdateType('deal')}
-                            />
-                          </View>
-                          <FlowSection title="Your message">
-                            <Field
-                              label="Title (required)"
-                              value={newUpdateTitle}
-                              onChangeText={setNewUpdateTitle}
-                              colors={colors}
-                              maxLength={120}
-                              returnKeyType="next"
-                            />
-                            <Field
-                              label="Message (required)"
-                              value={newUpdateBody}
-                              onChangeText={setNewUpdateBody}
-                              colors={colors}
-                              multiline
-                              maxLength={500}
-                              style={styles.multiline}
-                            />
-                          </FlowSection>
-                          <ThemedText themeColor="textSecondary" type="small">
-                            This sends immediately after your business is approved. Avoid sending
-                            frequent or unrelated alerts.
-                          </ThemedText>
-                          <PrimaryButton
-                            loading={saving}
-                            disabled={saving || !newUpdateTitle.trim() || !newUpdateBody.trim()}
-                            label={saving ? 'Sending…' : 'Send to followers'}
-                            onPress={() => void sendBusinessUpdate()}
-                          />
-                        </View>
-                      </MerchantSheet>
-                      <MerchantSheet
-                        visible={Boolean(selectedUpdate)}
-                        title={selectedUpdate?.title ?? 'Update'}
-                        onClose={() => setSelectedUpdateId(null)}
-                      >
-                        {selectedUpdate && (
-                          <>
-                            <MerchantStatus
-                              label={
-                                selectedUpdate.update_type === 'deal'
-                                  ? 'Special offer'
-                                  : 'Announcement'
-                              }
-                            />
-                            <ThemedText themeColor="textSecondary">
-                              Sent {new Date(selectedUpdate.created_at).toLocaleString()}
-                            </ThemedText>
-                            <FlowSection title="Message sent">
-                              <ThemedText selectable>{selectedUpdate.body}</ThemedText>
-                            </FlowSection>
-                          </>
-                        )}
-                      </MerchantSheet>
-                    </View>
-                  )}
-
-                  {section === 'rewards' && (
-                    <View style={{ gap: 16 }}>
-                      <WorkspaceSectionToolbar
-                        subtitle="Program overview"
-                        action={
-                          canEdit ? (
-                            <MerchantButton
-                              label={reward ? 'Edit rules' : 'Create program'}
-                              secondary
-                              disabled={saving}
-                              onPress={() => setRewardEditorOpen(true)}
-                            />
-                          ) : undefined
-                        }
-                      />
-                      {reward ? (
-                        <View style={{ gap: 16 }}>
-                          <RewardProgramCard
-                            preview
-                            name={reward.name}
-                            description={reward.reward_description}
-                            type={reward.program_type}
-                            target={
-                              reward.program_type === 'visits'
-                                ? reward.stamps_required
-                                : (reward.points_required ?? 0)
-                            }
-                            active={reward.is_active}
-                          />
-                          <View
-                            style={{
-                              padding: 18,
-                              borderRadius: 16,
-                              borderWidth: 1,
-                              borderColor: colors.border,
-                              backgroundColor: colors.backgroundElement,
-                              gap: 7,
-                            }}
-                          >
-                            <ThemedText type="smallBold">Customers earn</ThemedText>
-                            <ThemedText>
-                              {reward.program_type === 'visits'
-                                ? '1 stamp per visit'
-                                : reward.points_per_dollar + ' points per $1'}
-                            </ThemedText>
-                            {!!reward.terms && (
-                              <ThemedText type="small" themeColor="textSecondary">
-                                {reward.terms}
-                              </ThemedText>
-                            )}
-                          </View>
-                        </View>
-                      ) : (
-                        <EmptyState
-                          title="No rewards program"
-                          message="Create a program to let customers earn visit stamps or spend points."
-                        />
-                      )}
-                      <MerchantSheet
-                        visible={rewardEditorOpen && canEdit}
-                        title="Reward rules"
-                        blocked={saving}
-                        onClose={() => setRewardEditorOpen(false)}
-                      >
-                        {error && <Notice kind="error" message={error} />}
-                        {notice && <Notice kind="success" message={notice} />}
-                        <View style={{ gap: 12 }}>
-                          <FlowSection title="Preview your reward card" collapsible>
-                            <RewardProgramCard
-                              preview
-                              name={rewardName || 'Your rewards program'}
-                              description={
-                                rewardDescription || 'Give customers a reason to come back.'
-                              }
-                              type={rewardProgramType}
-                              target={
-                                Number(
-                                  rewardProgramType === 'visits' ? stampsRequired : pointsRequired,
-                                ) || 0
-                              }
-                            />
-                          </FlowSection>
-                          <ThemedText type="card">1 · How customers earn</ThemedText>
-                          <ThemedText type="small" themeColor="textSecondary">
-                            Choose a visit-based or spend-based program.
-                          </ThemedText>
-                          <View style={styles.choiceRow}>
-                            <ChoiceButton
-                              label="Visit stamps"
-                              selected={rewardProgramType === 'visits'}
-                              onPress={() => canEdit && setRewardProgramType('visits')}
-                            />
-                            <ChoiceButton
-                              label="Spend points"
-                              selected={rewardProgramType === 'points'}
-                              onPress={() => canEdit && setRewardProgramType('points')}
-                            />
-                          </View>
-                          <ThemedText type="card">2 · What customers receive</ThemedText>
-                          <Field
-                            label="Program name"
-                            value={rewardName}
-                            onChangeText={setRewardName}
-                            colors={colors}
-                            editable={canEdit}
-                          />
-                          <Field
-                            label="Reward description"
-                            value={rewardDescription}
-                            onChangeText={setRewardDescription}
-                            colors={colors}
-                            editable={canEdit}
-                            multiline
-                            style={styles.multiline}
-                          />
-                          <FlowSection
-                            title="Use rewards at checkout"
-                            description="Optional rewards for pickup orders"
-                            collapsible
-                            initiallyOpen={checkoutRewardEnabled}
-                          >
-                            <CheckoutRewardEditor
-                              businessId={businessId}
-                              enabled={checkoutRewardEnabled}
-                              type={checkoutRewardType}
-                              percent={checkoutRewardPercent}
-                              items={checkoutRewardItems}
-                              disabled={!canEdit}
-                              onEnabled={setCheckoutRewardEnabled}
-                              onType={setCheckoutRewardType}
-                              onPercent={setCheckoutRewardPercent}
-                              onItems={setCheckoutRewardItems}
-                            />
-                          </FlowSection>
-                          {rewardProgramType === 'visits' ? (
-                            <Field
-                              label="Stamps required (2–30)"
-                              value={stampsRequired}
-                              onChangeText={setStampsRequired}
-                              colors={colors}
-                              editable={canEdit}
-                              keyboardType="number-pad"
-                              maxLength={2}
-                            />
-                          ) : (
-                            <>
-                              <Field
-                                label="Points earned per $1 spent"
-                                value={pointsPerDollar}
-                                onChangeText={setPointsPerDollar}
-                                colors={colors}
-                                editable={canEdit}
-                                keyboardType="decimal-pad"
+                                returnKeyType="next"
                               />
                               <Field
-                                label="Points needed to redeem (required)"
-                                value={pointsRequired}
-                                onChangeText={setPointsRequired}
+                                editable={!saving && !photoUploading}
+                                label="Section description (optional)"
+                                value={newSectionDescription}
+                                onChangeText={setNewSectionDescription}
                                 colors={colors}
-                                editable={canEdit}
-                                keyboardType="number-pad"
                               />
-                              <ThemedText themeColor="textSecondary" type="small">
-                                Staff will enter the purchase total when scanning. A $25 purchase at
-                                1 point per dollar earns 25 points.
-                              </ThemedText>
-                            </>
-                          )}
-                          <Field
-                            label="3 · Terms (optional)"
-                            value={rewardTerms}
-                            onChangeText={setRewardTerms}
-                            colors={colors}
-                            editable={canEdit}
-                            multiline
-                            style={styles.multiline}
-                          />
-                          {reward && (
-                            <LabeledSwitch
-                              label="Program active"
-                              disabled={!canEdit}
-                              value={reward.is_active}
-                              onValueChange={(value) => void toggleReward(value)}
-                            />
-                          )}
-                          {canEdit && (
-                            <PrimaryButton
-                              loading={saving}
-                              disabled={saving}
-                              label={
-                                saving
-                                  ? 'Saving…'
-                                  : reward
-                                    ? 'Save rewards program'
-                                    : 'Create rewards program'
-                              }
-                              onPress={() => void saveReward()}
-                            />
-                          )}
-                        </View>
-                      </MerchantSheet>
-                    </View>
-                  )}
-
-                  {section === 'photos' && (
-                    <View style={styles.cardList}>
-                      <WorkspaceSectionToolbar
-                        subtitle={photos.length + ' images'}
-                        action={
-                          canEdit ? (
-                            <MerchantButton
-                              label="Add photo"
-                              secondary
-                              disabled={photoUploading || saving}
-                              onPress={() => setPhotoUploadOpen(true)}
-                            />
-                          ) : undefined
-                        }
-                      />
-                      {!selectedPhoto && (
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-                          {photos.map((photo) => {
-                            const asset = firstMediaAsset(photo.media_assets);
-                            return (
-                              <Pressable
-                                key={photo.id}
-                                accessibilityRole="button"
-                                accessibilityLabel={
-                                  'Open ' +
-                                  photo.role.replaceAll('_', ' ') +
-                                  ': ' +
-                                  (photo.caption || asset?.alt_text || 'photo')
-                                }
-                                disabled={saving || photoUploading}
-                                onPress={() => setSelectedPhotoId(photo.id)}
-                                style={{
-                                  width: '47%',
-                                  flexGrow: 0,
-                                  gap: 8,
-                                  padding: 10,
-                                  borderRadius: 12,
-                                  borderWidth: 1,
-                                  borderColor: inventoryColors.border,
-                                  backgroundColor: inventoryColors.surface,
-                                }}
-                              >
-                                {asset?.status === 'ready' ? (
-                                  <Image
-                                    accessibilityLabel={
-                                      asset.alt_text ?? photo.caption ?? 'Business photo'
-                                    }
-                                    contentFit={photo.role === 'logo' ? 'contain' : 'cover'}
-                                    source={{ uri: storagePublicUrl(asset.storage_path) }}
-                                    style={{ width: '100%', aspectRatio: 1, borderRadius: 12 }}
-                                  />
-                                ) : (
-                                  <ThemedText type="small" themeColor="textSecondary">
-                                    Image {asset?.status ?? 'unavailable'}
-                                  </ThemedText>
-                                )}
-                                <ThemedText type="smallBold">
-                                  {photo.role === 'gallery'
-                                    ? 'Gallery photo'
-                                    : photo.role === 'logo'
-                                      ? 'Business logo'
-                                      : 'Cover photo'}
-                                </ThemedText>
-                                <ThemedText
-                                  type="small"
-                                  themeColor="textSecondary"
-                                  numberOfLines={2}
-                                >
-                                  {photo.caption || asset?.alt_text || 'No description'}
-                                </ThemedText>
-                              </Pressable>
-                            );
-                          })}
-                        </View>
-                      )}
-                      {selectedPhoto && (
-                        <BackPill
-                          label="Back to photos"
-                          disabled={saving || photoUploading}
-                          onPress={() => closePhotoView()}
-                        />
-                      )}
-                      {canEdit && (
-                        <MerchantSheet
-                          visible={photoUploadOpen}
-                          title="Add business photo"
-                          blocked={photoUploading || saving}
-                          onClose={() => setPhotoUploadOpen(false)}
-                        >
-                          {error && <Notice kind="error" message={error} />}
-                          <View style={{ gap: 12 }}>
-                            <ThemedText themeColor="textSecondary" type="small">
-                              Images are resized on this device before secure upload. Gallery photos
-                              are limited to {mediaLimits.maxGalleryImages}.
-                            </ThemedText>
-                            <Field
-                              label="Image description (optional)"
-                              value={photoAltText}
-                              onChangeText={setPhotoAltText}
-                              colors={colors}
-                              editable={!photoUploading}
-                            />
-                            <View style={styles.inlineActions}>
                               <PrimaryButton
                                 loading={saving}
-                                disabled={photoUploading}
-                                label={photoUploading ? 'Uploading…' : 'Add gallery photo'}
-                                onPress={() => void pickAndUploadPhoto('gallery')}
-                              />
-                              <SecondaryButton
-                                disabled={photoUploading}
-                                label="Add cover"
-                                onPress={() => void pickAndUploadPhoto('cover')}
-                              />
-                              <SecondaryButton
-                                disabled={photoUploading}
-                                label="Add logo"
-                                onPress={() => void pickAndUploadPhoto('logo')}
+                                disabled={saving || !newSectionName.trim()}
+                                label={`Create ${offeringTerminology.section}`}
+                                onPress={() => void createOfferingSection()}
                               />
                             </View>
-                          </View>
-                        </MerchantSheet>
+                          </MerchantSheet>
+                        </View>
                       )}
-                      {photos.length === 0 ? (
-                        <EmptyState
-                          title="No photos yet"
-                          message="No photos have been added to this business."
-                        />
-                      ) : (
-                        photos.map((photo, photoIndex) => {
-                          if (photo.id !== selectedPhotoId) return null;
-                          const asset = Array.isArray(photo.media_assets)
-                            ? photo.media_assets[0]
-                            : photo.media_assets;
-                          return (
-                            <View key={photo.id} style={styles.settingRowCard}>
-                              {asset?.status === 'ready' && (
-                                <Image
-                                  accessibilityLabel={asset.alt_text ?? photo.caption ?? ''}
-                                  source={{ uri: storagePublicUrl(asset.storage_path) }}
-                                  contentFit={photo.role === 'logo' ? 'contain' : 'cover'}
-                                  style={[
-                                    styles.photoPreview,
-                                    { backgroundColor: colors.logoSurface },
-                                  ]}
-                                  transition={180}
-                                />
-                              )}
-                              {editingPhotoId === photo.id ? (
-                                <View style={styles.editForm}>
-                                  <ThemedText type="smallBold">Photo caption (optional)</ThemedText>
-                                  <TextInput
-                                    accessibilityLabel="Photo caption"
-                                    editable={canEdit}
-                                    onChangeText={setPhotoCaptionDraft}
-                                    placeholder="Describe this photo for customers"
-                                    placeholderTextColor={colors.textSecondary}
-                                    style={[
-                                      styles.input,
-                                      {
-                                        color: colors.text,
-                                        backgroundColor: colors.background,
-                                        borderColor: colors.inputBorder,
-                                      },
-                                    ]}
-                                    value={photoCaptionDraft}
-                                  />
-                                  <View style={styles.inlineActions}>
-                                    <PrimaryButton
-                                      loading={saving}
-                                      disabled={!canEdit}
-                                      label="Save caption"
-                                      onPress={() => void savePhotoCaption(photo)}
-                                    />
-                                    <SecondaryButton
-                                      label="Cancel"
-                                      onPress={() => closePhotoView(false)}
-                                    />
+
+                      {section === 'events' && (
+                        <View style={styles.cardList}>
+                          {!selectedEvent && !newEventOpen && (
+                            <EventInbox
+                              events={events.map((item) => ({
+                                id: item.id,
+                                title: item.title,
+                                startsAt: item.starts_at,
+                                timezone: business?.timezone || 'America/Chicago',
+                                photo: (() => {
+                                  const a = firstMediaAsset(item.media_assets);
+                                  return a?.status === 'ready'
+                                    ? storagePublicUrl(a.storage_path)
+                                    : null;
+                                })(),
+                                published: item.is_published,
+                                publishAt: item.publish_at,
+                                attending: eventRsvpCounts[item.id]?.going ?? 0,
+                                waitlisted: eventRsvpCounts[item.id]?.waitlist ?? 0,
+                              }))}
+                              disabled={saving || photoUploading}
+                              onOpen={setSelectedEventId}
+                              {...(canEdit ? { onCreate: () => setNewEventOpen(true) } : {})}
+                            />
+                          )}
+                          {selectedEvent &&
+                            (events.length === 0 ? (
+                              <EmptyState
+                                title="No events yet"
+                                message="Add a date, location and details to help customers plan a visit."
+                              />
+                            ) : (
+                              events
+                                .filter((item) => item.id === selectedEventId)
+                                .map((item) => (
+                                  <View
+                                    key={item.id}
+                                    style={
+                                      editingEventId === item.id
+                                        ? { gap: 20 }
+                                        : styles.settingRowCard
+                                    }
+                                  >
+                                    {editingEventId === item.id ? (
+                                      <View style={styles.editForm}>
+                                        <FlowSection title="The essentials">
+                                          <Field
+                                            label="Event title (required)"
+                                            value={editEventTitle}
+                                            onChangeText={setEditEventTitle}
+                                            colors={colors}
+                                          />
+                                          <Field
+                                            label="Description (optional)"
+                                            value={editEventDescription}
+                                            onChangeText={setEditEventDescription}
+                                            colors={colors}
+                                            multiline
+                                            style={styles.multiline}
+                                          />
+                                        </FlowSection>
+                                        <FlowSection title="When & where">
+                                          <View style={styles.stackFields}>
+                                            <StopPickerField
+                                              label="Date (required)"
+                                              value={
+                                                editEventDate
+                                                  ? formatStopDateForDisplay(editEventDate)
+                                                  : ''
+                                              }
+                                              placeholder="Choose a date"
+                                              colors={colors}
+                                              onPress={() => setEventPickerTarget('edit-date')}
+                                            />
+                                            <StopPickerField
+                                              label="Start time (required)"
+                                              value={
+                                                editEventTime
+                                                  ? formatStopTimeForDisplay(editEventTime)
+                                                  : ''
+                                              }
+                                              placeholder="Choose a time"
+                                              colors={colors}
+                                              onPress={() => setEventPickerTarget('edit-time')}
+                                            />
+                                          </View>
+                                          <Field
+                                            label="Location (optional)"
+                                            value={editEventLocation}
+                                            onChangeText={setEditEventLocation}
+                                            colors={colors}
+                                          />
+                                          <Field
+                                            label="RSVP capacity (optional)"
+                                            value={editEventRsvpLimit}
+                                            onChangeText={setEditEventRsvpLimit}
+                                            colors={colors}
+                                            keyboardType="number-pad"
+                                            placeholder="No limit"
+                                            hint="Leave blank for unlimited guests. Enter 0 for waitlist only."
+                                          />
+                                        </FlowSection>
+                                        <ThemedText themeColor="textSecondary" type="small">
+                                          {eventRsvpCounts[item.id]?.going ?? 0} people attending ·{' '}
+                                          {eventRsvpCounts[item.id]?.waitlist ?? 0} groups
+                                          waitlisted
+                                        </ThemedText>
+                                        <FlowSection
+                                          title="Photos"
+                                          description="Cover image and gallery"
+                                          collapsible
+                                        >
+                                          <ThemedText type="smallBold">Event photos</ThemedText>
+                                          <ThemedText themeColor="textSecondary" type="small">
+                                            Add one cover image and up to{' '}
+                                            {mediaLimits.maxGalleryImages} gallery images. Images
+                                            are optimized before upload.
+                                          </ThemedText>
+                                          {(() => {
+                                            const cover = firstMediaAsset(item.media_assets);
+                                            return cover?.status === 'ready' ? (
+                                              <Image
+                                                accessibilityLabel={
+                                                  cover.alt_text ?? `${item.title} cover`
+                                                }
+                                                contentFit="cover"
+                                                source={{
+                                                  uri: storagePublicUrl(cover.storage_path),
+                                                }}
+                                                style={styles.eventCoverPreview}
+                                                transition={180}
+                                              />
+                                            ) : (
+                                              <ThemedText themeColor="textSecondary" type="small">
+                                                No cover image yet.
+                                              </ThemedText>
+                                            );
+                                          })()}
+                                          <Field
+                                            label="Event photo description (optional)"
+                                            value={eventPhotoAltText}
+                                            onChangeText={setEventPhotoAltText}
+                                            colors={colors}
+                                            editable={!photoUploading}
+                                          />
+                                          <Field
+                                            label="Gallery caption (optional)"
+                                            value={eventPhotoCaption}
+                                            onChangeText={setEventPhotoCaption}
+                                            colors={colors}
+                                            editable={!photoUploading}
+                                          />
+                                          <View style={styles.inlineActions}>
+                                            <SecondaryButton
+                                              disabled={photoUploading}
+                                              label={
+                                                photoUploading
+                                                  ? 'Uploading…'
+                                                  : 'Add / replace cover'
+                                              }
+                                              onPress={() =>
+                                                void pickAndUploadPhoto('event', item.id)
+                                              }
+                                            />
+                                            <SecondaryButton
+                                              disabled={
+                                                photoUploading ||
+                                                (item.event_photos?.length ?? 0) >=
+                                                  mediaLimits.maxGalleryImages
+                                              }
+                                              label={
+                                                photoUploading ? 'Uploading…' : 'Add gallery image'
+                                              }
+                                              onPress={() =>
+                                                void pickAndUploadPhoto('event_gallery', item.id)
+                                              }
+                                            />
+                                          </View>
+                                          {!!item.event_photos?.length && (
+                                            <View style={styles.eventGalleryList}>
+                                              {item.event_photos
+                                                .slice()
+                                                .sort((a, b) => a.display_order - b.display_order)
+                                                .map((photo, photoIndex, ordered) => {
+                                                  const asset = firstMediaAsset(photo.media_assets);
+                                                  return (
+                                                    <View
+                                                      key={photo.id}
+                                                      style={styles.eventGalleryRow}
+                                                    >
+                                                      {asset?.status === 'ready' && (
+                                                        <Image
+                                                          accessibilityLabel={
+                                                            asset.alt_text ?? photo.caption ?? ''
+                                                          }
+                                                          contentFit="cover"
+                                                          source={{
+                                                            uri: storagePublicUrl(
+                                                              asset.storage_path,
+                                                            ),
+                                                          }}
+                                                          style={styles.eventGalleryThumb}
+                                                          transition={180}
+                                                        />
+                                                      )}
+                                                      <View style={styles.rowText}>
+                                                        <ThemedText type="smallBold">
+                                                          {photo.caption ||
+                                                            asset?.alt_text ||
+                                                            'No caption'}
+                                                        </ThemedText>
+                                                        <View style={styles.inlineActions}>
+                                                          <Pressable
+                                                            onPress={() =>
+                                                              beginEventPhotoEdit(photo)
+                                                            }
+                                                            style={{
+                                                              minHeight: 44,
+                                                              minWidth: 44,
+                                                              justifyContent: 'center',
+                                                            }}
+                                                          >
+                                                            <ThemedText type="smallBold">
+                                                              Caption
+                                                            </ThemedText>
+                                                          </Pressable>
+                                                          <Pressable
+                                                            disabled={photoIndex === 0}
+                                                            onPress={() =>
+                                                              void moveEventPhoto(item, photo, -1)
+                                                            }
+                                                            style={
+                                                              photoIndex === 0 && styles.disabled
+                                                            }
+                                                          >
+                                                            <ThemedText type="smallBold">
+                                                              Up
+                                                            </ThemedText>
+                                                          </Pressable>
+                                                          <Pressable
+                                                            disabled={
+                                                              photoIndex === ordered.length - 1
+                                                            }
+                                                            onPress={() =>
+                                                              void moveEventPhoto(item, photo, 1)
+                                                            }
+                                                            style={
+                                                              photoIndex === ordered.length - 1 &&
+                                                              styles.disabled
+                                                            }
+                                                          >
+                                                            <ThemedText type="smallBold">
+                                                              Down
+                                                            </ThemedText>
+                                                          </Pressable>
+                                                          <Pressable
+                                                            onPress={() =>
+                                                              removeEventPhoto(item, photo)
+                                                            }
+                                                            style={{
+                                                              minHeight: 44,
+                                                              minWidth: 44,
+                                                              justifyContent: 'center',
+                                                            }}
+                                                          >
+                                                            <ThemedText
+                                                              style={styles.destructiveText}
+                                                              type="smallBold"
+                                                            >
+                                                              Remove
+                                                            </ThemedText>
+                                                          </Pressable>
+                                                        </View>
+                                                      </View>
+                                                    </View>
+                                                  );
+                                                })}
+                                            </View>
+                                          )}
+                                          {editingPhotoId &&
+                                            item.event_photos?.some(
+                                              (photo) => photo.id === editingPhotoId,
+                                            ) && (
+                                              <View style={styles.editForm}>
+                                                <ThemedText type="smallBold">
+                                                  Edit gallery caption
+                                                </ThemedText>
+                                                <TextInput
+                                                  accessibilityLabel="Event gallery caption"
+                                                  editable={canEdit}
+                                                  onChangeText={setEventPhotoCaption}
+                                                  placeholder="Describe this image for customers"
+                                                  placeholderTextColor={colors.textSecondary}
+                                                  style={[
+                                                    styles.input,
+                                                    {
+                                                      color: colors.text,
+                                                      backgroundColor: colors.background,
+                                                      borderColor: colors.inputBorder,
+                                                    },
+                                                  ]}
+                                                  value={eventPhotoCaption}
+                                                />
+                                                <View style={styles.inlineActions}>
+                                                  <PrimaryButton
+                                                    loading={saving}
+                                                    disabled={!canEdit}
+                                                    label="Save caption"
+                                                    onPress={() => {
+                                                      const photo = item.event_photos?.find(
+                                                        (candidate) =>
+                                                          candidate.id === editingPhotoId,
+                                                      );
+                                                      if (photo)
+                                                        void saveEventPhotoCaption(item, photo);
+                                                    }}
+                                                  />
+                                                  <SecondaryButton
+                                                    label="Cancel"
+                                                    onPress={() => setEditingPhotoId(null)}
+                                                  />
+                                                </View>
+                                              </View>
+                                            )}
+                                        </FlowSection>
+                                        <ThemedText type="smallBold">Publishing</ThemedText>
+                                        <View style={styles.choiceRow}>
+                                          <ChoiceButton
+                                            label="Draft"
+                                            selected={editEventSaveMode === 'draft'}
+                                            onPress={() => setEditEventSaveMode('draft')}
+                                          />
+                                          <ChoiceButton
+                                            label="Publish now"
+                                            selected={editEventSaveMode === 'publish'}
+                                            onPress={() => setEditEventSaveMode('publish')}
+                                          />
+                                          <ChoiceButton
+                                            label="Schedule"
+                                            selected={editEventSaveMode === 'schedule'}
+                                            onPress={() => setEditEventSaveMode('schedule')}
+                                          />
+                                        </View>
+                                        {editEventSaveMode === 'schedule' && (
+                                          <View style={styles.stackFields}>
+                                            <StopPickerField
+                                              label="Publish date (required)"
+                                              value={
+                                                editEventPublishDate
+                                                  ? formatStopDateForDisplay(editEventPublishDate)
+                                                  : ''
+                                              }
+                                              placeholder="Choose a date"
+                                              colors={colors}
+                                              onPress={() =>
+                                                setEventPickerTarget('edit-publish-date')
+                                              }
+                                            />
+                                            <StopPickerField
+                                              label="Publish time (required)"
+                                              value={
+                                                editEventPublishTime
+                                                  ? formatStopTimeForDisplay(editEventPublishTime)
+                                                  : ''
+                                              }
+                                              placeholder="Choose a time"
+                                              colors={colors}
+                                              onPress={() =>
+                                                setEventPickerTarget('edit-publish-time')
+                                              }
+                                            />
+                                          </View>
+                                        )}
+                                        <View style={styles.inlineActions}>
+                                          <PrimaryButton
+                                            loading={saving}
+                                            disabled={
+                                              saving ||
+                                              !editEventTitle.trim() ||
+                                              !editEventDate ||
+                                              !editEventTime
+                                            }
+                                            label="Save changes"
+                                            onPress={() => void saveEventEdit(item)}
+                                          />
+                                          <SecondaryButton
+                                            label="Cancel"
+                                            onPress={() => closeEventView(false)}
+                                          />
+                                        </View>
+                                      </View>
+                                    ) : (
+                                      <ManagedEventOverview
+                                        title={item.title}
+                                        startsAt={item.starts_at}
+                                        timezone={business?.timezone || 'America/Chicago'}
+                                        location={item.address_text}
+                                        photo={(() => {
+                                          const a = firstMediaAsset(item.media_assets);
+                                          return a?.status === 'ready'
+                                            ? storagePublicUrl(a.storage_path)
+                                            : null;
+                                        })()}
+                                        published={item.is_published}
+                                        publishAt={item.publish_at}
+                                        attending={eventRsvpCounts[item.id]?.going ?? 0}
+                                        capacity={item.rsvp_limit}
+                                        waitlisted={eventRsvpCounts[item.id]?.waitlist ?? 0}
+                                        canEdit={canEdit}
+                                        disabled={saving || photoUploading}
+                                        publishingControl={
+                                          <LabeledSwitch
+                                            label="Visible to customers"
+                                            disabled={!canEdit || saving || photoUploading}
+                                            value={item.is_published}
+                                            onValueChange={(value) => void updateEvent(item, value)}
+                                          />
+                                        }
+                                        onEdit={() => beginEventEdit(item)}
+                                        onArchive={() => archiveEvent(item)}
+                                        onAttendees={() =>
+                                          router.push({
+                                            pathname: '/event-attendees' as never,
+                                            params: { eventId: item.id },
+                                          } as never)
+                                        }
+                                      />
+                                    )}
                                   </View>
+                                ))
+                            ))}
+                          {canEdit && newEventOpen && (
+                            <View style={{ gap: 20 }}>
+                              <ThemedText themeColor="textSecondary" type="small">
+                                Required fields are labeled. Choose whether this saves as a draft or
+                                publishes now.
+                              </ThemedText>
+                              <ThemedText themeColor="textSecondary" type="small">
+                                After creating the event, tap Edit to add its cover and gallery
+                                photos.
+                              </ThemedText>
+                              <FlowSection title="The essentials">
+                                <Field
+                                  label="Event title (required)"
+                                  value={newEventTitle}
+                                  onChangeText={setNewEventTitle}
+                                  colors={colors}
+                                />
+                                <Field
+                                  label="Description (optional)"
+                                  value={newEventDescription}
+                                  onChangeText={setNewEventDescription}
+                                  colors={colors}
+                                  multiline
+                                  style={styles.multiline}
+                                />
+                              </FlowSection>
+                              <FlowSection title="When & where">
+                                <View style={styles.stackFields}>
+                                  <StopPickerField
+                                    label="Date (required)"
+                                    value={
+                                      newEventDate ? formatStopDateForDisplay(newEventDate) : ''
+                                    }
+                                    placeholder="Choose a date"
+                                    colors={colors}
+                                    onPress={() => setEventPickerTarget('new-date')}
+                                  />
+                                  <StopPickerField
+                                    label="Start time (required)"
+                                    value={
+                                      newEventTime ? formatStopTimeForDisplay(newEventTime) : ''
+                                    }
+                                    placeholder="Choose a time"
+                                    colors={colors}
+                                    onPress={() => setEventPickerTarget('new-time')}
+                                  />
                                 </View>
+                                <Field
+                                  label="Location (optional)"
+                                  value={newEventLocation}
+                                  onChangeText={setNewEventLocation}
+                                  colors={colors}
+                                />
+                                <Field
+                                  label="RSVP capacity (optional)"
+                                  value={newEventRsvpLimit}
+                                  onChangeText={setNewEventRsvpLimit}
+                                  colors={colors}
+                                  keyboardType="number-pad"
+                                  placeholder="No limit"
+                                  hint="Leave blank for unlimited guests. Enter 0 for waitlist only."
+                                />
+                              </FlowSection>
+                              <ThemedText type="smallBold">
+                                When should customers see it?
+                              </ThemedText>
+                              <View style={styles.choiceRow}>
+                                <ChoiceButton
+                                  label="Save draft"
+                                  selected={eventSaveMode === 'draft'}
+                                  onPress={() => setEventSaveMode('draft')}
+                                />
+                                <ChoiceButton
+                                  label="Publish now"
+                                  selected={eventSaveMode === 'publish'}
+                                  onPress={() => setEventSaveMode('publish')}
+                                />
+                                <ChoiceButton
+                                  label="Schedule"
+                                  selected={eventSaveMode === 'schedule'}
+                                  onPress={() => setEventSaveMode('schedule')}
+                                />
+                              </View>
+                              {eventSaveMode === 'schedule' && (
+                                <View style={styles.stackFields}>
+                                  <StopPickerField
+                                    label="Publish date (required)"
+                                    value={
+                                      newEventPublishDate
+                                        ? formatStopDateForDisplay(newEventPublishDate)
+                                        : ''
+                                    }
+                                    placeholder="Choose a date"
+                                    colors={colors}
+                                    onPress={() => setEventPickerTarget('new-publish-date')}
+                                  />
+                                  <StopPickerField
+                                    label="Publish time (required)"
+                                    value={
+                                      newEventPublishTime
+                                        ? formatStopTimeForDisplay(newEventPublishTime)
+                                        : ''
+                                    }
+                                    placeholder="Choose a time"
+                                    colors={colors}
+                                    onPress={() => setEventPickerTarget('new-publish-time')}
+                                  />
+                                </View>
+                              )}
+                              <PrimaryButton
+                                loading={saving}
+                                disabled={
+                                  saving ||
+                                  !newEventTitle.trim() ||
+                                  !newEventDate ||
+                                  !newEventTime ||
+                                  (eventSaveMode === 'schedule' &&
+                                    (!newEventPublishDate || !newEventPublishTime))
+                                }
+                                label={
+                                  eventSaveMode === 'publish'
+                                    ? 'Create and publish'
+                                    : eventSaveMode === 'schedule'
+                                      ? 'Create and schedule'
+                                      : 'Save as draft'
+                                }
+                                onPress={() => void createEvent()}
+                              />
+                            </View>
+                          )}
+                        </View>
+                      )}
+
+                      {section === 'events' && eventPickerTarget && (
+                        <BusinessWorkspaceSheet
+                          visible
+                          onClose={() => setEventPickerTarget(null)}
+                          closeAccessibilityLabel="Close event date and time picker"
+                          title={
+                            eventPickerTarget.endsWith('date') ? 'Choose a date' : 'Choose a time'
+                          }
+                          description="Choose when this event takes place."
+                          backgroundColor={colors.backgroundElement}
+                          headerCopyGap={Spacing.one}
+                          maxHeight="78%"
+                        >
+                          <DateTimePicker
+                            value={eventPickerValue(eventPickerTarget)}
+                            mode={eventPickerTarget.endsWith('date') ? 'date' : 'time'}
+                            display={
+                              eventPickerTarget.endsWith('date')
+                                ? 'inline'
+                                : Platform.OS === 'ios'
+                                  ? 'spinner'
+                                  : 'default'
+                            }
+                            presentation="inline"
+                            is24Hour={false}
+                            accentColor={Brand.primary}
+                            themeVariant={scheme === 'dark' ? 'dark' : 'light'}
+                            onValueChange={(_, value) =>
+                              handleEventPickerChange(eventPickerTarget, value)
+                            }
+                          />
+                        </BusinessWorkspaceSheet>
+                      )}
+
+                      {section === 'updates' && (
+                        <View style={{ gap: 16 }}>
+                          <WorkspaceSectionToolbar
+                            subtitle={updates.length + ' sent updates'}
+                            action={
+                              canEdit ? (
+                                <MerchantButton
+                                  label="New update"
+                                  secondary
+                                  disabled={saving}
+                                  onPress={() => setContentPanel('update')}
+                                />
+                              ) : undefined
+                            }
+                          />
+                          <MerchantSearch
+                            value={contentQuery}
+                            onChange={setContentQuery}
+                            placeholder="Search updates"
+                          />
+                          <View
+                            style={[merchantStyles.list, { borderColor: inventoryColors.border }]}
+                          >
+                            {updates
+                              .filter((update) =>
+                                (update.title + ' ' + update.body)
+                                  .toLowerCase()
+                                  .includes(contentQuery.trim().toLowerCase()),
+                              )
+                              .map((update) => (
+                                <MerchantRow
+                                  key={update.id}
+                                  title={update.title}
+                                  detail={update.body}
+                                  subtitle={new Date(update.created_at).toLocaleDateString(
+                                    undefined,
+                                    {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      year: 'numeric',
+                                    },
+                                  )}
+                                  status={
+                                    <MerchantStatus
+                                      label={
+                                        update.update_type === 'deal' ? 'Offer' : 'Announcement'
+                                      }
+                                    />
+                                  }
+                                  onPress={() => setSelectedUpdateId(update.id)}
+                                />
+                              ))}
+                          </View>
+                          {!updates.length && (
+                            <EmptyState
+                              title="No updates yet"
+                              message="Announcements and offers you send will appear here."
+                            />
+                          )}
+                          {!!updates.length &&
+                            !updates.some((update) =>
+                              (update.title + ' ' + update.body)
+                                .toLowerCase()
+                                .includes(contentQuery.trim().toLowerCase()),
+                            ) && <StateNotice message="No updates match your search." />}
+                          <MerchantSheet
+                            visible={contentPanel === 'update' && canEdit}
+                            title="New follower update"
+                            blocked={saving}
+                            onClose={() => setContentPanel(null)}
+                          >
+                            {error && <Notice kind="error" message={error} />}
+                            {notice && <Notice kind="success" message={notice} />}
+                            <View style={styles.formCard}>
+                              <FormSectionDescription description="Reach followers who enabled General updates. New published events send their own event alert." />
+                              <ThemedText type="smallBold">Update type</ThemedText>
+                              <View style={styles.choiceRow}>
+                                <ChoiceButton
+                                  label="Announcement"
+                                  selected={newUpdateType === 'announcement'}
+                                  onPress={() => setNewUpdateType('announcement')}
+                                />
+                                <ChoiceButton
+                                  label="Special offer"
+                                  selected={newUpdateType === 'deal'}
+                                  onPress={() => setNewUpdateType('deal')}
+                                />
+                              </View>
+                              <FlowSection title="Your message">
+                                <Field
+                                  label="Title (required)"
+                                  value={newUpdateTitle}
+                                  onChangeText={setNewUpdateTitle}
+                                  colors={colors}
+                                  maxLength={120}
+                                  returnKeyType="next"
+                                />
+                                <Field
+                                  label="Message (required)"
+                                  value={newUpdateBody}
+                                  onChangeText={setNewUpdateBody}
+                                  colors={colors}
+                                  multiline
+                                  maxLength={500}
+                                  style={styles.multiline}
+                                />
+                              </FlowSection>
+                              <ThemedText themeColor="textSecondary" type="small">
+                                This sends immediately after your business is approved. Avoid
+                                sending frequent or unrelated alerts.
+                              </ThemedText>
+                              <PrimaryButton
+                                loading={saving}
+                                disabled={saving || !newUpdateTitle.trim() || !newUpdateBody.trim()}
+                                label={saving ? 'Sending…' : 'Send to followers'}
+                                onPress={() => void sendBusinessUpdate()}
+                              />
+                            </View>
+                          </MerchantSheet>
+                          <MerchantSheet
+                            visible={Boolean(selectedUpdate)}
+                            title={selectedUpdate?.title ?? 'Update'}
+                            onClose={() => setSelectedUpdateId(null)}
+                          >
+                            {selectedUpdate && (
+                              <>
+                                <MerchantStatus
+                                  label={
+                                    selectedUpdate.update_type === 'deal'
+                                      ? 'Special offer'
+                                      : 'Announcement'
+                                  }
+                                />
+                                <ThemedText themeColor="textSecondary">
+                                  Sent {new Date(selectedUpdate.created_at).toLocaleString()}
+                                </ThemedText>
+                                <FlowSection title="Message sent">
+                                  <ThemedText selectable>{selectedUpdate.body}</ThemedText>
+                                </FlowSection>
+                              </>
+                            )}
+                          </MerchantSheet>
+                        </View>
+                      )}
+
+                      {section === 'rewards' && (
+                        <View style={{ gap: 16 }}>
+                          <WorkspaceSectionToolbar
+                            subtitle="Program overview"
+                            action={
+                              canEdit ? (
+                                <MerchantButton
+                                  label={reward ? 'Edit rules' : 'Create program'}
+                                  secondary
+                                  disabled={saving}
+                                  onPress={() => setRewardEditorOpen(true)}
+                                />
+                              ) : undefined
+                            }
+                          />
+                          {reward ? (
+                            <View style={{ gap: 16 }}>
+                              <RewardProgramCard
+                                preview
+                                name={reward.name}
+                                description={reward.reward_description}
+                                type={reward.program_type}
+                                target={
+                                  reward.program_type === 'visits'
+                                    ? reward.stamps_required
+                                    : (reward.points_required ?? 0)
+                                }
+                                active={reward.is_active}
+                              />
+                              <View
+                                style={{
+                                  padding: 18,
+                                  borderRadius: 16,
+                                  borderWidth: 1,
+                                  borderColor: colors.border,
+                                  backgroundColor: colors.backgroundElement,
+                                  gap: 7,
+                                }}
+                              >
+                                <ThemedText type="smallBold">Customers earn</ThemedText>
+                                <ThemedText>
+                                  {reward.program_type === 'visits'
+                                    ? '1 stamp per visit'
+                                    : reward.points_per_dollar + ' points per $1'}
+                                </ThemedText>
+                                {!!reward.terms && (
+                                  <ThemedText type="small" themeColor="textSecondary">
+                                    {reward.terms}
+                                  </ThemedText>
+                                )}
+                              </View>
+                            </View>
+                          ) : (
+                            <EmptyState
+                              title="No rewards program"
+                              message="Create a program to let customers earn visit stamps or spend points."
+                            />
+                          )}
+                          <MerchantSheet
+                            visible={rewardEditorOpen && canEdit}
+                            title="Reward rules"
+                            blocked={saving}
+                            onClose={() => setRewardEditorOpen(false)}
+                          >
+                            {error && <Notice kind="error" message={error} />}
+                            {notice && <Notice kind="success" message={notice} />}
+                            <View style={{ gap: 12 }}>
+                              <FlowSection title="Preview your reward card" collapsible>
+                                <RewardProgramCard
+                                  preview
+                                  name={rewardName || 'Your rewards program'}
+                                  description={
+                                    rewardDescription || 'Give customers a reason to come back.'
+                                  }
+                                  type={rewardProgramType}
+                                  target={
+                                    Number(
+                                      rewardProgramType === 'visits'
+                                        ? stampsRequired
+                                        : pointsRequired,
+                                    ) || 0
+                                  }
+                                />
+                              </FlowSection>
+                              <ThemedText type="card">1 · How customers earn</ThemedText>
+                              <ThemedText type="small" themeColor="textSecondary">
+                                Choose a visit-based or spend-based program.
+                              </ThemedText>
+                              <View style={styles.choiceRow}>
+                                <ChoiceButton
+                                  label="Visit stamps"
+                                  selected={rewardProgramType === 'visits'}
+                                  onPress={() => canEdit && setRewardProgramType('visits')}
+                                />
+                                <ChoiceButton
+                                  label="Spend points"
+                                  selected={rewardProgramType === 'points'}
+                                  onPress={() => canEdit && setRewardProgramType('points')}
+                                />
+                              </View>
+                              <ThemedText type="card">2 · What customers receive</ThemedText>
+                              <Field
+                                label="Program name"
+                                value={rewardName}
+                                onChangeText={setRewardName}
+                                colors={colors}
+                                editable={canEdit}
+                              />
+                              <Field
+                                label="Reward description"
+                                value={rewardDescription}
+                                onChangeText={setRewardDescription}
+                                colors={colors}
+                                editable={canEdit}
+                                multiline
+                                style={styles.multiline}
+                              />
+                              <FlowSection
+                                title="Use rewards at checkout"
+                                description="Optional rewards for pickup orders"
+                                collapsible
+                                initiallyOpen={checkoutRewardEnabled}
+                              >
+                                <CheckoutRewardEditor
+                                  businessId={businessId}
+                                  enabled={checkoutRewardEnabled}
+                                  type={checkoutRewardType}
+                                  percent={checkoutRewardPercent}
+                                  items={checkoutRewardItems}
+                                  disabled={!canEdit}
+                                  onEnabled={setCheckoutRewardEnabled}
+                                  onType={setCheckoutRewardType}
+                                  onPercent={setCheckoutRewardPercent}
+                                  onItems={setCheckoutRewardItems}
+                                />
+                              </FlowSection>
+                              {rewardProgramType === 'visits' ? (
+                                <Field
+                                  label="Stamps required (2–30)"
+                                  value={stampsRequired}
+                                  onChangeText={setStampsRequired}
+                                  colors={colors}
+                                  editable={canEdit}
+                                  keyboardType="number-pad"
+                                  maxLength={2}
+                                />
                               ) : (
                                 <>
-                                  <View style={styles.rowText}>
+                                  <Field
+                                    label="Points earned per $1 spent"
+                                    value={pointsPerDollar}
+                                    onChangeText={setPointsPerDollar}
+                                    colors={colors}
+                                    editable={canEdit}
+                                    keyboardType="decimal-pad"
+                                  />
+                                  <Field
+                                    label="Points needed to redeem (required)"
+                                    value={pointsRequired}
+                                    onChangeText={setPointsRequired}
+                                    colors={colors}
+                                    editable={canEdit}
+                                    keyboardType="number-pad"
+                                  />
+                                  <ThemedText themeColor="textSecondary" type="small">
+                                    Staff will enter the purchase total when scanning. A $25
+                                    purchase at 1 point per dollar earns 25 points.
+                                  </ThemedText>
+                                </>
+                              )}
+                              <Field
+                                label="3 · Terms (optional)"
+                                value={rewardTerms}
+                                onChangeText={setRewardTerms}
+                                colors={colors}
+                                editable={canEdit}
+                                multiline
+                                style={styles.multiline}
+                              />
+                              {reward && (
+                                <LabeledSwitch
+                                  label="Program active"
+                                  disabled={!canEdit}
+                                  value={reward.is_active}
+                                  onValueChange={(value) => void toggleReward(value)}
+                                />
+                              )}
+                              {canEdit && (
+                                <PrimaryButton
+                                  loading={saving}
+                                  disabled={saving}
+                                  label={
+                                    saving
+                                      ? 'Saving…'
+                                      : reward
+                                        ? 'Save rewards program'
+                                        : 'Create rewards program'
+                                  }
+                                  onPress={() => void saveReward()}
+                                />
+                              )}
+                            </View>
+                          </MerchantSheet>
+                        </View>
+                      )}
+
+                      {section === 'photos' && (
+                        <View style={styles.cardList}>
+                          <WorkspaceSectionToolbar
+                            subtitle={photos.length + ' images'}
+                            action={
+                              canEdit ? (
+                                <MerchantButton
+                                  label="Add photo"
+                                  secondary
+                                  disabled={photoUploading || saving}
+                                  onPress={() => setPhotoUploadOpen(true)}
+                                />
+                              ) : undefined
+                            }
+                          />
+                          {!selectedPhoto && (
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+                              {photos.map((photo) => {
+                                const asset = firstMediaAsset(photo.media_assets);
+                                return (
+                                  <Pressable
+                                    key={photo.id}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={
+                                      'Open ' +
+                                      photo.role.replaceAll('_', ' ') +
+                                      ': ' +
+                                      (photo.caption || asset?.alt_text || 'photo')
+                                    }
+                                    disabled={saving || photoUploading}
+                                    onPress={() => setSelectedPhotoId(photo.id)}
+                                    style={{
+                                      width: '47%',
+                                      flexGrow: 0,
+                                      gap: 8,
+                                      padding: 10,
+                                      borderRadius: 12,
+                                      borderWidth: 1,
+                                      borderColor: inventoryColors.border,
+                                      backgroundColor: inventoryColors.surface,
+                                    }}
+                                  >
+                                    {asset?.status === 'ready' ? (
+                                      <Image
+                                        accessibilityLabel={
+                                          asset.alt_text ?? photo.caption ?? 'Business photo'
+                                        }
+                                        contentFit={photo.role === 'logo' ? 'contain' : 'cover'}
+                                        source={{ uri: storagePublicUrl(asset.storage_path) }}
+                                        style={{ width: '100%', aspectRatio: 1, borderRadius: 12 }}
+                                      />
+                                    ) : (
+                                      <ThemedText type="small" themeColor="textSecondary">
+                                        Image {asset?.status ?? 'unavailable'}
+                                      </ThemedText>
+                                    )}
                                     <ThemedText type="smallBold">
                                       {photo.role === 'gallery'
                                         ? 'Gallery photo'
@@ -5844,366 +5812,516 @@ function BusinessWorkspaceContent({
                                           ? 'Business logo'
                                           : 'Cover photo'}
                                     </ThemedText>
-                                    <ThemedText themeColor="textSecondary" type="small">
-                                      {photo.caption || asset?.alt_text || 'No caption'}
+                                    <ThemedText
+                                      type="small"
+                                      themeColor="textSecondary"
+                                      numberOfLines={2}
+                                    >
+                                      {photo.caption || asset?.alt_text || 'No description'}
                                     </ThemedText>
-                                  </View>
-                                  <View style={styles.statusBadge}>
-                                    <ThemedText style={styles.statusText} type="smallBold">
-                                      {asset?.status === 'ready'
-                                        ? 'Visible on your page'
-                                        : 'Processing image'}
-                                    </ThemedText>
-                                  </View>
-                                  {canEdit && (
-                                    <View style={styles.inlineActions}>
-                                      <MerchantButton
-                                        label="Move earlier"
-                                        secondary
-                                        disabled={photoIndex === 0}
-                                        onPress={() => void movePhoto(photo, -1)}
-                                      />
-                                      <MerchantButton
-                                        label="Move later"
-                                        secondary
-                                        disabled={photoIndex === photos.length - 1}
-                                        onPress={() => void movePhoto(photo, 1)}
-                                      />
-                                      <MerchantButton
-                                        label="Edit caption"
-                                        secondary
-                                        onPress={() => beginPhotoEdit(photo)}
-                                      />
-                                      <MerchantButton
-                                        label="Remove photo"
-                                        destructive
-                                        onPress={() => removePhoto(photo)}
-                                      />
-                                    </View>
-                                  )}
-                                </>
-                              )}
+                                  </Pressable>
+                                );
+                              })}
                             </View>
-                          );
-                        })
-                      )}
-                      <Notice
-                        kind="info"
-                        message="Captions, ordering and removal are saved immediately. Open a photo to manage it."
-                      />
-                    </View>
-                  )}
-
-                  {section === 'staff' && canEdit && (
-                    <View style={{ gap: 16 }}>
-                      <WorkspaceSectionToolbar
-                        subtitle={
-                          staff.length + ' members · ' + pendingInvites.length + ' pending invites'
-                        }
-                        action={
-                          <MerchantButton
-                            label="Invite"
-                            secondary
-                            disabled={saving}
-                            onPress={() => setContentPanel('invite')}
-                          />
-                        }
-                      />
-                      <MerchantSearch
-                        value={contentQuery}
-                        onChange={setContentQuery}
-                        placeholder="Search staff and invites"
-                      />
-                      <ThemedText accessibilityRole="header" type="smallBold">
-                        Members
-                      </ThemedText>
-                      <View style={[merchantStyles.list, { borderColor: inventoryColors.border }]}>
-                        {staff
-                          .filter((member) =>
-                            member.display_name
-                              .toLowerCase()
-                              .includes(contentQuery.trim().toLowerCase()),
-                          )
-                          .map((member) => (
-                            <MerchantRow
-                              key={member.member_id}
-                              title={member.display_name}
-                              leading={<FlowAvatar name={member.display_name} />}
-                              subtitle={'Added ' + new Date(member.created_at).toLocaleDateString()}
-                              status={<MerchantStatus label="Staff" />}
-                              onPress={() => setSelectedStaffId(member.member_id)}
+                          )}
+                          {selectedPhoto && (
+                            <BackPill
+                              label="Back to photos"
+                              disabled={saving || photoUploading}
+                              onPress={() => closePhotoView()}
                             />
-                          ))}
-                      </View>
-                      {!staff.length && (
-                        <EmptyState
-                          title="No staff members"
-                          message="Invite trusted staff to use Staff Scan for rewards, pickups and events."
-                        />
-                      )}
-                      {!!staff.length &&
-                        !staff.some((member) =>
-                          member.display_name
-                            .toLowerCase()
-                            .includes(contentQuery.trim().toLowerCase()),
-                        ) && <StateNotice message="No staff members match your search." />}
-                      <ThemedText accessibilityRole="header" type="smallBold">
-                        Pending invitations
-                      </ThemedText>
-                      <View style={[merchantStyles.list, { borderColor: inventoryColors.border }]}>
-                        {pendingInvites
-                          .filter((invite) =>
-                            invite.invited_email
-                              .toLowerCase()
-                              .includes(contentQuery.trim().toLowerCase()),
-                          )
-                          .map((invite) => (
-                            <MerchantRow
-                              key={invite.invite_id}
-                              title={invite.invited_email}
-                              subtitle={
-                                'Expires ' + new Date(invite.expires_at).toLocaleDateString()
-                              }
-                              status={<MerchantStatus label="Pending" tone="warning" />}
-                              onPress={() => setSelectedInviteId(invite.invite_id)}
-                            />
-                          ))}
-                      </View>
-                      {!pendingInvites.length && (
-                        <ThemedText type="small" themeColor="textSecondary">
-                          No pending invitations.
-                        </ThemedText>
-                      )}
-                      <MerchantSheet
-                        visible={contentPanel === 'invite'}
-                        title="Invite staff"
-                        blocked={saving}
-                        onClose={() => setContentPanel(null)}
-                      >
-                        {error && <Notice kind="error" message={error} />}
-                        {notice && <Notice kind="success" message={notice} />}
-                        <View style={styles.formCard}>
-                          <ThemedText themeColor="textSecondary" type="small">
-                            Send a secure, single-use link. They can create an account or sign in
-                            first, then accept the invite to unlock Staff Scan access.
-                          </ThemedText>
-                          <FlowSection title="Invite someone to your team">
-                            <Field
-                              label="Staff email"
-                              value={staffEmail}
-                              onChangeText={setStaffEmail}
-                              colors={colors}
-                              editable={!saving}
-                              keyboardType="email-address"
-                              autoCapitalize="none"
-                              autoCorrect={false}
-                            />
-                          </FlowSection>
-                          <PrimaryButton
-                            loading={saving}
-                            disabled={saving}
-                            label={saving ? 'Creating invite…' : 'Create invite'}
-                            onPress={() => void createStaffInvite()}
-                          />
-                        </View>
-                        {latestInviteLink && (
-                          <View style={styles.inviteLinkCard}>
-                            <View style={styles.rowText}>
-                              <ThemedText type="smallBold">
-                                Invite ready for {latestInviteLink.email}
-                              </ThemedText>
-                              <ThemedText themeColor="textSecondary" type="small">
-                                This link expires in 7 days and works whether they already have an
-                                account or are joining Parish Pass for the first time.
-                              </ThemedText>
-                              <ThemedText
-                                selectable
-                                numberOfLines={2}
-                                style={styles.inviteLinkText}
-                                type="code"
-                              >
-                                {latestInviteLink.url}
-                              </ThemedText>
-                              <ThemedText themeColor="textSecondary" type="small">
-                                You can also press and hold the link to copy it.
-                              </ThemedText>
-                            </View>
-                            <PrimaryButton
-                              loading={saving}
-                              disabled={false}
-                              label="Share or copy invite link"
-                              onPress={() => void shareStaffInvite()}
-                            />
-                          </View>
-                        )}
-                      </MerchantSheet>
-                      <MerchantSheet
-                        visible={Boolean(selectedStaff)}
-                        title={selectedStaff?.display_name ?? 'Staff member'}
-                        blocked={saving}
-                        onClose={() => setSelectedStaffId(null)}
-                      >
-                        {error && <Notice kind="error" message={error} />}
-                        {selectedStaff && (
-                          <>
-                            <FlowIdentity
-                              name={selectedStaff.display_name}
-                              detail="Staff Scan access"
-                            />
-                            <ThemedText themeColor="textSecondary">
-                              Added {new Date(selectedStaff.created_at).toLocaleDateString()}
-                            </ThemedText>
-                            <ThemedText>
-                              Removing this member revokes their staff access to this business.
-                            </ThemedText>
-                            <MerchantButton
-                              label="Remove staff member"
-                              destructive
-                              loading={saving}
-                              onPress={() => removeStaffMember(selectedStaff)}
-                            />
-                          </>
-                        )}
-                      </MerchantSheet>
-                      <MerchantSheet
-                        visible={Boolean(selectedInvite)}
-                        title="Pending invitation"
-                        blocked={saving}
-                        onClose={() => setSelectedInviteId(null)}
-                      >
-                        {error && <Notice kind="error" message={error} />}
-                        {selectedInvite && (
-                          <>
-                            <FlowIdentity
-                              name={selectedInvite.invited_email}
-                              detail="Invitation pending"
-                            />
-                            <ThemedText themeColor="textSecondary">
-                              Expires {new Date(selectedInvite.expires_at).toLocaleString()}
-                            </ThemedText>
-                            <MerchantButton
-                              label="Revoke invitation"
-                              destructive
-                              loading={saving}
-                              onPress={() => revokeStaffInvite(selectedInvite)}
-                            />
-                          </>
-                        )}
-                      </MerchantSheet>
-                    </View>
-                  )}
-
-                  {section === 'review' && business && (
-                    <View style={styles.cardList}>
-                      <View style={{ gap: 12 }}>
-                        <WorkspaceSectionToolbar
-                          subtitle={
-                            readiness
-                              ? readiness.checks.filter((check) => check.complete).length +
-                                ' of ' +
-                                readiness.checks.length +
-                                ' requirements complete'
-                              : 'Checking publication requirements'
-                          }
-                        />
-                        <MerchantStatus
-                          label={
-                            business.status === 'active'
-                              ? 'Published'
-                              : business.status === 'pending_review'
-                                ? 'Awaiting review'
-                                : 'Draft'
-                          }
-                          tone={business.status === 'active' ? 'success' : 'quiet'}
-                        />
-                        <ThemedText themeColor="textSecondary">
-                          These are the requirements to publish. Menu items, products and services
-                          are recommended, but do not block submission.
-                        </ThemedText>
-                        <View
-                          style={[merchantStyles.list, { borderColor: inventoryColors.border }]}
-                        >
-                          {readiness?.checks.map((check) => {
-                            const destination = publishingCheckSection(
-                              check.key,
-                              business.business_type === 'mobile',
-                            );
-                            return (
-                              <MerchantRow
-                                key={check.key}
-                                title={check.label}
-                                status={
-                                  <MerchantStatus
-                                    label={check.complete ? 'Complete' : 'Required'}
-                                    tone={check.complete ? 'success' : 'warning'}
+                          )}
+                          {canEdit && (
+                            <MerchantSheet
+                              visible={photoUploadOpen}
+                              title="Add business photo"
+                              blocked={photoUploading || saving}
+                              onClose={() => setPhotoUploadOpen(false)}
+                            >
+                              {error && <Notice kind="error" message={error} />}
+                              <View style={{ gap: 12 }}>
+                                <ThemedText themeColor="textSecondary" type="small">
+                                  Images are resized on this device before secure upload. Gallery
+                                  photos are limited to {mediaLimits.maxGalleryImages}.
+                                </ThemedText>
+                                <Field
+                                  label="Image description (optional)"
+                                  value={photoAltText}
+                                  onChangeText={setPhotoAltText}
+                                  colors={colors}
+                                  editable={!photoUploading}
+                                />
+                                <View style={styles.inlineActions}>
+                                  <PrimaryButton
+                                    loading={saving}
+                                    disabled={photoUploading}
+                                    label={photoUploading ? 'Uploading…' : 'Add gallery photo'}
+                                    onPress={() => void pickAndUploadPhoto('gallery')}
                                   />
-                                }
-                                disabled={!canEdit || !destination}
-                                label={canEdit && destination ? 'Edit ' + check.label : check.label}
-                                onPress={() => {
-                                  if (canEdit && destination) openEditor(destination);
-                                }}
-                              />
-                            );
-                          })}
+                                  <SecondaryButton
+                                    disabled={photoUploading}
+                                    label="Add cover"
+                                    onPress={() => void pickAndUploadPhoto('cover')}
+                                  />
+                                  <SecondaryButton
+                                    disabled={photoUploading}
+                                    label="Add logo"
+                                    onPress={() => void pickAndUploadPhoto('logo')}
+                                  />
+                                </View>
+                              </View>
+                            </MerchantSheet>
+                          )}
+                          {photos.length === 0 ? (
+                            <EmptyState
+                              title="No photos yet"
+                              message="No photos have been added to this business."
+                            />
+                          ) : (
+                            photos.map((photo, photoIndex) => {
+                              if (photo.id !== selectedPhotoId) return null;
+                              const asset = Array.isArray(photo.media_assets)
+                                ? photo.media_assets[0]
+                                : photo.media_assets;
+                              return (
+                                <View key={photo.id} style={styles.settingRowCard}>
+                                  {asset?.status === 'ready' && (
+                                    <Image
+                                      accessibilityLabel={asset.alt_text ?? photo.caption ?? ''}
+                                      source={{ uri: storagePublicUrl(asset.storage_path) }}
+                                      contentFit={photo.role === 'logo' ? 'contain' : 'cover'}
+                                      style={[
+                                        styles.photoPreview,
+                                        { backgroundColor: colors.logoSurface },
+                                      ]}
+                                      transition={180}
+                                    />
+                                  )}
+                                  {editingPhotoId === photo.id ? (
+                                    <View style={styles.editForm}>
+                                      <ThemedText type="smallBold">
+                                        Photo caption (optional)
+                                      </ThemedText>
+                                      <TextInput
+                                        accessibilityLabel="Photo caption"
+                                        editable={canEdit}
+                                        onChangeText={setPhotoCaptionDraft}
+                                        placeholder="Describe this photo for customers"
+                                        placeholderTextColor={colors.textSecondary}
+                                        style={[
+                                          styles.input,
+                                          {
+                                            color: colors.text,
+                                            backgroundColor: colors.background,
+                                            borderColor: colors.inputBorder,
+                                          },
+                                        ]}
+                                        value={photoCaptionDraft}
+                                      />
+                                      <View style={styles.inlineActions}>
+                                        <PrimaryButton
+                                          loading={saving}
+                                          disabled={!canEdit}
+                                          label="Save caption"
+                                          onPress={() => void savePhotoCaption(photo)}
+                                        />
+                                        <SecondaryButton
+                                          label="Cancel"
+                                          onPress={() => closePhotoView(false)}
+                                        />
+                                      </View>
+                                    </View>
+                                  ) : (
+                                    <>
+                                      <View style={styles.rowText}>
+                                        <ThemedText type="smallBold">
+                                          {photo.role === 'gallery'
+                                            ? 'Gallery photo'
+                                            : photo.role === 'logo'
+                                              ? 'Business logo'
+                                              : 'Cover photo'}
+                                        </ThemedText>
+                                        <ThemedText themeColor="textSecondary" type="small">
+                                          {photo.caption || asset?.alt_text || 'No caption'}
+                                        </ThemedText>
+                                      </View>
+                                      <View style={styles.statusBadge}>
+                                        <ThemedText style={styles.statusText} type="smallBold">
+                                          {asset?.status === 'ready'
+                                            ? 'Visible on your page'
+                                            : 'Processing image'}
+                                        </ThemedText>
+                                      </View>
+                                      {canEdit && (
+                                        <View style={styles.inlineActions}>
+                                          <MerchantButton
+                                            label="Move earlier"
+                                            secondary
+                                            disabled={photoIndex === 0}
+                                            onPress={() => void movePhoto(photo, -1)}
+                                          />
+                                          <MerchantButton
+                                            label="Move later"
+                                            secondary
+                                            disabled={photoIndex === photos.length - 1}
+                                            onPress={() => void movePhoto(photo, 1)}
+                                          />
+                                          <MerchantButton
+                                            label="Edit caption"
+                                            secondary
+                                            onPress={() => beginPhotoEdit(photo)}
+                                          />
+                                          <MerchantButton
+                                            label="Remove photo"
+                                            destructive
+                                            onPress={() => removePhoto(photo)}
+                                          />
+                                        </View>
+                                      )}
+                                    </>
+                                  )}
+                                </View>
+                              );
+                            })
+                          )}
+                          <Notice
+                            kind="info"
+                            message="Captions, ordering and removal are saved immediately. Open a photo to manage it."
+                          />
                         </View>
-                        {business.review_feedback && (
-                          <Notice
-                            kind="info"
-                            message={'Review feedback: ' + business.review_feedback}
+                      )}
+
+                      {section === 'staff' && canEdit && (
+                        <View style={{ gap: 16 }}>
+                          <WorkspaceSectionToolbar
+                            subtitle={
+                              staff.length +
+                              ' members · ' +
+                              pendingInvites.length +
+                              ' pending invites'
+                            }
+                            action={
+                              <MerchantButton
+                                label="Invite"
+                                secondary
+                                disabled={saving}
+                                onPress={() => setContentPanel('invite')}
+                              />
+                            }
                           />
-                        )}
-                        {checkingReadiness && <ThemedText>Checking saved changes…</ThemedText>}
-                        {readinessError && (
-                          <Notice
-                            kind="info"
-                            message="We couldn’t check your saved changes. Retry before submitting."
+                          <MerchantSearch
+                            value={contentQuery}
+                            onChange={setContentQuery}
+                            placeholder="Search staff and invites"
                           />
-                        )}
-                        <AppButton
-                          label="Recheck requirements"
-                          variant="secondary"
-                          disabled={checkingReadiness}
-                          onPress={() => void refreshReadiness()}
-                        />
-                        {business.status === 'draft' && canEdit && (
-                          <>
-                            <AppButton
-                              label="View listing plans"
-                              onPress={() => router.push('/listing-plans' as Href)}
-                              variant="secondary"
+                          <ThemedText accessibilityRole="header" type="smallBold">
+                            Members
+                          </ThemedText>
+                          <View
+                            style={[merchantStyles.list, { borderColor: inventoryColors.border }]}
+                          >
+                            {staff
+                              .filter((member) =>
+                                member.display_name
+                                  .toLowerCase()
+                                  .includes(contentQuery.trim().toLowerCase()),
+                              )
+                              .map((member) => (
+                                <MerchantRow
+                                  key={member.member_id}
+                                  title={member.display_name}
+                                  leading={<FlowAvatar name={member.display_name} />}
+                                  subtitle={
+                                    'Added ' + new Date(member.created_at).toLocaleDateString()
+                                  }
+                                  status={<MerchantStatus label="Staff" />}
+                                  onPress={() => setSelectedStaffId(member.member_id)}
+                                />
+                              ))}
+                          </View>
+                          {!staff.length && (
+                            <EmptyState
+                              title="No staff members"
+                              message="Invite trusted staff to use Staff Scan for rewards, pickups and events."
                             />
-                            <PrimaryButton
-                              loading={saving}
-                              disabled={saving || checkingReadiness || !readiness?.ready}
-                              label={
-                                readiness?.ready
-                                  ? 'Submit for Parish Pass review'
-                                  : 'Complete checklist to submit'
+                          )}
+                          {!!staff.length &&
+                            !staff.some((member) =>
+                              member.display_name
+                                .toLowerCase()
+                                .includes(contentQuery.trim().toLowerCase()),
+                            ) && <StateNotice message="No staff members match your search." />}
+                          <ThemedText accessibilityRole="header" type="smallBold">
+                            Pending invitations
+                          </ThemedText>
+                          <View
+                            style={[merchantStyles.list, { borderColor: inventoryColors.border }]}
+                          >
+                            {pendingInvites
+                              .filter((invite) =>
+                                invite.invited_email
+                                  .toLowerCase()
+                                  .includes(contentQuery.trim().toLowerCase()),
+                              )
+                              .map((invite) => (
+                                <MerchantRow
+                                  key={invite.invite_id}
+                                  title={invite.invited_email}
+                                  subtitle={
+                                    'Expires ' + new Date(invite.expires_at).toLocaleDateString()
+                                  }
+                                  status={<MerchantStatus label="Pending" tone="warning" />}
+                                  onPress={() => setSelectedInviteId(invite.invite_id)}
+                                />
+                              ))}
+                          </View>
+                          {!pendingInvites.length && (
+                            <ThemedText type="small" themeColor="textSecondary">
+                              No pending invitations.
+                            </ThemedText>
+                          )}
+                          <MerchantSheet
+                            visible={contentPanel === 'invite'}
+                            title="Invite staff"
+                            blocked={saving}
+                            onClose={() => setContentPanel(null)}
+                          >
+                            {error && <Notice kind="error" message={error} />}
+                            {notice && <Notice kind="success" message={notice} />}
+                            <View style={styles.formCard}>
+                              <ThemedText themeColor="textSecondary" type="small">
+                                Send a secure, single-use link. They can create an account or sign
+                                in first, then accept the invite to unlock Staff Scan access.
+                              </ThemedText>
+                              <FlowSection title="Invite someone to your team">
+                                <Field
+                                  label="Staff email"
+                                  value={staffEmail}
+                                  onChangeText={setStaffEmail}
+                                  colors={colors}
+                                  editable={!saving}
+                                  keyboardType="email-address"
+                                  autoCapitalize="none"
+                                  autoCorrect={false}
+                                />
+                              </FlowSection>
+                              <PrimaryButton
+                                loading={saving}
+                                disabled={saving}
+                                label={saving ? 'Creating invite…' : 'Create invite'}
+                                onPress={() => void createStaffInvite()}
+                              />
+                            </View>
+                            {latestInviteLink && (
+                              <View style={styles.inviteLinkCard}>
+                                <View style={styles.rowText}>
+                                  <ThemedText type="smallBold">
+                                    Invite ready for {latestInviteLink.email}
+                                  </ThemedText>
+                                  <ThemedText themeColor="textSecondary" type="small">
+                                    This link expires in 7 days and works whether they already have
+                                    an account or are joining Parish Pass for the first time.
+                                  </ThemedText>
+                                  <ThemedText
+                                    selectable
+                                    numberOfLines={2}
+                                    style={styles.inviteLinkText}
+                                    type="code"
+                                  >
+                                    {latestInviteLink.url}
+                                  </ThemedText>
+                                  <ThemedText themeColor="textSecondary" type="small">
+                                    You can also press and hold the link to copy it.
+                                  </ThemedText>
+                                </View>
+                                <PrimaryButton
+                                  loading={saving}
+                                  disabled={false}
+                                  label="Share or copy invite link"
+                                  onPress={() => void shareStaffInvite()}
+                                />
+                              </View>
+                            )}
+                          </MerchantSheet>
+                          <MerchantSheet
+                            visible={Boolean(selectedStaff)}
+                            title={selectedStaff?.display_name ?? 'Staff member'}
+                            blocked={saving}
+                            onClose={() => setSelectedStaffId(null)}
+                          >
+                            {error && <Notice kind="error" message={error} />}
+                            {selectedStaff && (
+                              <>
+                                <FlowIdentity
+                                  name={selectedStaff.display_name}
+                                  detail="Staff Scan access"
+                                />
+                                <ThemedText themeColor="textSecondary">
+                                  Added {new Date(selectedStaff.created_at).toLocaleDateString()}
+                                </ThemedText>
+                                <ThemedText>
+                                  Removing this member revokes their staff access to this business.
+                                </ThemedText>
+                                <MerchantButton
+                                  label="Remove staff member"
+                                  destructive
+                                  loading={saving}
+                                  onPress={() => removeStaffMember(selectedStaff)}
+                                />
+                              </>
+                            )}
+                          </MerchantSheet>
+                          <MerchantSheet
+                            visible={Boolean(selectedInvite)}
+                            title="Pending invitation"
+                            blocked={saving}
+                            onClose={() => setSelectedInviteId(null)}
+                          >
+                            {error && <Notice kind="error" message={error} />}
+                            {selectedInvite && (
+                              <>
+                                <FlowIdentity
+                                  name={selectedInvite.invited_email}
+                                  detail="Invitation pending"
+                                />
+                                <ThemedText themeColor="textSecondary">
+                                  Expires {new Date(selectedInvite.expires_at).toLocaleString()}
+                                </ThemedText>
+                                <MerchantButton
+                                  label="Revoke invitation"
+                                  destructive
+                                  loading={saving}
+                                  onPress={() => revokeStaffInvite(selectedInvite)}
+                                />
+                              </>
+                            )}
+                          </MerchantSheet>
+                        </View>
+                      )}
+
+                      {section === 'review' && business && (
+                        <View style={styles.cardList}>
+                          <View style={{ gap: 12 }}>
+                            <WorkspaceSectionToolbar
+                              subtitle={
+                                readiness
+                                  ? readiness.checks.filter((check) => check.complete).length +
+                                    ' of ' +
+                                    readiness.checks.length +
+                                    ' requirements complete'
+                                  : 'Checking publication requirements'
                               }
-                              onPress={() => void submitForReview()}
                             />
-                          </>
-                        )}
-                        {business.status === 'pending_review' && (
-                          <Notice
-                            kind="info"
-                            message="This page is waiting for Parish Pass review. Editing your listing returns it to draft; submit again when your changes are ready."
-                          />
-                        )}
-                        {business.status === 'active' && (
-                          <Notice kind="success" message="This business page is live." />
-                        )}
-                      </View>
-                    </View>
+                            <MerchantStatus
+                              label={
+                                business.status === 'active'
+                                  ? 'Published'
+                                  : business.status === 'pending_review'
+                                    ? 'Awaiting review'
+                                    : 'Draft'
+                              }
+                              tone={business.status === 'active' ? 'success' : 'quiet'}
+                            />
+                            <ThemedText themeColor="textSecondary">
+                              These are the requirements to publish. Menu items, products and
+                              services are recommended, but do not block submission.
+                            </ThemedText>
+                            <View
+                              style={[merchantStyles.list, { borderColor: inventoryColors.border }]}
+                            >
+                              {readiness?.checks.map((check) => {
+                                const destination = publishingCheckSection(
+                                  check.key,
+                                  business.business_type === 'mobile',
+                                );
+                                return (
+                                  <MerchantRow
+                                    key={check.key}
+                                    title={check.label}
+                                    status={
+                                      <MerchantStatus
+                                        label={check.complete ? 'Complete' : 'Required'}
+                                        tone={check.complete ? 'success' : 'warning'}
+                                      />
+                                    }
+                                    disabled={!canEdit || !destination}
+                                    label={
+                                      canEdit && destination ? 'Edit ' + check.label : check.label
+                                    }
+                                    onPress={() => {
+                                      if (canEdit && destination) openEditor(destination);
+                                    }}
+                                  />
+                                );
+                              })}
+                            </View>
+                            {business.review_feedback && (
+                              <Notice
+                                kind="info"
+                                message={'Review feedback: ' + business.review_feedback}
+                              />
+                            )}
+                            {checkingReadiness && <ThemedText>Checking saved changes…</ThemedText>}
+                            {readinessError && (
+                              <Notice
+                                kind="info"
+                                message="We couldn’t check your saved changes. Retry before submitting."
+                              />
+                            )}
+                            <AppButton
+                              label="Recheck requirements"
+                              variant="secondary"
+                              disabled={checkingReadiness}
+                              onPress={() => void refreshReadiness()}
+                            />
+                            {business.status === 'draft' && canEdit && (
+                              <>
+                                <AppButton
+                                  label="View listing plans"
+                                  onPress={() => router.push('/listing-plans' as Href)}
+                                  variant="secondary"
+                                />
+                                <PrimaryButton
+                                  loading={saving}
+                                  disabled={
+                                    checkingReadiness ||
+                                    !canSubmitBusinessForReview({
+                                      isOwner: canEdit,
+                                      status: business.status,
+                                      saving,
+                                      readiness,
+                                    })
+                                  }
+                                  label={
+                                    readiness?.ready
+                                      ? 'Submit for Parish Pass review'
+                                      : 'Complete checklist to submit'
+                                  }
+                                  onPress={() => void submitForReview()}
+                                />
+                              </>
+                            )}
+                            {business.status === 'pending_review' && (
+                              <Notice
+                                kind="info"
+                                message="This page is waiting for Parish Pass review. Editing your listing returns it to draft; submit again when your changes are ready."
+                              />
+                            )}
+                            {business.status === 'active' && (
+                              <Notice kind="success" message="This business page is live." />
+                            )}
+                          </View>
+                        </View>
+                      )}
+                    </>
                   )}
-                </>
-              )}
-            </BusinessFeatureGate>
-          </ScrollView>
-        </SafeAreaView>
-      </ThemedView>
-    </SwipeBackView>
+                </BusinessFeatureGate>
+              </ScrollView>
+            </SafeAreaView>
+          </ThemedView>
+        </SwipeBackView>
+      }
+    </PageHeaderScope>
   );
 }
 
@@ -6497,17 +6615,6 @@ function FormSectionDescription({ description }: { readonly description: string 
     <View style={styles.formSectionHeading}>
       <ThemedText themeColor="textSecondary" type="small">
         {description}
-      </ThemedText>
-    </View>
-  );
-}
-
-function MenuStat({ label, value }: { readonly label: string; readonly value: number }) {
-  return (
-    <View style={styles.menuStat}>
-      <ThemedText type="subtitle">{value}</ThemedText>
-      <ThemedText themeColor="textSecondary" type="small">
-        {label}
       </ThemedText>
     </View>
   );

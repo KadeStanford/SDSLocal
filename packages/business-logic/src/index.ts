@@ -304,3 +304,18 @@ export function calculateLoyaltyBalance(input: LoyaltyBalanceInput): LoyaltyBala
     progressTowardNextReward: availableStamps % input.stampsRequired,
   };
 }
+
+/** Shared client gate; the server still independently validates submission. */
+export function canSubmitBusinessForReview(input: {
+  isOwner: boolean; status: string; saving?: boolean;
+  readiness: {ready: boolean; checks: readonly {key: string; complete: boolean|null}[]}|null|undefined;
+}): boolean {
+  const keys=['description','category','contact','location','hours','logo','cover'];
+  return input.isOwner&&input.status==='draft'&&input.saving!==true&&input.readiness?.ready===true
+    &&keys.every(key=>input.readiness?.checks.some(check=>check.key===key&&check.complete===true));
+}
+
+
+export * from './moderation-outcome';
+
+export * from './staff-invite-preview';

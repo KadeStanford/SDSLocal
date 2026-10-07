@@ -31,9 +31,14 @@ export function RewardsCodeSheet({
     });
     return () => subscription.remove();
   }, []);
-  useEffect(() => {
+  const scope = JSON.stringify([visible, active, membershipId, retry]);
+  const [previousScope, setPreviousScope] = useState(scope);
+  if (previousScope !== scope) {
+    setPreviousScope(scope);
     setCode(null);
     setError(null);
+  }
+  useEffect(() => {
     if (!visible || !active || !membershipId) return;
     return startRewardCodeRotation(
       async () => {
@@ -84,7 +89,7 @@ export function RewardsCodeSheet({
           minHeight: 160,
         }}
       >
-        {active && code && Date.parse(code.expiresAt) > Date.now() && width > 40 ? (
+        {visible && active && code && width > 40 ? (
           <QRCode
             value={code.token}
             size={Math.min(280, width - 40)}

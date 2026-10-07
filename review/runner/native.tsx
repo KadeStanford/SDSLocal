@@ -1,0 +1,28 @@
+import {AppIcon} from '@/components/app-icon';
+import {assets} from './asset-map';
+import React,{useEffect} from 'react';
+import {View,Text,Image as WebImage,StyleSheet} from 'react-native-web';
+export const noop=()=>{};
+export const NativeComponent=({children,...props}:any)=><View {...props}>{children}</View>;
+export const nativeCall=async()=>({status:'denied',granted:false,canceled:true,assets:[],data:[],coords:{latitude:30.5045,longitude:-90.4625}});
+export const Image=({source,style,contentFit='cover',accessibilityLabel,onError,...props}:any)=>{const candidate=typeof source==='string'?{uri:source}:source;const uri=candidate?.uri?.replace('https://local-fixture.invalid','');const resolved=uri&&assets[uri]?{uri:assets[uri]}:candidate;return <WebImage {...props} source={resolved} style={style} resizeMode={contentFit==='contain'?'contain':'cover'} accessibilityLabel={accessibilityLabel} onError={onError}/>;};
+export const SymbolView=AppIcon;
+export const router={push:(target:any)=>navigate(target),replace:(target:any)=>navigate(target),back:()=>history.back(),canGoBack:()=>true,setParams:noop};
+function navigate(target:any){const url=new URL(location.href);const destination=new URL(typeof target==='string'?target:target.pathname,location.origin);url.searchParams.set('screen',destination.pathname.replace(/^\//,''));for(const[k,v]of destination.searchParams)url.searchParams.set(k,v);if(typeof target==='object')for(const[k,v]of Object.entries(target.params||{}))url.searchParams.set(k,String(v));location.href=url.href;}
+export const useFocusEffect=(fn:any)=>useEffect(fn,[fn]);
+export const useLocalSearchParams=()=>{const p=Object.fromEntries(new URLSearchParams(location.search));const defaults=['explore','calendar','rewards','account','businesses'].includes(p.screen||'explore')?{}:p.screen==='order'?{businessId:'cafe'}:{id:'cafe',slug:'bayou-bloom',businessId:'cafe',orderId:'fixture',membershipId:'membership'};return {...defaults,...p}};
+export const useRouter=()=>router;
+export const usePathname=()=>'/'+(new URLSearchParams(location.search).get('screen')||'explore');
+export const useSegments=()=>[usePathname()];
+export const useNavigation=()=>({addListener:()=>noop,setOptions:noop});
+export const Link=({href,children,...props}:any)=>React.createElement(Text,{...props,accessibilityRole:'link',href:typeof href==='string'?href:'#',onPress:(event:any)=>{event?.preventDefault?.();navigate(href);}},children);
+export const Redirect=({href}:any)=><Text>Route redirect: {String(href)}</Text>;
+export const Stack:any=NativeComponent;Stack.Screen=()=>null;
+export const Tabs:any=NativeComponent;Tabs.Screen=()=>null;
+export const Slot=NativeComponent;
+export const SafeAreaView=NativeComponent;
+export const SafeAreaProvider=NativeComponent;
+export const useSafeAreaInsets=()=>({top:0,bottom:0,left:0,right:0});
+export const useSafeAreaFrame=()=>({x:0,y:0,width:390,height:844});
+export const DefaultTheme={colors:{}};export const DarkTheme=DefaultTheme;export const ThemeProvider=NativeComponent;
+export const AnimatedView=View;

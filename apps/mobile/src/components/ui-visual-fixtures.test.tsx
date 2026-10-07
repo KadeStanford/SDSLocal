@@ -20,7 +20,7 @@ vi.mock('react-native', async () => vi.importActual('react-native-web'));
 vi.mock('@/hooks/use-color-scheme', () => ({ useColorScheme: () => review.scheme }));
 vi.mock('@/hooks/use-theme', () => ({ useTheme: () => themeColors[review.scheme] }));
 vi.mock('expo-router', () => ({ router: { push: vi.fn() }, useFocusEffect: () => {} }));
-vi.mock('expo-symbols', () => ({ SymbolView: () => null }));
+vi.mock('@/components/app-icon', () => ({ AppIcon: () => null }));
 vi.mock('expo-image', () => ({
   Image: ({
     source,

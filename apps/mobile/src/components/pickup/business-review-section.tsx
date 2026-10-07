@@ -1,3 +1,4 @@
+import { RatingLabel } from '@/components/rating-label';
 import { savePendingAuthIntent } from '@/lib/auth-intents';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, View } from 'react-native';
@@ -161,7 +162,7 @@ export function BusinessReviewSection({
       );
       if (reportError) throw reportError;
       setReportedIds((old) => new Set(old).add(reportId));
-      setNotice(data === false ? 'You already reported this review.' : 'Report sent to SDS Local.');
+      setNotice(data === false ? 'You already reported this review.' : 'Report sent to Parish Pass.');
       setReportId(null);
       setReason(null);
       setDetails('');
@@ -322,7 +323,7 @@ export function BusinessReviewSection({
           >
             <ThemedText type="title">Report this review</ThemedText>
             <ThemedText themeColor="textSecondary">
-              Your report goes privately to SDS Local for moderation.
+              Your report goes privately to Parish Pass for moderation.
             </ThemedText>
             {reportReasons.map(([key, label]) => (
               <Pressable
@@ -419,13 +420,7 @@ function ReviewIdentity({ review }: { review: PublicPickupReview }) {
           backgroundColor: c.backgroundSelected,
         }}
       >
-        <ThemedText
-          type="smallBold"
-          themeColor="accent"
-          accessibilityLabel={`${review.rating} out of 5 stars`}
-        >
-          ★ {review.rating}.0
-        </ThemedText>
+        <RatingLabel rating={review.rating} />
       </View>
     </View>
   );

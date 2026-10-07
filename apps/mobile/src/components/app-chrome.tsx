@@ -3,10 +3,10 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { useAppMode } from '@/providers/app-mode-provider';
-import { AlertsButton } from './alerts-button';
+
 import { ModeSwitch } from './mode-switch';
 import { router } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import { useTheme } from '@/hooks/use-theme';
 
 /** Shared utility actions for top-level customer and business screens. */
@@ -25,6 +25,7 @@ export function AppChrome({
   const businessMode = mode === 'business';
   const colors = useTheme();
 
+  if (!businessMode && !onBack) return null;
   return (
     <View
       style={[
@@ -66,7 +67,6 @@ export function AppChrome({
           <ThemedText type="small">Account</ThemedText>
         </Pressable>
       )}
-      <AlertsButton />
     </View>
   );
 }
@@ -74,12 +74,11 @@ export function AppChrome({
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: Spacing.two,
   },
-  // Alerts float over the utility edge in customer mode so removing the mode
-  // switch does not leave an empty 48px header band on every screen.
-  rowCustomer: { position: 'absolute', top: 0, right: Spacing.four, zIndex: 2 },
+  rowCustomer: { justifyContent: 'flex-end' },
   rowBusiness: { justifyContent: 'space-between' },
   rowInline: { flexShrink: 0 },
 });

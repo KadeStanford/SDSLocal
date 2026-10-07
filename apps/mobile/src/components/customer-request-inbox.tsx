@@ -1,9 +1,10 @@
-import { FlowAvatar, FlowSection, FlowIdentity } from '@/components/flow-layout';
+import { FlowSection, FlowIdentity } from '@/components/flow-layout';
 import { RequestAnswers } from './request-question-fields';
 import type { RequestAnswer } from '@/lib/service-request-schema';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { AppIcon } from './app-icon';
 import { ThemedText } from './themed-text';
-import { MerchantRow, MerchantStatus, merchantStyles } from './merchant-ui';
+import { MerchantStatus } from './merchant-ui';
 import { useMerchantTheme } from '@/hooks/use-merchant-theme';
 import { requestStatusLabels } from '@/lib/merchant-inbox';
 
@@ -73,31 +74,60 @@ export function CustomerRequestInbox({
 }) {
   const c = useMerchantTheme();
   return (
-    <View style={[merchantStyles.list, { borderColor: c.border }]}>
+    <View style={{ gap: 16 }}>
       {requests.map((request) => (
-        <MerchantRow
+        <Pressable
           key={request.id}
-          title={requestBusinessName(request)}
-          leading={<FlowAvatar name={requestBusinessName(request)} />}
-
-          subtitle={
-            'Sent ' +
-            new Date(request.created_at).toLocaleDateString(undefined, {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            })
-          }
-          detail={request.request_message}
-          status={
+          accessibilityRole="button"
+          accessibilityLabel={`View request to ${requestBusinessName(request)}, ${customerRequestStatus(request)}`}
+          onPress={() => onOpen(request.id)}
+          style={({ pressed }) => ({
+            borderWidth: 1,
+            borderColor: c.border,
+            borderRadius: 20,
+            overflow: 'hidden',
+            backgroundColor: c.surface,
+            opacity: pressed ? 0.8 : 1,
+          })}
+        >
+          <View style={{ padding: 18, gap: 16 }}>
+            <FlowIdentity
+              name={requestBusinessName(request)}
+              detail={
+                'Sent ' +
+                new Date(request.created_at).toLocaleDateString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })
+              }
+            />
             <MerchantStatus
               label={customerRequestStatus(request)}
               tone={request.status === 'completed' ? 'success' : 'quiet'}
             />
-          }
-          label={`View request to ${requestBusinessName(request)}, ${customerRequestStatus(request)}`}
-          onPress={() => onOpen(request.id)}
-        />
+            <ThemedText type="small" themeColor="textSecondary" numberOfLines={3}>
+              {request.request_message}
+            </ThemedText>
+          </View>
+          <View
+            style={{
+              minHeight: 48,
+              paddingHorizontal: 18,
+              paddingVertical: 13,
+              backgroundColor: c.success,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+            }}
+          >
+            <ThemedText type="smallBold" style={{ color: c.onAction }}>
+              View request
+            </ThemedText>
+            <AppIcon name="chevron-right" size={20} tintColor={c.onAction} />
+          </View>
+        </Pressable>
       ))}
     </View>
   );

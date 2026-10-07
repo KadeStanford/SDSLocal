@@ -1,3 +1,4 @@
+import { PageHeader } from '@/components/page-header';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -5,8 +6,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'reac
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PublicBusinessPageContent } from '@/components/public-business-page';
-import { CustomerAction } from '@/components/customer-ui';
-import { CustomerBrand } from '@/components/customer-brand';
+
 import { SwipeBackView } from '@/components/swipe-back-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -85,11 +85,8 @@ export default function PublicBusinessRoute() {
     <SwipeBackView onSwipeBack={() => router.back()}>
       <ThemedView style={styles.container}>
         <SafeAreaView edges={['top']} style={styles.container}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <CustomerAction label="Back" icon="back" iconOnly onPress={() => router.back()} />
-            <View style={{ flex: 1, paddingLeft: 14 }}>
-              <CustomerBrand />
-            </View>
+          <View style={styles.header}>
+            <PageHeader onBack={() => router.back()} />
           </View>
 
           <ScrollView
@@ -136,7 +133,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.two,
     minHeight: 56,
-    paddingHorizontal: Spacing.four,
+    paddingHorizontal: 20,
   },
   backButton: { minWidth: 64, minHeight: 44, justifyContent: 'center' },
   headerTitle: { flex: 1, textAlign: 'center' },
@@ -146,7 +143,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     gap: Spacing.three,
     maxWidth: 760,
-    padding: Spacing.four,
+    padding: 20,
     width: '100%',
   },
   loader: { marginVertical: Spacing.six },

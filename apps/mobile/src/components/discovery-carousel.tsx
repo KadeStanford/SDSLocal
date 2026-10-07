@@ -59,6 +59,8 @@ export function DiscoveryCarousel({
   cardWidth,
   rowWidth,
   children,
+  cardGap = 12,
+  showIndicators = true,
 }: {
   id: string;
   title: string;
@@ -66,25 +68,29 @@ export function DiscoveryCarousel({
   cardWidth: number;
   rowWidth: number;
   children: ReactNode;
+  cardGap?: number;
+  showIndicators?: boolean;
 }) {
   const [position, setPosition] = useState(0);
   return (
     <View style={{ gap: 10 }}>
       <HorizontalScrollRow
-        accessibilityLabel={`${title}, ${total} businesses. Swipe to explore.`}
+        accessibilityLabel={`${title}, ${total} businesses. Swipe to explore.${showIndicators ? '' : ` Business ${position + 1} of ${total}.`}`}
         testID={`discovery-carousel-${id}`}
-        snapToInterval={cardWidth + 12}
+        snapToInterval={cardWidth + cardGap}
         decelerationRate="fast"
         disableIntervalMomentum
         scrollEventThrottle={32}
         onScroll={(event) =>
-          setPosition(carouselPosition(event.nativeEvent.contentOffset.x, cardWidth + 12, total))
+          setPosition(
+            carouselPosition(event.nativeEvent.contentOffset.x, cardWidth + cardGap, total),
+          )
         }
-        contentContainerStyle={{ gap: 12, paddingRight: Math.max(0, rowWidth - cardWidth) }}
+        contentContainerStyle={{ gap: cardGap, paddingRight: Math.max(0, rowWidth - cardWidth) }}
       >
         {children}
       </HorizontalScrollRow>
-      <CarouselIndicators position={position} total={total} />
+      {showIndicators && <CarouselIndicators position={position} total={total} />}
     </View>
   );
 }

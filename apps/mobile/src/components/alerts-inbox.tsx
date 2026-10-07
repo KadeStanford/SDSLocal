@@ -1,5 +1,7 @@
+import { PageHeader } from './page-header';
 import { BusinessSearch } from './business-screen-header';
 import { useState } from 'react';
+
 import { Pressable, Switch, View } from 'react-native';
 import { EmptyState } from './data-state';
 import { ThemedText } from './themed-text';
@@ -10,17 +12,22 @@ import { splitNotificationAlerts } from '@/lib/notification-audience';
 export function AlertsInboxHeader({
   count,
   unread,
+  loading = false,
+  failed = false,
   onClear,
   onClose,
 }: {
   count: number;
   unread: number;
+  loading?: boolean;
+  failed?: boolean;
   onClear: () => void;
   onClose: () => void;
 }) {
   const c = useMerchantTheme();
   return (
-    <View style={{ gap: 4 }}>
+    <View style={{ gap: 16 }}>
+      <PageHeader onBack={onClose} backLabel="Back" alerts="current" />
       <View
         style={{
           flexDirection: 'row',
@@ -29,19 +36,13 @@ export function AlertsInboxHeader({
           gap: 16,
         }}
       >
-        <ThemedText type="title" style={{ flex: 1 }}>
+        <ThemedText
+          accessibilityRole="header"
+          type="title"
+          style={{ flex: 1, fontSize: 28, lineHeight: 34 }}
+        >
           Alerts
         </ThemedText>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Done"
-          onPress={onClose}
-          style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 }}
-        >
-          <ThemedText type="smallBold" style={{ color: c.success }}>
-            Done
-          </ThemedText>
-        </Pressable>
       </View>
       <View
         style={{
@@ -53,9 +54,15 @@ export function AlertsInboxHeader({
         }}
       >
         <ThemedText type="small" style={{ color: c.secondary }}>
-          {unread ? `${unread} unread · ${count} total` : 'You’re up to date'}
+          {loading
+            ? 'Loading alerts…'
+            : failed
+              ? 'Refresh to check your alerts'
+              : unread
+                ? `${unread} unread · ${count} total`
+                : 'You’re up to date'}
         </ThemedText>
-        {count > 0 && (
+        {!loading && !failed && count > 0 && (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Clear all alerts"
@@ -99,56 +106,73 @@ export function AlertsInboxList<T extends DismissibleAlertRow>({
   );
   return (
     <View style={{ gap: 16 }}>
-      <BusinessSearch value={search} onChange={setSearch} placeholder="Search alerts" />
-      <View
-        accessibilityRole="tablist"
-        style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: c.border }}
-      >
-        {(['customer', 'business'] as const).map((item) => (
-          <Pressable
-            key={item}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: audience === item }}
-            onPress={() => onAudience(item)}
-            style={{
-              flex: 1,
-              minHeight: 48,
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 8,
-              borderBottomWidth: 2,
-              borderBottomColor: audience === item ? c.success : 'transparent',
-            }}
-          >
-            <ThemedText
-              type="smallBold"
-              style={{ color: audience === item ? c.text : c.secondary }}
-            >
-              {item === 'customer' ? 'Customer' : 'Business'} · {groups[item].length}
-            </ThemedText>
-          </Pressable>
-        ))}
-      </View>
       <View
         style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 8,
+          padding: 12,
+          gap: 12,
+          borderWidth: 1,
+          borderColor: c.border,
+          borderRadius: 18,
+          backgroundColor: c.surface,
         }}
       >
-        <ThemedText type="small" style={{ color: c.secondary }}>
-          {visible.length} {visible.length === 1 ? 'alert' : 'alerts'}
-        </ThemedText>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <ThemedText type="small">Unread only</ThemedText>
-          <Switch
-            accessibilityLabel="Unread only"
-            value={readFilter === 'unread'}
-            onValueChange={(value) => setReadFilter(value ? 'unread' : 'all')}
-            trackColor={{ true: c.success, false: c.border }}
-          />
+        <View
+          accessibilityRole="tablist"
+          style={{
+            flexDirection: 'row',
+            gap: 4,
+            borderRadius: 12,
+            padding: 4,
+            backgroundColor: c.background,
+          }}
+        >
+          {(['customer', 'business'] as const).map((item) => (
+            <Pressable
+              key={item}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: audience === item }}
+              onPress={() => onAudience(item)}
+              style={{
+                flex: 1,
+                minHeight: 48,
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 8,
+                borderRadius: 9,
+                backgroundColor: audience === item ? c.success : 'transparent',
+              }}
+            >
+              <ThemedText
+                type="smallBold"
+                style={{ color: audience === item ? c.onAction : c.secondary }}
+              >
+                {item === 'customer' ? 'Customer' : 'Business'} · {groups[item].length}
+              </ThemedText>
+            </Pressable>
+          ))}
+        </View>
+        <BusinessSearch value={search} onChange={setSearch} placeholder="Search alerts" />
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 8,
+          }}
+        >
+          <ThemedText type="small" style={{ color: c.secondary }}>
+            {visible.length} {visible.length === 1 ? 'alert' : 'alerts'}
+          </ThemedText>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <ThemedText type="small">Unread only</ThemedText>
+            <Switch
+              accessibilityLabel="Unread only"
+              value={readFilter === 'unread'}
+              onValueChange={(value) => setReadFilter(value ? 'unread' : 'all')}
+              trackColor={{ true: c.success, false: c.border }}
+            />
+          </View>
         </View>
       </View>
       {!visible.length && (

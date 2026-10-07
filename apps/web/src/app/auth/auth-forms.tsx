@@ -1,6 +1,7 @@
 'use client';
+import { SurfacePanel, ActionButton } from '@/components/shared-ui';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 
 import {
   appleSignInAction,
@@ -25,6 +26,7 @@ function Feedback({ state }: { readonly state: AuthFormState }) {
 }
 
 export function AuthForms({ next = '/account' }: { readonly next?: string }) {
+  const [tab, setTab] = useState<'signin' | 'signup'>('signin');
   const [signInState, signIn, signInPending] = useActionState(signInAction, initialState);
   const [signUpState, signUp, signUpPending] = useActionState(signUpAction, initialState);
   const [magicState, magicLink, magicPending] = useActionState(magicLinkAction, initialState);
@@ -35,8 +37,46 @@ export function AuthForms({ next = '/account' }: { readonly next?: string }) {
   );
 
   return (
-    <div className="auth-grid">
-      <section className="panel">
+    <div className="account-auth">
+      <div className="account-auth-tabs" role="tablist" aria-label="Account access">
+        {(['signin', 'signup'] as const).map((value) => (
+          <button
+            key={value}
+            type="button"
+            role="tab"
+            id={`auth-tab-${value}`}
+            aria-controls={`auth-panel-${value}`}
+            aria-selected={tab === value}
+            tabIndex={tab === value ? 0 : -1}
+            disabled={
+              signInPending || signUpPending || magicPending || applePending || googlePending
+            }
+            onClick={() => setTab(value)}
+            onKeyDown={(event) => {
+              if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+              event.preventDefault();
+              const nextTab =
+                event.key === 'Home'
+                  ? 'signin'
+                  : event.key === 'End'
+                    ? 'signup'
+                    : value === 'signin'
+                      ? 'signup'
+                      : 'signin';
+              setTab(nextTab);
+              document.getElementById(`auth-tab-${nextTab}`)?.focus();
+            }}
+          >
+            {value === 'signin' ? 'Sign in' : 'Create account'}
+          </button>
+        ))}
+      </div>
+      <SurfacePanel
+        id="auth-panel-signin"
+        role="tabpanel"
+        aria-labelledby="auth-tab-signin"
+        hidden={tab !== 'signin'}
+      >
         <p className="eyebrow">Welcome back</p>
         <h2>Sign in</h2>
         <form action={signIn} className="form-stack">
@@ -50,46 +90,53 @@ export function AuthForms({ next = '/account' }: { readonly next?: string }) {
             <input name="password" type="password" autoComplete="current-password" required />
           </label>
           <Feedback state={signInState} />
-          <button className="button" disabled={signInPending}>
+          <ActionButton disabled={signInPending} type="submit">
             {signInPending ? 'Signing in…' : 'Sign in'}
-          </button>
+          </ActionButton>
         </form>
 
         <div className="divider">or</div>
         <form action={appleSignIn} className="form-stack">
           <input type="hidden" name="next" value={next} />
           <Feedback state={appleState} />
-          <button className="button button-secondary" disabled={applePending}>
+          <ActionButton className="button-secondary" disabled={applePending} type="submit">
             {applePending ? 'Connecting…' : 'Continue with Apple'}
-          </button>
+          </ActionButton>
         </form>
         <form action={googleSignIn} className="form-stack">
           <input type="hidden" name="next" value={next} />
           <Feedback state={googleState} />
-          <button className="button button-secondary" disabled={googlePending}>
+          <ActionButton className="button-secondary" disabled={googlePending} type="submit">
             {googlePending ? 'Connecting…' : 'Continue with Google'}
-          </button>
+          </ActionButton>
         </form>
-        <div className="divider">or</div>
-        <form action={magicLink} className="form-stack">
-          <input type="hidden" name="next" value={next} />
-          <label>
-            Email for a magic link
-            <input name="email" type="email" autoComplete="email" required />
-          </label>
-          <Feedback state={magicState} />
-          <button className="button button-secondary" disabled={magicPending}>
-            {magicPending ? 'Sending…' : 'Email me a sign-in link'}
-          </button>
-        </form>
+        <details className="account-auth-magic">
+          <summary>Email me a sign-in link</summary>
+          <form action={magicLink} className="form-stack">
+            <input type="hidden" name="next" value={next} />
+            <label>
+              Email for a magic link
+              <input name="email" type="email" autoComplete="email" required />
+            </label>
+            <Feedback state={magicState} />
+            <ActionButton className="button-secondary" disabled={magicPending} type="submit">
+              {magicPending ? 'Sending…' : 'Email me a sign-in link'}
+            </ActionButton>
+          </form>
+        </details>
         {process.env.NODE_ENV === 'development' && (
           <a className="local-inbox-link" href="http://127.0.0.1:54324" target="_blank">
             Open the local development inbox
           </a>
         )}
-      </section>
+      </SurfacePanel>
 
-      <section className="panel panel-accent">
+      <SurfacePanel
+        id="auth-panel-signup"
+        role="tabpanel"
+        aria-labelledby="auth-tab-signup"
+        hidden={tab !== 'signup'}
+      >
         <p className="eyebrow">New to Parish Pass</p>
         <h2>Create an account</h2>
         <form action={signUp} className="form-stack">
@@ -116,26 +163,26 @@ export function AuthForms({ next = '/account' }: { readonly next?: string }) {
             </span>
           </label>
           <Feedback state={signUpState} />
-          <button className="button" disabled={signUpPending}>
+          <ActionButton disabled={signUpPending} type="submit">
             {signUpPending ? 'Creating account…' : 'Create account'}
-          </button>
+          </ActionButton>
         </form>
         <div className="divider">or</div>
         <form action={appleSignIn} className="form-stack">
           <input type="hidden" name="next" value={next} />
           <Feedback state={appleState} />
-          <button className="button button-secondary" disabled={applePending}>
+          <ActionButton className="button-secondary" disabled={applePending} type="submit">
             {applePending ? 'Connecting…' : 'Create account with Apple'}
-          </button>
+          </ActionButton>
         </form>
         <form action={googleSignIn} className="form-stack">
           <input type="hidden" name="next" value={next} />
           <Feedback state={googleState} />
-          <button className="button button-secondary" disabled={googlePending}>
+          <ActionButton className="button-secondary" disabled={googlePending} type="submit">
             {googlePending ? 'Connecting…' : 'Create account with Google'}
-          </button>
+          </ActionButton>
         </form>
-      </section>
+      </SurfacePanel>
     </div>
   );
 }

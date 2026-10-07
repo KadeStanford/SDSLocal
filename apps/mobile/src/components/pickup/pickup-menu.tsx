@@ -3,7 +3,7 @@ import { memo, useMemo, useRef, useState, type ReactNode } from 'react';
 import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 import { AppTextInput as TextInput } from '@/components/app-text-input';
 import { ThemedText } from '../themed-text';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import { EmptyState } from '../data-state';
 import { HorizontalScrollRow } from '../horizontal-scroll-row';
 import { useTheme } from '@/hooks/use-theme';
@@ -47,13 +47,12 @@ export const PickupMenuRow = memo(function PickupMenuRow({
   return (
     <View
       style={{
-        padding: 12,
-        marginBottom: 16,
-        borderRadius: 20,
+        padding: 16,
+        marginBottom: 12,
+        borderRadius: 18,
         borderWidth: 1,
         borderColor: c.divider,
         backgroundColor: c.backgroundElement,
-        boxShadow: '0 6px 20px rgba(10, 34, 21, 0.08)',
       }}
     >
       <Pressable
@@ -62,10 +61,9 @@ export const PickupMenuRow = memo(function PickupMenuRow({
         accessibilityState={{ disabled: blocked }}
         disabled={blocked}
         onPress={() => (hasVariants ? onChoose(product, variants) : onChoose(product))}
-        style={({ pressed }) => ({ minWidth: 0, opacity: pressed ? 0.75 : 1 })}
+        style={({ pressed }) => ({ minWidth: 0, flexDirection: 'row', alignItems: 'flex-start', gap: 14, opacity: pressed ? 0.75 : 1 })}
       >
-        {hasPhoto && <ProductPhoto image={product.image} menu />}
-        <View style={{ paddingHorizontal: 6, paddingTop: hasPhoto ? 16 : 6, gap: 8 }}>
+        <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
           <ThemedText type="card" style={{ fontSize: 18, lineHeight: 24, letterSpacing: -0.25 }}>
             {product.name}
           </ThemedText>
@@ -91,6 +89,7 @@ export const PickupMenuRow = memo(function PickupMenuRow({
             )
           )}
         </View>
+        {hasPhoto && <ProductPhoto image={product.image} compact />}
       </Pressable>
       <View
         style={{
@@ -98,10 +97,8 @@ export const PickupMenuRow = memo(function PickupMenuRow({
           flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 14,
-          paddingHorizontal: 6,
-          paddingTop: 20,
-          paddingBottom: 6,
+          gap: 12,
+          paddingTop: 14,
         }}
       >
         <View style={{ gap: 2 }}>
@@ -146,31 +143,30 @@ export const PickupMenuRow = memo(function PickupMenuRow({
             onPress={() => (customizable ? onChoose(product, variants) : onAdd(product))}
             style={({ pressed }) => ({
               minHeight: 48,
-              minWidth: 130,
+              minWidth: 120,
               paddingHorizontal: 16,
               paddingVertical: 10,
               borderRadius: 12,
               borderWidth: 1,
-              borderColor: c.divider,
-              backgroundColor: blocked ? c.background : c.backgroundSelected,
+              borderColor: blocked ? c.divider : c.actionPrimary,
+              backgroundColor: blocked ? c.background : c.actionPrimary,
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'center',
               gap: 12,
               opacity: pressed ? 0.75 : 1,
-              boxShadow: blocked ? undefined : '0 2px 3px rgba(16, 45, 37, 0.08)',
             })}
           >
             {!customizable && !unavailable && (
-              <QuantityIcon color={blocked ? c.textSecondary : c.accent} plus />
+              <QuantityIcon color={blocked ? c.textSecondary : c.onAction} plus />
             )}
-            <ThemedText type="smallBold" style={{ color: blocked ? c.textSecondary : c.accent }}>
+            <ThemedText type="smallBold" style={{ color: blocked ? c.textSecondary : c.onAction }}>
               {unavailable ? 'Unavailable' : customizable ? 'Customize' : 'Add item'}
             </ThemedText>
             {customizable && !unavailable && (
               <SymbolView
                 name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
-                tintColor={blocked ? c.textSecondary : c.accent}
+                tintColor={blocked ? c.textSecondary : c.onAction}
                 style={{ width: 16, height: 16 }}
               />
             )}

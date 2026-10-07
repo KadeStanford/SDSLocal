@@ -1,4 +1,5 @@
 import { Pressable, View } from 'react-native';
+import { AppIcon } from './app-icon';
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from './themed-text';
 export function ServiceRequestSummaryCard({
@@ -38,12 +39,39 @@ export function ServiceRequestSummaryCard({
         opacity: pressed ? 0.75 : 1,
       })}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8,
+        }}
+      >
+        <ThemedText type="small" themeColor="textSecondary">
+          Received{' '}
+          {new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+        </ThemedText>
+        <ThemedText
+          style={{
+            fontSize: 13,
+            lineHeight: 18,
+            color: status === 'New request' ? c.warningText : c.accent,
+            backgroundColor: status === 'New request' ? c.warningSurface : c.backgroundSelected,
+            paddingHorizontal: 10,
+            paddingVertical: 5,
+            borderRadius: 8,
+          }}
+        >
+          {status === 'New request' ? 'New' : status}
+        </ThemedText>
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <View
           style={{
-            width: 34,
-            height: 34,
-            borderRadius: 17,
+            width: 44,
+            height: 44,
+            borderRadius: 12,
             backgroundColor: c.backgroundSelected,
             alignItems: 'center',
             justifyContent: 'center',
@@ -53,43 +81,28 @@ export function ServiceRequestSummaryCard({
             {initials}
           </ThemedText>
         </View>
-        <ThemedText type="smallBold" style={{ flex: 1 }}>
+        <ThemedText type="card" style={{ flex: 1 }}>
           {name}
         </ThemedText>
-        <ThemedText
-          style={{
-            fontSize: 11,
-            lineHeight: 16,
-            color: status === 'New request' ? '#f3c375' : c.accent,
-            backgroundColor: status === 'New request' ? '#4b3e28' : c.backgroundSelected,
-            paddingHorizontal: 8,
-            paddingVertical: 4,
-            borderRadius: 7,
-          }}
-        >
-          {status === 'New request' ? 'New' : status}
-        </ThemedText>
       </View>
-      <ThemedText type="small" themeColor="textSecondary" numberOfLines={3}>
-        {message}
-      </ThemedText>
+      <ThemedText numberOfLines={3}>{message}</ThemedText>
       <View
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          justifyContent: 'center',
           gap: 8,
-          paddingTop: 12,
-          borderTopWidth: 1,
-          borderColor: c.divider,
+          minHeight: 48,
+          paddingHorizontal: 14,
+          paddingVertical: 12,
+          borderRadius: 12,
+          backgroundColor: c.accent,
         }}
       >
-        <ThemedText style={{ fontSize: 11, lineHeight: 16, color: c.textSecondary }}>
-          {new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+        <ThemedText type="smallBold" style={{ color: c.onAccent }}>
+          Review request
         </ThemedText>
-        <ThemedText type="smallBold" themeColor="accent">
-          Review request →
-        </ThemedText>
+        <AppIcon name="chevron-right" size={18} tintColor={c.onAccent} />
       </View>
     </Pressable>
   );

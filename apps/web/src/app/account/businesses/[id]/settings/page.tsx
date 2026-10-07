@@ -1,7 +1,10 @@
-import { getBusinessStatusLabel, getOfferingTerminology } from '@sds/business-logic';
+import { SurfacePanel, ActionButton } from '@/components/shared-ui';
+import { BusinessWorkspaceHeader } from '@/components/business-workspace-header';
+
+import { AppIcon } from '@/components/app-icon';
+import { canSubmitBusinessForReview, getBusinessStatusLabel } from '@sds/business-logic';
 import type { BusinessType, ServiceAreaType } from '@sds/types';
 import type { EventTimezone } from '@sds/validation';
-import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
 import { createClient } from '@/lib/supabase/server';
@@ -116,32 +119,21 @@ export default async function BusinessSettingsPage({
   const readiness = readinessData as ReadinessResult | null;
 
   return (
-    <main className="page-shell narrow-shell">
-      <nav className="topbar">
-        <Link className="brand" href="/account">
-          ← Account
-        </Link>
-        <div className="nav-actions">
-          <Link href={`/account/businesses/${id}/offerings`}>
-            {getOfferingTerminology(business.business_type).items}
-          </Link>
-          <Link href={`/account/businesses/${id}/media`}>Photos</Link>
-          <Link href={`/account/businesses/${id}/updates`}>Follower updates</Link>
-          <Link href={`/b/${business.slug}`}>View page</Link>
-        </div>
-      </nav>
-
-      <div className="page-heading compact-heading">
-        <p className="eyebrow">Business details</p>
-        <h1>{business.name}</h1>
-        <p>Keep the public profile accurate, complete, and easy for customers to understand.</p>
-      </div>
+    <main className="page-shell business-workspace">
+      <BusinessWorkspaceHeader
+        id={id}
+        name={business.name}
+        slug={business.slug}
+        section="settings"
+        title="Business details"
+        description="Keep your public details accurate and check publication readiness."
+      />
 
       {typeof query.saved === 'string' && <p className="notice-success">{query.saved}</p>}
       {typeof query.error === 'string' && <p className="notice-error">{query.error}</p>}
       {business.review_feedback && <p className="notice-error">{business.review_feedback}</p>}
 
-      <section className="panel readiness-panel" id="readiness">
+      <SurfacePanel className="readiness-panel" id="readiness">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Publication readiness</p>
@@ -150,26 +142,42 @@ export default async function BusinessSettingsPage({
           {business.status === 'draft' && (
             <form action={submitBusinessForReviewAction}>
               <input type="hidden" name="businessId" value={business.id} />
-              <button className="button" disabled={!readiness?.ready}>
+              <ActionButton
+                disabled={
+                  !canSubmitBusinessForReview({ isOwner: true, status: business.status, readiness })
+                }
+                type="submit"
+              >
                 Submit for review
-              </button>
+              </ActionButton>
             </form>
           )}
+        </div>
+        <div className="workspace-readiness-progress">
+          <strong>
+            {(readiness?.checks ?? []).filter((check) => check.complete).length}
+            <span> / {(readiness?.checks ?? []).length} checks complete</span>
+          </strong>
+          <progress
+            aria-label="Publication readiness"
+            max={Math.max(1, (readiness?.checks ?? []).length)}
+            value={(readiness?.checks ?? []).filter((check) => check.complete).length}
+          />
         </div>
         <ul className="readiness-list">
           {(readiness?.checks ?? []).map((check) => (
             <li className={check.complete ? 'readiness-complete' : ''} key={check.key}>
-              <span aria-hidden="true">{check.complete ? '✓' : '○'}</span>
+              <AppIcon name={check.complete ? 'circle-check' : 'circle'} size={20} />
               {check.label}
             </li>
           ))}
         </ul>
         {business.status === 'pending_review' && (
           <p className="field-hint">
-            SDS is reviewing this profile. Content changes return it to draft.
+            Parish Pass is reviewing this profile. Content changes return it to draft.
           </p>
         )}
-      </section>
+      </SurfacePanel>
 
       <BusinessDetailsForm
         business={business}

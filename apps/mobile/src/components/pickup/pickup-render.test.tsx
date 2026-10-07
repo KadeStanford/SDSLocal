@@ -74,8 +74,8 @@ vi.mock('@/hooks/use-theme', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/use-theme')>()),
   useTheme: () => themeColors[review.scheme],
 }));
-vi.mock('expo-symbols', async () => ({
-  SymbolView: (await import('../../test/visual-symbol')).VisualSymbol,
+vi.mock('@/components/app-icon', async () => ({
+  AppIcon: (await import('../../test/visual-symbol')).VisualSymbol,
 }));
 vi.mock('@/lib/storage-url', () => ({ storagePublicUrl: () => null }));
 vi.mock('@/hooks/use-reduced-motion', () => ({ useReducedMotion: () => true }));

@@ -1,7 +1,9 @@
+import { PageHeader } from '@/components/page-header';
+import { AppIcon } from '@/components/app-icon';
 import { RewardProgramCard } from './reward-program-card';
 import { Pressable, View } from 'react-native';
 import { BusinessLogo } from './business-logo';
-import { CustomerBrand } from './customer-brand';
+
 import { CustomerAction } from './customer-ui';
 import { AppButton } from './app-button';
 import { ThemedText } from './themed-text';
@@ -54,7 +56,7 @@ function RewardIdentity({ card, inverse = false }: { card: RewardWalletCard; inv
         </ThemedText>
         {!inverse && (
           <ThemedText type="small" themeColor="textSecondary">
-            Parish Pass rewards
+            {card.program_type === 'points' ? 'Points rewards' : 'Visit rewards'}
           </ThemedText>
         )}
       </View>
@@ -164,36 +166,36 @@ export function RewardsWalletCard({
         opacity: pressed ? 0.8 : 1,
       })}
     >
-      <RewardProgramCard
-        identity={<RewardIdentity card={card} inverse />}
-        name={card.program_name}
-        description={card.reward_description}
-        type={card.program_type ?? 'visits'}
-        target={rewardProgress(card).target}
-        progress={rewardProgress(card).progress}
-        ready={card.rewards_ready}
-        balance={card.available_points}
-        footer={
-          <View
-            style={{
-              minHeight: 51,
-              paddingHorizontal: 22,
-              paddingVertical: 15,
-              backgroundColor: '#214c3e',
-              borderTopWidth: 1,
-              borderColor: '#416351',
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <ThemedText type="smallBold" style={{ color: '#edf7ef' }}>
-              View rewards
-            </ThemedText>
-            <ThemedText style={{ color: '#edf7ef' }}>›</ThemedText>
-          </View>
-        }
-      />
+      <View style={{ padding: 20, gap: 18 }}>
+        <RewardIdentity card={card} />
+        <View style={{ height: 1, backgroundColor: c.divider }} />
+        <View style={{ gap: 6 }}>
+          <ThemedText type="card" style={{ fontSize: 20, lineHeight: 26 }}>
+            {card.program_name}
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {card.reward_description}
+          </ThemedText>
+        </View>
+        <RewardProgress card={card} />
+      </View>
+      <View
+        style={{
+          minHeight: 48,
+          paddingHorizontal: 20,
+          paddingVertical: 13,
+          backgroundColor: c.accent,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+        }}
+      >
+        <ThemedText type="smallBold" style={{ color: c.onAccent, fontSize: 16, lineHeight: 22 }}>
+          View rewards
+        </ThemedText>
+        <AppIcon name="chevron-right" size={20} tintColor={c.onAccent} />
+      </View>
     </Pressable>
   );
 }
@@ -210,7 +212,7 @@ export function RewardDetails({
 }) {
   return (
     <View style={{ gap: 20 }}>
-      <CustomerBrand />
+      <PageHeader />
       <View style={{ alignSelf: 'flex-start' }}>
         <CustomerAction label="Rewards" icon="back" onPress={onBack} />
       </View>
@@ -245,7 +247,7 @@ export function RewardsWalletList({
     <View style={{ gap: 24 }}>
       {[
         { title: 'Ready to enjoy', cards: cards.filter((c) => c.rewards_ready > 0) },
-        { title: 'Your next little win', cards: cards.filter((c) => c.rewards_ready <= 0) },
+        { title: 'In progress', cards: cards.filter((c) => c.rewards_ready <= 0) },
       ]
         .filter((g) => g.cards.length)
         .map((g) => (

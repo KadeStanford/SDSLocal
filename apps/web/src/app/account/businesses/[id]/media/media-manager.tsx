@@ -1,4 +1,5 @@
 'use client';
+import { ActionButton } from '@/components/shared-ui';
 
 import { mediaLimits } from '@sds/image-processing-config';
 import { useRouter } from 'next/navigation';
@@ -105,6 +106,30 @@ export function MediaManager({
   const galleryCount = initialPhotos.filter((photo) => photo.role === 'gallery').length;
   return (
     <div className="media-manager">
+      {initialPhotos.length ? (
+        <div className="workspace-photo-library">
+          <div className="workspace-collection-heading">
+            <h2>Current photos</h2>
+            <span>
+              {initialPhotos.length} {initialPhotos.length === 1 ? 'photo' : 'photos'}
+            </span>
+          </div>
+          <div className="media-grid">
+            {initialPhotos.map((photo) => (
+              <figure key={photo.id} className={`media-card media-card-${photo.role}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={photo.url} alt={photo.altText ?? ''} />
+                <figcaption>{photo.role}</figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="empty-state">
+          <strong>No photos yet</strong>
+          <span>Add a logo, cover, or gallery image to bring the page to life.</span>
+        </div>
+      )}
       <input
         ref={inputRef}
         className="visually-hidden"
@@ -129,25 +154,25 @@ export function MediaManager({
         </span>
       </label>
       <div className="media-actions">
-        <button className="button" type="button" disabled={busy} onClick={() => choose('logo')}>
+        <ActionButton type="button" disabled={busy} onClick={() => choose('logo')}>
           {initialPhotos.some((photo) => photo.role === 'logo') ? 'Replace logo' : 'Add logo'}
-        </button>
-        <button
-          className="button button-secondary"
+        </ActionButton>
+        <ActionButton
+          className="button-secondary"
           type="button"
           disabled={busy}
           onClick={() => choose('cover')}
         >
           {initialPhotos.some((photo) => photo.role === 'cover') ? 'Replace cover' : 'Add cover'}
-        </button>
-        <button
-          className="button button-secondary"
+        </ActionButton>
+        <ActionButton
+          className="button-secondary"
           type="button"
           disabled={busy || galleryCount >= mediaLimits.maxGalleryImages}
           onClick={() => choose('gallery')}
         >
           Add gallery photo ({galleryCount}/{mediaLimits.maxGalleryImages})
-        </button>
+        </ActionButton>
       </div>
       <p className="form-success" aria-live="polite">
         {message}
@@ -155,22 +180,6 @@ export function MediaManager({
       <p className="form-error" role="alert">
         {error}
       </p>
-      {initialPhotos.length ? (
-        <div className="media-grid">
-          {initialPhotos.map((photo) => (
-            <figure key={photo.id} className={`media-card media-card-${photo.role}`}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={photo.url} alt={photo.altText ?? ''} />
-              <figcaption>{photo.role}</figcaption>
-            </figure>
-          ))}
-        </div>
-      ) : (
-        <div className="empty-state">
-          <strong>No photos yet</strong>
-          <span>Add a logo, cover, or gallery image to bring the page to life.</span>
-        </div>
-      )}
     </div>
   );
 }

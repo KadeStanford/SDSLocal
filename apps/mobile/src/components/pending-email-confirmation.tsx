@@ -17,7 +17,7 @@ export function PendingEmailConfirmation({
   const [until, setUntil] = useState(() =>
     Number(globalThis.localStorage.getItem('parish:confirmation-resend-after') ?? 0),
   );
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);

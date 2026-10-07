@@ -31,10 +31,11 @@ export const Fonts = Platform.select({
     mono: 'monospace',
   },
   web: {
-    sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
+    // React Native Web quotes variable expressions as family names; use native CSS families.
+    sans: 'system-ui',
+    serif: 'ui-serif',
+    rounded: 'system-ui',
+    mono: 'ui-monospace',
   },
 });
 

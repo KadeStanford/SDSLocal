@@ -1,5 +1,6 @@
+import { AppIcon } from '@/components/app-icon';
 import { View, StyleSheet } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import { ThemedText } from '../themed-text';
 import { BusinessLogo } from '../business-logo';
 import { useTheme } from '@/hooks/use-theme';
@@ -261,12 +262,10 @@ export function OrderTimeline({ order }: { order: PickupOrder }) {
                   backgroundColor: complete || current ? c.accent : c.backgroundSelected,
                 }}
               >
-                <ThemedText
+                {complete ? <AppIcon name="check" size={15} tintColor={c.accent} /> : <ThemedText
                   type="smallBold"
                   style={{ color: complete || current ? c.onAccent : c.textSecondary }}
-                >
-                  {complete ? '✓' : i + 1}
-                </ThemedText>
+                >{i + 1}</ThemedText>}
               </View>
               {i < 4 && (
                 <View

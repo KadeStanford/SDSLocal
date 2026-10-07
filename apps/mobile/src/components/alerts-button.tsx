@@ -1,7 +1,7 @@
 import { BusinessThemeProvider } from './business-theme';
 import { AlertsInboxHeader, AlertsInboxList } from '@/components/alerts-inbox';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -55,10 +55,10 @@ export function AlertsButton() {
     const { data, error: queryError } = await supabase
       .from('notification_deliveries')
       .select(
-        'id, entity_type, entity_id, title, body, created_at, read_at, url, order_status, order_audience',
+        'id, entity_type, entity_id, title, body, created_at, read_at, url, order_status, order_audience, moderation_outcome',
       )
       .eq('user_id', session.user.id)
-      .or('status.eq.sent,entity_type.eq.pickup_order')
+      .or('status.eq.sent,entity_type.eq.pickup_order,inbox_available_at.not.is.null')
       .is('dismissed_at', null)
       .order('created_at', { ascending: false })
       .limit(100);
@@ -81,6 +81,11 @@ export function AlertsButton() {
   }, [loadAlerts, open]);
 
   async function markRead(row: AlertRow) {
+    if (row.moderation_outcome) {
+      setOpen(false);
+      router.push(`/moderation-outcome?deliveryId=${encodeURIComponent(row.id)}` as never);
+      return;
+    }
     setSelected(row);
     if (row.read_at) return;
     void haptics.selection();
@@ -142,7 +147,7 @@ export function AlertsButton() {
         }}
         style={({ pressed }) => [
           styles.button,
-          { backgroundColor: colors.backgroundElement, borderColor: colors.backgroundSelected },
+          { backgroundColor: colors.backgroundElement, borderColor: colors.divider },
           pressed && styles.pressed,
         ]}
       >
@@ -174,6 +179,8 @@ export function AlertsButton() {
                 <ScrollView contentContainerStyle={styles.modalContent} directionalLockEnabled>
                   <AlertsInboxHeader
                     count={alerts.length}
+                    loading={loading}
+                    failed={!!error}
                     unread={alerts.filter((row) => !row.read_at).length}
                     onClear={() => void clearAllAlerts()}
                     onClose={() => setOpen(false)}
@@ -313,8 +320,8 @@ export function AlertsButton() {
 const styles = StyleSheet.create({
   button: {
     flexShrink: 0,
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: Radius.small,

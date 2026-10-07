@@ -1,3 +1,4 @@
+import { AppIcon } from '@/components/app-icon';
 import { HelpPolicyLinks } from './help-policy-links';
 import { MerchantButton } from './merchant-ui';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -262,7 +263,7 @@ export function AccountDataPanel() {
             <ThemedText type="smallBold" style={{ flex: 1 }}>
               What gets deleted?
             </ThemedText>
-            <ThemedText themeColor="textSecondary">{showDataDetails ? '−' : '+'}</ThemedText>
+            <AppIcon name={showDataDetails ? 'minus' : 'plus'} size={18} />
           </Pressable>
           {showDataDetails && (
             <View style={styles.detailsBody}>

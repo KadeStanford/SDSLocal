@@ -1,8 +1,9 @@
+import { PageHeader } from '../page-header';
 import { rewardTerms } from '@/lib/pickup-rewards';
 import { useState } from 'react';
 import { Modal, ScrollView, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import { PickupActionButton } from './pickup-action-button';
 import { ThemedText } from '../themed-text';
 import { useReducedMotion } from '@/hooks/use-reduced-motion';
@@ -53,69 +54,48 @@ export function PickupItem({
       onRequestClose={onClose}
     >
       <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
-        <View
-          style={{
-            paddingHorizontal: 16,
-            paddingVertical: 8,
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: 12,
-          }}
-        >
-          <ThemedText type="smallBold">
-            {line ? 'Edit your item' : 'Customize your item'}
-          </ThemedText>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Close item details"
-            onPress={onClose}
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: c.divider,
-              backgroundColor: c.backgroundElement,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <SymbolView
-              name={{ ios: 'xmark', android: 'close', web: 'close' }}
-              tintColor={c.text}
-              style={{ width: 18, height: 18 }}
-            />
-          </Pressable>
+        <View style={{ paddingHorizontal: 20, paddingVertical: 12 }}>
+          <PageHeader onBack={onClose} backLabel="Back to menu" />
         </View>
         <ScrollView
           style={{ flex: 1, minHeight: 0 }}
           contentContainerStyle={{ padding: 20, gap: 18, paddingBottom: 24 }}
           keyboardShouldPersistTaps="handled"
         >
-          {safeProductImage(selectedProduct.image) && (
-            <View
-              style={{
-                padding: 8,
-                borderRadius: 20,
-                backgroundColor: c.backgroundElement,
-                boxShadow: '0 5px 18px rgba(16, 45, 37, 0.08)',
-              }}
-            >
-              <ProductPhoto image={selectedProduct.image} detail />
-            </View>
-          )}
-          <View style={{ gap: 8 }}>
-            <ThemedText type="subtitle">{selectedProduct.name}</ThemedText>
-            <ThemedText type="smallBold">
-              {selectedProduct.variation && selectedProduct.variation !== 'Regular'
-                ? `${selectedProduct.variation} · `
-                : ''}
-              {money(selectedProduct.price, selectedProduct.currency)}
-            </ThemedText>
-            {!!selectedProduct.description && (
-              <ThemedText themeColor="textSecondary">{selectedProduct.description}</ThemedText>
+          <View
+            style={{
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor: c.divider,
+              overflow: 'hidden',
+              backgroundColor: c.backgroundElement,
+            }}
+          >
+            {safeProductImage(selectedProduct.image) && (
+              <View
+                style={{
+                  padding: 0,
+                  overflow: 'hidden',
+                  backgroundColor: c.backgroundElement,
+                }}
+              >
+                <ProductPhoto image={selectedProduct.image} detail />
+              </View>
             )}
+            <View style={{ gap: 8, padding: 16 }}>
+              <ThemedText type="subtitle" style={{ fontSize: 24, lineHeight: 30 }}>
+                {selectedProduct.name}
+              </ThemedText>
+              <ThemedText type="smallBold">
+                {selectedProduct.variation && selectedProduct.variation !== 'Regular'
+                  ? `${selectedProduct.variation} · `
+                  : ''}
+                {money(selectedProduct.price, selectedProduct.currency)}
+              </ThemedText>
+              {!!selectedProduct.description && (
+                <ThemedText themeColor="textSecondary">{selectedProduct.description}</ThemedText>
+              )}
+            </View>
           </View>
           {reward && (
             <View
@@ -382,7 +362,7 @@ export function PickupItem({
             flexShrink: 0,
             borderTopWidth: 1,
             borderTopColor: c.divider,
-            backgroundColor: c.background,
+            backgroundColor: c.backgroundElement,
           }}
         >
           {(disabled || selectedProduct.available === false || saveError) && (

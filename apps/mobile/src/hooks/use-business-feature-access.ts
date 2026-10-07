@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { AppState } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { type BusinessFeatureAccess } from '@sds/business-logic';
@@ -15,8 +15,11 @@ export function useBusinessFeatureAccess(businessId: string | null | undefined) 
   const { summary } = useListingBilling();
   const userId = session?.user.id;
   const identity = JSON.stringify([userId, businessId, summary]);
-  const scope = useRef(new BusinessAccessRequestScope()).current;
-  scope.select(identity);
+  const [scope] = useState(() => new BusinessAccessRequestScope());
+  useLayoutEffect(() => {
+    scope.select(identity);
+    return () => scope.invalidate();
+  }, [identity, scope]);
   const [result, setResult] = useState<{
     identity: string;
     access: BusinessFeatureAccess | null;

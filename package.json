@@ -9,6 +9,8 @@
     "pnpm": ">=11 <12"
   },
   "scripts": {
+    "admin:demo": "pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/admin/start-demo.ps1",
+    "admin:test": "node --experimental-transform-types ./scripts/admin/test-moderation.mjs",
     "build": "turbo run build",
     "clean": "turbo run clean && rimraf .turbo",
     "dev": "turbo run dev --parallel",
@@ -25,9 +27,16 @@
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
-    "db:lint": "supabase db lint --local"
+    "db:lint": "supabase db lint --local",
+    "test:backend": "vitest run supabase/functions",
+    "readiness": "node ./scripts/readiness.mjs",
+    "readiness:serve": "node ./scripts/serve-readiness.mjs",
+    "readiness:browser": "node scripts/readiness-preview.mjs --test",
+    "readiness:database": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/readiness-db.ps1",
+    "readiness:integration": "node scripts/readiness-integration.mjs"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/node": "22.20.2",
     "eas-cli": "24.4.2",
     "prettier": "^3.6.2",

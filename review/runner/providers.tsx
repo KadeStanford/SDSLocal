@@ -1,0 +1,13 @@
+import React from 'react';
+import {session,mode,scheme,business} from './fixtures';
+export const passthrough=({children}:any)=><>{children}</>;
+const noop=()=>{};const done=async()=>true;
+const auth={session,loading:false,secureStorageWarning:null};
+let currentMode=mode;const modeListeners=new Set<()=>void>();const subscribeMode=(listener:()=>void)=>{modeListeners.add(listener);return()=>{modeListeners.delete(listener);};};
+const appMode={loading:false,hasBusinessAccess:true,accessError:false,setMode:(nextMode:string)=>{currentMode=nextMode==='business'?'business':'customer';const p=new URL(location.href);p.searchParams.set('mode',currentMode);history.replaceState(null,'',p.href);for(const listener of modeListeners)listener();},refreshBusinessAccess:done};
+const notification={status:'available',errorMessage:null,unreadCount:0,businessChime:true,setBusinessChime:noop,refreshUnreadCount:done,enable:done,deactivate:done};
+const nearby={enabled:false,permission:'denied',loading:false,error:null,enable:done,disable:done,refresh:done,updatePreferences:done,preferences:{enabled:false},supported:false};
+const pickup={businesses:[{id:'cafe',businessId:'cafe',name:business.name,provider:'stripe',canManage:true,canRefund:true,counts:{placed:1,accepted:0,preparing:1,ready:0,requests:0,active:1},providers:['stripe']}],selected:'cafe',loading:false,error:'',select:noop,refresh:done};
+const billing={summary:{billingEnabled:false,planCode:null,planName:null,status:'none',canPublish:false,listingLimit:3,usedListings:1,availableListings:2,currentPeriodEnd:null,willRenew:false,provider:null,productId:null,businessIds:['cafe']},packages:[],loading:false,purchasing:false,configured:false,notice:null,error:null,storeDiagnostic:null,refresh:done,purchase:async()=>false,restore:async()=>false,manage:done};
+export const useAuth=()=>auth;export const useAppMode=()=>({...appMode,mode:React.useSyncExternalStore(subscribeMode,()=>currentMode)});export const useNotifications=()=>notification;export const useNearbyAlerts=()=>nearby;export const usePickupWorkspace=()=>pickup;export const useListingBilling=()=>billing;export const useColorScheme=()=>scheme;
+export const useServiceOperations=()=>({businesses:[{id:'services',name:'Cypress & Co Home Care',timezone:'America/Chicago'}],selected:'services',loading:false,error:null,select:noop,refresh:done,appointments:[],requests:[]});

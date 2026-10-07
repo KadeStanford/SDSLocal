@@ -20,7 +20,7 @@ vi.mock('react', async () => ({
   },
 }));
 vi.mock('react-native', () => ({ View: 'View', Pressable: 'Pressable' }));
-vi.mock('expo-symbols', () => ({ SymbolView: 'SymbolView' }));
+vi.mock('@/components/app-icon', () => ({ AppIcon: 'SymbolView' }));
 vi.mock('./date-picker-control', () => ({ DatePickerControl: 'DatePickerControl' }));
 vi.mock('./app-text-input', () => ({ AppTextInput: 'AppTextInput' }));
 vi.mock('./merchant-ui', () => ({

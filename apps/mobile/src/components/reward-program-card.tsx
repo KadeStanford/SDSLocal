@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { type ReactNode } from 'react';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import { ThemedText } from './themed-text';
 export function RewardProgramCard({
   name,
@@ -32,10 +32,10 @@ export function RewardProgramCard({
   const count = Number.isFinite(target) ? Math.max(0, Math.floor(target)) : 0;
   const earned = Math.max(0, progress);
   const stampCount = Math.min(30, count);
-  const columns = stampCount === 6 ? 3 : stampCount <= 8 ? 4 : stampCount <= 15 ? 5 : 6;
+  const columns = stampCount <= 6 ? stampCount : stampCount <= 8 ? 4 : stampCount <= 15 ? 5 : 6;
   return (
-    <View style={{ backgroundColor: '#12362d', borderRadius: 22, overflow: 'hidden' }}>
-      <View style={{ padding: 22, gap: 16 }}>
+    <View style={{ backgroundColor: '#102D25', borderRadius: 18, overflow: 'hidden' }}>
+      <View style={{ padding: 20, gap: 16 }}>
         {identity}
         {(!identity || ready > 0) && (
           <View

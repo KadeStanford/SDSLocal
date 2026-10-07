@@ -1,3 +1,4 @@
+import { AppIcon } from '@/components/app-icon';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useMerchantTheme } from '@/hooks/use-merchant-theme';
@@ -69,9 +70,7 @@ export function PickupLaunchGuide({ steps }: { readonly steps: readonly PickupLa
               key={step.label}
               style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}
             >
-              <ThemedText style={{ color: step.complete ? c.success : c.secondary }}>
-                {step.complete ? '✓' : '○'}
-              </ThemedText>
+              <AppIcon name={step.complete ? 'circle-check' : 'circle'} size={20} tintColor={step.complete ? c.success : c.secondary} />
               <ThemedText type="small" style={{ flex: 1, color: c.text }}>
                 {step.label}
               </ThemedText>

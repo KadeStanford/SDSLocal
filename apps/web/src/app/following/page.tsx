@@ -1,3 +1,6 @@
+import { PageHeader } from '@/components/page-header';
+import { AppIcon } from '@/components/app-icon';
+
 import type { EventTimezone } from '@sds/validation';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -83,21 +86,27 @@ export default async function FollowingPage() {
   const businessById = new Map(businesses.map((business) => [business.id, business]));
 
   return (
-    <main className="page-shell">
-      <nav className="topbar">
-        <Link className="brand" href="/">
-          Parish Pass
-        </Link>
+    <main className="page-shell following-page">
+      <PageHeader />
+      <nav className="parish-page-links" aria-label="Page links">
         <div className="nav-actions">
-          <Link href="/explore">Explore</Link>
-          <Link href="/events">Events</Link>
-          <Link href="/account">Your account</Link>
+          <Link href="/explore">
+            <AppIcon name="compass" size={18} />
+            Explore
+          </Link>
+          <Link href="/events">
+            <AppIcon name="calendar-days" size={18} />
+            Events
+          </Link>
+          <Link href="/account">
+            <AppIcon name="circle-user-round" size={18} />
+            Your account
+          </Link>
         </div>
       </nav>
       <div className="page-heading compact-heading">
-        <p className="eyebrow">Your local feed</p>
-        <h1>Businesses you follow.</h1>
-        <p>Upcoming events and recently updated offerings, gathered in one place.</p>
+        <h1>Following</h1>
+        <p>Updates from the businesses you follow.</p>
       </div>
 
       {!businesses.length ? (
@@ -109,21 +118,34 @@ export default async function FollowingPage() {
           </Link>
         </div>
       ) : (
-        <>
-          <section className="followed-business-strip" aria-label="Followed businesses">
+        <div className="following-layout">
+          <section className="following-businesses" aria-label="Followed businesses">
+            <div className="section-heading">
+              <h2>Your businesses</h2>
+              <span className="muted">{businesses.length} followed</span>
+            </div>
             {businesses.map((business) => (
-              <Link href={`/b/${business.slug}`} key={business.id}>
-                <span style={{ backgroundColor: business.primary_color }}>
-                  {business.name.slice(0, 1).toUpperCase()}
-                </span>
-                <strong>{business.name}</strong>
-                <small>{[business.city, business.region_code].filter(Boolean).join(', ')}</small>
-              </Link>
+              <article className="following-business" key={business.id}>
+                <div className="following-business-identity">
+                  <span className="workspace-initial" aria-hidden="true">
+                    {business.name.slice(0, 1).toUpperCase()}
+                  </span>
+                  <div>
+                    <h3>{business.name}</h3>
+                    <p>{[business.city, business.region_code].filter(Boolean).join(', ')}</p>
+                  </div>
+                </div>
+                <p>{business.description}</p>
+                <Link className="following-business-open" href={'/b/' + business.slug}>
+                  View business
+                  <AppIcon name="chevron-right" size={18} />
+                </Link>
+              </article>
             ))}
           </section>
 
-          <div className="following-feed-grid">
-            <section className="panel">
+          <div className="following-stream">
+            <section className="following-collection">
               <div className="section-heading">
                 <div>
                   <p className="eyebrow">Coming up</p>
@@ -137,9 +159,15 @@ export default async function FollowingPage() {
                   if (!business) return null;
                   return (
                     <Link href={`/events/${business.slug}/${event.slug}`} key={event.id}>
-                      <span>{formatEventTime(event.starts_at, event.timezone)}</span>
+                      <span className="following-date">
+                        {formatEventTime(event.starts_at, event.timezone)}
+                      </span>
                       <strong>{event.title}</strong>
                       <small>{business.name}</small>
+                      <span className="following-feed-open">
+                        View event
+                        <AppIcon name="chevron-right" size={18} />
+                      </span>
                     </Link>
                   );
                 })}
@@ -149,7 +177,7 @@ export default async function FollowingPage() {
               </div>
             </section>
 
-            <section className="panel">
+            <section className="following-collection">
               <div className="section-heading">
                 <div>
                   <p className="eyebrow">Recently updated</p>
@@ -165,6 +193,10 @@ export default async function FollowingPage() {
                       <strong>{offering.name}</strong>
                       <span>{offering.description}</span>
                       <small>{business.name}</small>
+                      <span className="following-feed-open">
+                        View offering
+                        <AppIcon name="chevron-right" size={18} />
+                      </span>
                     </Link>
                   );
                 })}
@@ -172,7 +204,7 @@ export default async function FollowingPage() {
               </div>
             </section>
           </div>
-        </>
+        </div>
       )}
     </main>
   );

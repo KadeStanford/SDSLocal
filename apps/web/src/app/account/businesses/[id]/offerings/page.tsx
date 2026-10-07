@@ -1,6 +1,8 @@
+import { ActionButton, SurfacePanel } from '@/components/shared-ui';
+import { BusinessWorkspaceHeader } from '@/components/business-workspace-header';
+
 import { getOfferingTerminology } from '@sds/business-logic';
 import type { BusinessType } from '@sds/types';
-import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
 import { createClient } from '@/lib/supabase/server';
@@ -10,8 +12,8 @@ import {
   archiveOfferingSectionAction,
   createOfferingItemAction,
   createOfferingSectionAction,
-  moveOfferingItemAction,
-  moveOfferingSectionAction,
+  moveOfferingItemInDirection,
+  moveOfferingSectionInDirection,
   restoreOfferingItemAction,
   restoreOfferingSectionAction,
   updateOfferingItemAction,
@@ -94,30 +96,31 @@ export default async function OfferingsPage({
   const activeSections = sections.filter((section) => !section.archived_at);
   const archivedSections = sections.filter((section) => section.archived_at);
   const archivedItems = items.filter((item) => item.archived_at);
+  const activeItemCount = items.filter((item) => !item.archived_at).length;
 
   return (
-    <main className="page-shell narrow-shell">
-      <nav className="topbar">
-        <Link className="brand" href="/account">
-          ← Account
-        </Link>
-        <div className="nav-actions">
-          <Link href={`/account/businesses/${id}/media`}>Photos</Link>
-          <Link href={`/b/${business.slug}`}>View page</Link>
-        </div>
-      </nav>
-
-      <div className="page-heading compact-heading">
-        <p className="eyebrow">{terminology.items}</p>
-        <h1>{business.name}</h1>
-        <p>Organize customer-facing {terminology.items.toLowerCase()} into clear sections.</p>
-      </div>
+    <main className="page-shell business-workspace">
+      <BusinessWorkspaceHeader
+        id={id}
+        name={business.name}
+        slug={business.slug}
+        section="offerings"
+        title={terminology.items}
+        description={`Organize customer-facing ${terminology.items.toLowerCase()} into clear sections.`}
+      />
 
       {typeof query.saved === 'string' && <p className="notice-success">{query.saved}</p>}
       {typeof query.error === 'string' && <p className="notice-error">{query.error}</p>}
 
-      <section className="panel offering-create-panel">
-        <h2>Add {terminology.section.toLowerCase()}</h2>
+      <div className="workspace-collection-heading">
+        <h2>Your {terminology.items.toLowerCase()}</h2>
+        <span>
+          {activeSections.length} {activeSections.length === 1 ? 'section' : 'sections'} ·{' '}
+          {activeItemCount} {activeItemCount === 1 ? 'item' : 'items'}
+        </span>
+      </div>
+      <details className="panel offering-create-panel">
+        <summary>Add {terminology.section.toLowerCase()}</summary>
         <form action={createOfferingSectionAction} className="inline-create-form">
           <input type="hidden" name="businessId" value={id} />
           <label>
@@ -128,9 +131,9 @@ export default async function OfferingsPage({
             Description
             <input name="description" maxLength={500} />
           </label>
-          <button className="button">Add section</button>
+          <ActionButton type="submit">Add section</ActionButton>
         </form>
-      </section>
+      </details>
 
       <div className="offering-editor-stack">
         {activeSections.map((section, sectionIndex) => {
@@ -138,56 +141,95 @@ export default async function OfferingsPage({
             (item) => item.section_id === section.id && !item.archived_at,
           );
           return (
-            <section className="panel offering-editor" key={section.id}>
-              <form action={updateOfferingSectionAction} className="section-edit-form">
-                <input type="hidden" name="businessId" value={id} />
-                <input type="hidden" name="sectionId" value={section.id} />
-                <label>
-                  Section name
-                  <input name="name" defaultValue={section.name} maxLength={100} required />
-                </label>
-                <label>
-                  Description
-                  <input
-                    name="description"
-                    defaultValue={section.description ?? ''}
-                    maxLength={500}
-                  />
-                </label>
-                <label className="inline-check">
-                  <input name="isVisible" type="checkbox" defaultChecked={section.is_visible} />
-                  Visible
-                </label>
-                <div className="section-editor-actions">
-                  <button className="button button-small">Save section</button>
-                  <button
-                    className="text-button"
-                    formAction={moveOfferingSectionAction}
-                    name="direction"
-                    value="up"
-                    disabled={sectionIndex === 0}
-                  >
-                    Move up
-                  </button>
-                  <button
-                    className="text-button"
-                    formAction={moveOfferingSectionAction}
-                    name="direction"
-                    value="down"
-                    disabled={sectionIndex === activeSections.length - 1}
-                  >
-                    Move down
-                  </button>
-                  <button className="text-button" formAction={archiveOfferingSectionAction}>
-                    Archive
-                  </button>
+            <SurfacePanel className="offering-editor" key={section.id}>
+              <div className="workspace-section-heading">
+                <div>
+                  <h3>{section.name}</h3>
+                  <p>
+                    {sectionItems.length} {sectionItems.length === 1 ? 'item' : 'items'}
+                  </p>
                 </div>
-              </form>
+                <span
+                  className={
+                    section.is_visible
+                      ? 'workspace-state workspace-state-active'
+                      : 'workspace-state'
+                  }
+                >
+                  {section.is_visible ? 'Visible' : 'Hidden'}
+                </span>
+              </div>
+              <details className="workspace-section-settings">
+                <summary>Edit section</summary>
+                <form action={updateOfferingSectionAction} className="section-edit-form">
+                  <input type="hidden" name="businessId" value={id} />
+                  <input type="hidden" name="sectionId" value={section.id} />
+                  <label>
+                    Section name
+                    <input name="name" defaultValue={section.name} maxLength={100} required />
+                  </label>
+                  <label>
+                    Description
+                    <input
+                      name="description"
+                      defaultValue={section.description ?? ''}
+                      maxLength={500}
+                    />
+                  </label>
+                  <label className="inline-check">
+                    <input name="isVisible" type="checkbox" defaultChecked={section.is_visible} />
+                    Visible
+                  </label>
+                  <div className="section-editor-actions">
+                    <ActionButton className="button-small" type="submit">
+                      Save section
+                    </ActionButton>
+                    <button
+                      className="text-button"
+                      formAction={moveOfferingSectionInDirection.bind(null, 'up')}
+                      disabled={sectionIndex === 0}
+                    >
+                      Move up
+                    </button>
+                    <button
+                      className="text-button"
+                      formAction={moveOfferingSectionInDirection.bind(null, 'down')}
+                      disabled={sectionIndex === activeSections.length - 1}
+                    >
+                      Move down
+                    </button>
+                    <button className="text-button" formAction={archiveOfferingSectionAction}>
+                      Archive
+                    </button>
+                  </div>
+                </form>
+              </details>
 
               <div className="offering-item-list">
                 {sectionItems.map((item, index) => (
                   <details className="offering-item-editor" key={item.id}>
                     <summary>
+                      {(() => {
+                        const asset = Array.isArray(item.media_assets)
+                          ? item.media_assets[0]
+                          : item.media_assets;
+                        return asset ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            className="workspace-item-photo"
+                            src={
+                              supabase.storage
+                                .from('business-media')
+                                .getPublicUrl(asset.storage_path).data.publicUrl
+                            }
+                            alt=""
+                          />
+                        ) : (
+                          <span className="workspace-item-fallback" aria-hidden="true">
+                            {item.name.slice(0, 1)}
+                          </span>
+                        );
+                      })()}
                       <span>
                         <strong>{item.name}</strong>
                         <small>{item.is_available ? 'Available' : 'Sold out / unavailable'}</small>
@@ -292,21 +334,19 @@ export default async function OfferingsPage({
                         </label>
                       </div>
                       <div className="item-editor-actions">
-                        <button className="button button-small">Save item</button>
+                        <ActionButton className="button-small" type="submit">
+                          Save item
+                        </ActionButton>
                         <button
                           className="text-button"
-                          formAction={moveOfferingItemAction}
-                          name="direction"
-                          value="up"
+                          formAction={moveOfferingItemInDirection.bind(null, 'up')}
                           disabled={index === 0}
                         >
                           Move up
                         </button>
                         <button
                           className="text-button"
-                          formAction={moveOfferingItemAction}
-                          name="direction"
-                          value="down"
+                          formAction={moveOfferingItemInDirection.bind(null, 'down')}
                           disabled={index === sectionItems.length - 1}
                         >
                           Move down
@@ -360,12 +400,12 @@ export default async function OfferingsPage({
                       <input name="isFeatured" type="checkbox" /> Featured
                     </label>
                   </div>
-                  <button className="button button-small">
+                  <ActionButton className="button-small" type="submit">
                     Add {terminology.item.toLowerCase()}
-                  </button>
+                  </ActionButton>
                 </form>
               </details>
-            </section>
+            </SurfacePanel>
           );
         })}
         {!activeSections.length && (

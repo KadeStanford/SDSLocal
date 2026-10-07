@@ -1,3 +1,5 @@
+import { Surface, SectionHeading } from './shared-ui';
+import { AppIcon } from '@/components/app-icon';
 import { useState, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTheme } from '@/hooks/use-theme';
@@ -19,31 +21,14 @@ export function FlowSection({
   initiallyOpen?: boolean;
   inset?: boolean;
 }) {
-  const c = useTheme();
   const [open, setOpen] = useState(initiallyOpen);
   const heading = (
-    <View style={{ flex: 1, gap: 4 }}>
-      <ThemedText type="smallBold" style={{ fontSize: 17 }}>
-        {title}
-      </ThemedText>
-      {!!description && (
-        <ThemedText type="small" themeColor="textSecondary">
-          {description}
-        </ThemedText>
-      )}
+    <View style={{ flex: 1 }}>
+      <SectionHeading title={title} description={description} titleStyle={{ fontSize: 17 }} />
     </View>
   );
   return (
-    <View
-      style={{
-        backgroundColor: inset ? 'transparent' : c.backgroundElement,
-        borderColor: c.divider,
-        borderWidth: inset ? 0 : 1,
-        borderRadius: inset ? 0 : 18,
-        padding: inset ? 0 : 18,
-        gap: 16,
-      }}
-    >
+    <Surface inset={inset}>
       {collapsible ? (
         <Pressable
           accessibilityRole="button"
@@ -52,7 +37,7 @@ export function FlowSection({
           style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 12 }}
         >
           {heading}
-          <ThemedText style={{ color: c.accent, fontSize: 24 }}>{open ? '−' : '+'}</ThemedText>
+          <AppIcon name={open ? 'minus' : 'plus'} size={18} />
         </Pressable>
       ) : (
         heading
@@ -64,7 +49,7 @@ export function FlowSection({
       >
         {children}
       </View>
-    </View>
+    </Surface>
   );
 }
 

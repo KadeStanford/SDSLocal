@@ -83,15 +83,6 @@ vi.mock('@/hooks/use-business-feature-access', () => ({
     refresh: vi.fn(),
   }),
 }));
-vi.mock('@/hooks/use-business-feature-access', () => ({
-  useBusinessFeatureAccess: () => ({
-    access: { businessId: 'business', enforced: false, planCode: null, features: [] },
-    owner: true,
-    loading: false,
-    error: null,
-    refresh: vi.fn(),
-  }),
-}));
 vi.mock('@/components/app-chrome', () => ({ AppChrome: () => null }));
 vi.mock('@/lib/haptics', () => ({ haptics: { selection: vi.fn() } }));
 vi.mock('@/lib/appointment-commerce', () => ({ appointmentCommerce: vi.fn() }));

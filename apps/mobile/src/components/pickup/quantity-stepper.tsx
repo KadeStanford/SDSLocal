@@ -1,6 +1,7 @@
 import { Pressable, View } from 'react-native';
 import { ThemedText } from '../themed-text';
 import { useTheme } from '@/hooks/use-theme';
+import { AppIcon } from '../app-icon';
 export function QuantityStepper({
   name,
   quantity,
@@ -33,14 +34,13 @@ export function QuantityStepper({
         style={({ pressed }) => ({
           width: 44,
           height: 44,
-          borderRadius: 22,
+          borderRadius: 12,
           borderWidth: 1,
           borderColor: c.divider,
           backgroundColor: c.backgroundElement,
           alignItems: 'center',
           justifyContent: 'center',
           opacity: disabled || quantity <= minimum ? 0.4 : pressed ? 0.7 : 1,
-          boxShadow: '0 2px 4px rgba(16, 45, 37, 0.06)',
         })}
       >
         <QuantityIcon color={c.accent} />
@@ -68,14 +68,13 @@ export function QuantityStepper({
         style={({ pressed }) => ({
           width: 44,
           height: 44,
-          borderRadius: 22,
+          borderRadius: 12,
           borderWidth: 1,
           borderColor: c.divider,
           backgroundColor: c.backgroundElement,
           alignItems: 'center',
           justifyContent: 'center',
           opacity: disabled || quantity >= 20 ? 0.4 : pressed ? 0.7 : 1,
-          boxShadow: '0 2px 4px rgba(16, 45, 37, 0.06)',
         })}
       >
         <QuantityIcon color={c.accent} plus />
@@ -84,25 +83,7 @@ export function QuantityStepper({
   );
 }
 
-/** Geometric strokes avoid font-baseline differences between the two symbols. */
+/** Quantity controls use the same canonical strokes as navigation and actions. */
 export function QuantityIcon({ color, plus = false }: { color: string; plus?: boolean }) {
-  return (
-    <View
-      accessible={false}
-      style={{ width: 20, height: 20, alignItems: 'center', justifyContent: 'center' }}
-    >
-      <View style={{ width: 16, height: 2, borderRadius: 1, backgroundColor: color }} />
-      {plus && (
-        <View
-          style={{
-            position: 'absolute',
-            width: 2,
-            height: 16,
-            borderRadius: 1,
-            backgroundColor: color,
-          }}
-        />
-      )}
-    </View>
-  );
+  return <AppIcon name={plus ? 'plus' : 'minus'} size={20} tintColor={color} />;
 }

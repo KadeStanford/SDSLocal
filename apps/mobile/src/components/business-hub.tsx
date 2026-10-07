@@ -1,7 +1,8 @@
-import { ParishBusinessBrand } from './business-screen-header';
+import { PageHeader } from '@/components/page-header';
+
 import { BusinessLogo } from './business-logo';
 import { AppButton } from './app-button';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon, AppIcon as SymbolView } from '@/components/app-icon';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -79,15 +80,17 @@ export function BusinessHub({
 
   return (
     <View style={styles.root}>
+      {showBrand && <PageHeader />}
       <View
         style={{
           gap: 16,
-          paddingBottom: 16,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.divider,
+          padding: 18,
+          borderRadius: 18,
+          borderWidth: 1,
+          borderColor: colors.divider,
+          backgroundColor: colors.backgroundElement,
         }}
       >
-        {showBrand && <ParishBusinessBrand />}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
           <BusinessLogo name={business.name} uri={logoUri} size={56} decorative />
           <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
@@ -108,7 +111,17 @@ export function BusinessHub({
             gap: 12,
           }}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 6,
+              backgroundColor: colors.backgroundSelected,
+              paddingHorizontal: 10,
+              paddingVertical: 7,
+              borderRadius: 8,
+            }}
+          >
             <View
               style={{
                 width: 6,
@@ -129,7 +142,9 @@ export function BusinessHub({
             style={({ pressed }) => [
               styles.preview,
               {
-                minHeight: 44,
+                minHeight: 48,
+                width: '100%',
+                justifyContent: 'center',
                 paddingHorizontal: 16,
                 borderRadius: 10,
                 backgroundColor: colors.backgroundSelected,
@@ -145,8 +160,31 @@ export function BusinessHub({
           </Pressable>
         </View>
       </View>
-      {onRequests && <AppButton label="Requests & estimates" onPress={onRequests} />}
-      {onOrders && <AppButton label="View pickup orders" onPress={onOrders} />}
+      {(onRequests || onOrders) && (
+        <View style={{ gap: 12 }}>
+          <ThemedText accessibilityRole="header" type="subtitle">
+            Your day-to-day
+          </ThemedText>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+            {onRequests && (
+              <AppButton
+                style={{ flex: 1, minWidth: 145 }}
+                icon={<AppIcon name="inbox" tintColor="#FFFFFF" size={20} />}
+                label="Requests & estimates"
+                onPress={onRequests}
+              />
+            )}
+            {onOrders && (
+              <AppButton
+                style={{ flex: 1, minWidth: 145 }}
+                icon={<AppIcon name="shopping-bag" tintColor="#FFFFFF" size={20} />}
+                label="Pickup orders"
+                onPress={onOrders}
+              />
+            )}
+          </View>
+        </View>
+      )}
 
       {canEdit && business.status === 'draft' && setupItems.length > 0 ? (
         <View
@@ -225,9 +263,7 @@ export function BusinessHub({
               {attention.detail}
             </ThemedText>
           </View>
-          <ThemedText accessible={false} themeColor="textSecondary">
-            ›
-          </ThemedText>
+          <AppIcon name="chevron-right" size={18} />
         </Pressable>
       ) : null}
 
@@ -245,7 +281,6 @@ export function BusinessHub({
             style={[
               styles.groupCard,
               { backgroundColor: colors.backgroundElement, borderColor: colors.divider },
-              group === 'OPERATIONS' && { backgroundColor: 'transparent' },
             ]}
           >
             <Pressable
@@ -271,20 +306,14 @@ export function BusinessHub({
               />
             </Pressable>
             {expanded && (
-              <View
-                style={[
-                  styles.destinationRows,
-                  { borderTopColor: colors.divider },
-                  group === 'OPERATIONS' && [styles.operationGrid, { marginTop: 12 }],
-                ]}
-              >
+              <View style={[styles.destinationRows, { borderTopColor: colors.divider }]}>
                 {rows.map((destination, index) => (
                   <HubRow
                     key={destination.key}
                     colors={colors}
                     icon={destination.icon}
                     index={index}
-                    tile={group === 'OPERATIONS'}
+                    tile={false}
                     onPress={() => onOpen(destination.key)}
                     summary={summaryFor(destination.key)}
                     title={
@@ -366,7 +395,7 @@ function HubRow({
                 justifyContent: 'space-between',
                 alignItems: 'center',
               }
-            : styles.rowIcon
+            : [styles.rowIcon, { backgroundColor: colors.backgroundSelected }]
         }
       >
         <SymbolView
@@ -386,7 +415,7 @@ function HubRow({
         <ThemedText type="smallBold" style={tile ? { fontSize: 16, lineHeight: 22 } : undefined}>
           {title}
         </ThemedText>
-        <ThemedText themeColor="textSecondary" type="small" numberOfLines={tile ? 2 : 1}>
+        <ThemedText themeColor="textSecondary" type="small">
           {summary}
         </ThemedText>
       </View>
@@ -472,8 +501,8 @@ const styles = StyleSheet.create({
   setupRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   groupCard: {
     overflow: 'hidden',
-    borderWidth: 0,
-    borderRadius: 8,
+    borderWidth: 1,
+    borderRadius: 18,
   },
   groupHeader: {
     minHeight: 76,
@@ -485,14 +514,20 @@ const styles = StyleSheet.create({
   },
   destinationRows: { borderTopWidth: StyleSheet.hairlineWidth },
   row: {
-    minHeight: 60,
+    minHeight: 80,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
   },
-  rowIcon: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
+  rowIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   icon: { width: 20, height: 20 },
   chevron: { width: 16, height: 16 },
   separator: { borderTopWidth: StyleSheet.hairlineWidth },

@@ -1,3 +1,4 @@
+import { PageHeader } from '@/components/page-header';
 import * as Crypto from 'expo-crypto';
 import {
   useNavigation,
@@ -8,9 +9,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppChrome } from '@/components/app-chrome';
-import { CustomerBrand } from '@/components/customer-brand';
-import { CustomerAction } from '@/components/customer-ui';
+
 import { RequestBusinessHeader } from '@/components/request-form-ui';
 import { EmptyState, ListLoading, StateNotice } from '@/components/data-state';
 import {
@@ -86,6 +85,16 @@ function ServiceRequestContent({
   const [loading, setLoading] = useState(true),
     [saving, setSaving] = useState(false);
   const [leaveAction, setLeaveAction] = useState<NavigationAction | null>(null);
+  const scroll = useRef<ScrollView>(null);
+  const reviewVisible = useRef(false);
+  useEffect(() => {
+    const next = !!review;
+    if (reviewVisible.current === next) return;
+    reviewVisible.current = next;
+    if (!scroll.current) return;
+    const frame = requestAnimationFrame(() => scroll.current?.scrollTo({ y: 0, animated: false }));
+    return () => cancelAnimationFrame(frame);
+  }, [review]);
   const dirty = !!(
     draft.message ||
     draft.timing ||
@@ -93,10 +102,13 @@ function ServiceRequestContent({
     Object.values(draft.answers ?? {}).some(Boolean)
   );
   useEffect(() => {
+    // Capture the request-version ref object used to invalidate pending reads.
+    const generationForCleanup = generation;
+
     alive.current = true;
     return () => {
       alive.current = false;
-      generation.current++;
+      generationForCleanup.current++;
     };
   }, []);
   usePreventRemove(dirty || saving, ({ data }) => {
@@ -162,7 +174,13 @@ function ServiceRequestContent({
     }
   }, [businessId]);
   useEffect(() => {
-    void load();
+    let active = true;
+    void Promise.resolve().then(() => {
+      if (active) void load();
+    });
+    return () => {
+      active = false;
+    };
   }, [load]);
   function reviewRequest() {
     if (!business || !customerId || pending.current) return;
@@ -222,25 +240,14 @@ function ServiceRequestContent({
           style={{ flex: 1 }}
         >
           <ScrollView
+            ref={scroll}
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={[
               merchantStyles.content,
               { padding: 20, gap: 24, paddingBottom: bottomPadding },
             ]}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-              <CustomerAction
-                label="Back"
-                icon="back"
-                iconOnly
-                disabled={saving}
-                onPress={() => router.back()}
-              />
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <CustomerBrand />
-              </View>
-              <AppChrome inline />
-            </View>
+            <PageHeader onBack={() => router.back()} backDisabled={saving} />
             <MerchantHeading
               title={review ? 'Review request' : 'Request a quote'}
               subtitle={

@@ -26,6 +26,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [secureStorageWarning, setSecureStorageWarning] = useState(getSecureStorageWarning);
 
   useEffect(() => {
+    let active = true;
+    let authEventObserved = false;
     const unsubscribeStorageWarning = subscribeToSecureStorageWarning(setSecureStorageWarning);
     // Biometrics are intentionally disabled in the current product flow. Clear
     // any credentials left by an older build before loading the session.
@@ -34,22 +36,27 @@ export function AuthProvider({ children }: PropsWithChildren) {
     void supabase.auth
       .getSession()
       .then(({ data }) => {
+        if (!active || authEventObserved) return;
         setSession(data.session);
         setLoading(false);
       })
       .catch(() => {
+        if (!active || authEventObserved) return;
         setSession(null);
         setSecureStorageWarning(getSecureStorageWarning());
         setLoading(false);
       });
 
     const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (!active) return;
+      authEventObserved = true;
       setSession(nextSession);
       setSecureStorageWarning(getSecureStorageWarning());
       setLoading(false);
     });
 
     return () => {
+      active = false;
       unsubscribeStorageWarning();
       data.subscription.unsubscribe();
     };

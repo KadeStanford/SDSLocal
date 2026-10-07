@@ -13,6 +13,7 @@ import { ordersTabVisible } from '@/lib/pickup-workspace';
 import { pickupDiscoveryEnabled } from '@/lib/pickup-discovery';
 import { useServiceOperations } from '@/providers/service-operations-provider';
 import { useBusinessActivity } from '@/hooks/use-business-activity';
+import { nativeTabIcons } from './native-tab-icons';
 
 export default function AppTabs() {
   const scheme = useColorScheme();
@@ -65,44 +66,28 @@ export default function AppTabs() {
       {(!session || mode === 'customer') && (
         <NativeTabs.Trigger name="explore">
           <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
-          <NativeTabs.Trigger.Icon
-            md={{ default: 'home', selected: 'home' }}
-            selectedColor={Brand.primary}
-            sf={{ default: 'house', selected: 'house.fill' }}
-          />
+          <NativeTabs.Trigger.Icon src={nativeTabIcons['house']} renderingMode="template" selectedColor={Brand.primary} />
         </NativeTabs.Trigger>
       )}
 
       {(!session || mode === 'customer') && (
         <NativeTabs.Trigger name="calendar">
           <NativeTabs.Trigger.Label>Events</NativeTabs.Trigger.Label>
-          <NativeTabs.Trigger.Icon
-            md={{ default: 'event', selected: 'event' }}
-            selectedColor={Brand.primary}
-            sf={{ default: 'calendar', selected: 'calendar.circle.fill' }}
-          />
+          <NativeTabs.Trigger.Icon src={nativeTabIcons['calendar-days']} renderingMode="template" selectedColor={Brand.primary} />
         </NativeTabs.Trigger>
       )}
 
       {session && mode === 'customer' && (
         <NativeTabs.Trigger name="rewards">
           <NativeTabs.Trigger.Label>Rewards</NativeTabs.Trigger.Label>
-          <NativeTabs.Trigger.Icon
-            md={{ default: 'redeem', selected: 'redeem' }}
-            selectedColor={Brand.primary}
-            sf={{ default: 'gift', selected: 'gift.fill' }}
-          />
+          <NativeTabs.Trigger.Icon src={nativeTabIcons['gift']} renderingMode="template" selectedColor={Brand.primary} />
         </NativeTabs.Trigger>
       )}
 
       {session && mode === 'business' && hasBusinessAccess && (
         <NativeTabs.Trigger name="businesses">
           <NativeTabs.Trigger.Label>Manage</NativeTabs.Trigger.Label>
-          <NativeTabs.Trigger.Icon
-            md={{ default: 'storefront', selected: 'storefront' }}
-            selectedColor={Brand.primary}
-            sf={{ default: 'building.2', selected: 'building.2.fill' }}
-          />
+          <NativeTabs.Trigger.Icon src={nativeTabIcons['store']} renderingMode="template" selectedColor={Brand.primary} />
         </NativeTabs.Trigger>
       )}
 
@@ -110,33 +95,21 @@ export default function AppTabs() {
         (!session || mode === 'customer' || pathname === '/orders') && (
           <NativeTabs.Trigger name="orders">
             <NativeTabs.Trigger.Label>Orders</NativeTabs.Trigger.Label>
-            <NativeTabs.Trigger.Icon
-              md={{ default: 'receipt_long', selected: 'receipt_long' }}
-              sf={{ default: 'bag', selected: 'bag.fill' }}
-              selectedColor={Brand.primary}
-            />
+            <NativeTabs.Trigger.Icon src={nativeTabIcons['shopping-bag']} renderingMode="template" selectedColor={Brand.primary} />
           </NativeTabs.Trigger>
         )}
 
       {session && mode === 'business' && hasBusinessAccess && (
         <NativeTabs.Trigger name="staff-scan">
           <NativeTabs.Trigger.Label>Staff Scan</NativeTabs.Trigger.Label>
-          <NativeTabs.Trigger.Icon
-            md={{ default: 'qr_code_scanner', selected: 'qr_code_scanner' }}
-            selectedColor={Brand.primary}
-            sf={{ default: 'qrcode', selected: 'qrcode.viewfinder' }}
-          />
+          <NativeTabs.Trigger.Icon src={nativeTabIcons['scan-line']} renderingMode="template" selectedColor={Brand.primary} />
         </NativeTabs.Trigger>
       )}
       {(showOrders || pathname === '/pickup-orders') && (
         <NativeTabs.Trigger name="pickup-orders">
           <NativeTabs.Trigger.Label>Orders</NativeTabs.Trigger.Label>
           {(requestCount > 0 || activity.orders) && <NativeTabs.Trigger.Badge />}
-          <NativeTabs.Trigger.Icon
-            md={{ default: 'receipt_long', selected: 'receipt_long' }}
-            sf={{ default: 'bag', selected: 'bag.fill' }}
-            selectedColor={Brand.primary}
-          />
+          <NativeTabs.Trigger.Icon src={nativeTabIcons['shopping-bag']} renderingMode="template" selectedColor={Brand.primary} />
         </NativeTabs.Trigger>
       )}
 
@@ -144,24 +117,20 @@ export default function AppTabs() {
         <NativeTabs.Trigger name="business-appointments">
           <NativeTabs.Trigger.Label>Appointments</NativeTabs.Trigger.Label>
           {activity.appointments && <NativeTabs.Trigger.Badge />}
-          <NativeTabs.Trigger.Icon sf="calendar" md="event" selectedColor={Brand.primary} />
+          <NativeTabs.Trigger.Icon src={nativeTabIcons['calendar-days']} renderingMode="template" selectedColor={Brand.primary} />
         </NativeTabs.Trigger>
       )}
       {serviceTabs && (
         <NativeTabs.Trigger name="business-requests">
           <NativeTabs.Trigger.Label>Requests</NativeTabs.Trigger.Label>
           {activity.requests && <NativeTabs.Trigger.Badge />}
-          <NativeTabs.Trigger.Icon sf="doc.text" md="description" selectedColor={Brand.primary} />
+          <NativeTabs.Trigger.Icon src={nativeTabIcons['file-text']} renderingMode="template" selectedColor={Brand.primary} />
         </NativeTabs.Trigger>
       )}
       {!serviceTabs && (
         <NativeTabs.Trigger name="account">
           <NativeTabs.Trigger.Label>Account</NativeTabs.Trigger.Label>
-          <NativeTabs.Trigger.Icon
-            md={{ default: 'person_outline', selected: 'account_circle' }}
-            selectedColor={Brand.primary}
-            sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }}
-          />
+          <NativeTabs.Trigger.Icon src={nativeTabIcons['circle-user-round']} renderingMode="template" selectedColor={Brand.primary} />
         </NativeTabs.Trigger>
       )}
     </NativeTabs>

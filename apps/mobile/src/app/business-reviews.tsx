@@ -1,8 +1,9 @@
+import { RatingLabel } from '@/components/rating-label';
+import { ReviewStars } from '@/components/focused-page-ui';
 import { BusinessScreenHeader } from '@/components/business-screen-header';
 import { FlowIdentity, FlowSection } from '@/components/flow-layout';
-import { BackPill } from '@/components/back-pill';
 import { usePullRefresh } from '@/hooks/use-pull-refresh';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 import { AppTextInput as TextInput } from '@/components/app-text-input';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -58,23 +59,27 @@ export default function BusinessReviewsScreen() {
     mutation = useRef(false);
   const activeScope = `${session?.user.id ?? ''}:${businessId ?? ''}:${mode}`;
   const scopeRef = useRef(activeScope);
-  scopeRef.current = activeScope;
-  useEffect(() => {
+  useLayoutEffect(() => {
     scopeRef.current = activeScope;
     return () => {
       scopeRef.current = '';
     };
   }, [activeScope]);
-  useEffect(() => {
+  const [previousScope, setPreviousScope] = useState(activeScope);
+  if (previousScope !== activeScope) {
+    setPreviousScope(activeScope);
     setSavingId(null);
     setNotice('');
     setSelectedId(null);
     setReviews([]);
     setDrafts({});
-    return () => {
+  }
+  useEffect(
+    () => () => {
       generation.current++;
-    };
-  }, [businessId, session?.user.id, mode]);
+    },
+    [activeScope],
+  );
   const load = useCallback(async () => {
     const readGeneration = ++generation.current;
     if (!businessId || !session || mode !== 'business') {
@@ -191,11 +196,11 @@ export default function BusinessReviewsScreen() {
         }
         ListHeaderComponent={
           <View style={{ gap: 20 }}>
-            <AppChrome />
-            <BackPill label="Back to business" onPress={() => router.back()} />
             <BusinessScreenHeader
               title="Customer reviews"
               subtitle="Verified orders and event attendance"
+              onBack={() => router.back()}
+              utility={<AppChrome inline showModeSwitch={false} />}
             />
             {!!error && (
               <>
@@ -234,13 +239,7 @@ export default function BusinessReviewsScreen() {
                 flexWrap: 'wrap',
               }}
             >
-              <ThemedText
-                accessibilityLabel={item.rating + ' out of 5 stars'}
-                style={{ color: c.success, fontSize: 19 }}
-              >
-                {'★'.repeat(item.rating)}
-                {'☆'.repeat(5 - item.rating)}
-              </ThemedText>
+              <RatingLabel rating={item.rating} />
               <ThemedText type="caption" themeColor="textSecondary">
                 {new Date(item.createdAt).toLocaleDateString(undefined, {
                   month: 'short',
@@ -313,7 +312,8 @@ export default function BusinessReviewsScreen() {
       >
         {selected && (
           <>
-            <FlowSection title={'★ ' + selected.rating + ' / 5'}>
+            <FlowSection title="Customer review">
+              <ReviewStars rating={selected.rating} />
               <FlowIdentity
                 name="Verified customer"
                 detail={selected.source === 'event' ? 'Attended this event' : 'Completed an order'}

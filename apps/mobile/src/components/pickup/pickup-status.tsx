@@ -1,4 +1,5 @@
-import { SymbolView } from 'expo-symbols';
+import { RatingLabel } from '@/components/rating-label';
+import { AppIcon, AppIcon as SymbolView } from '@/components/app-icon';
 import { pendingPaymentPresentation } from '@/lib/pending-payment';
 import { useState, type ReactNode } from 'react';
 import { ActivityIndicator, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
@@ -52,7 +53,13 @@ export function CustomerOrderIdentity({ order }: { order: PickupOrder }) {
     </View>
   );
 }
-export function CustomerOrderProgress({ order }: { order: PickupOrder }) {
+export function CustomerOrderProgress({
+  order,
+  inset = false,
+}: {
+  order: PickupOrder;
+  inset?: boolean;
+}) {
   const c = useTheme();
   const tracking = orderTracking(order.status);
   const message =
@@ -81,7 +88,13 @@ export function CustomerOrderProgress({ order }: { order: PickupOrder }) {
             ? 'Show your pickup QR at the counter when you arrive.'
             : null;
   return (
-    <View style={styles.progressRoot}>
+    <View
+      style={[
+        styles.progressRoot,
+        { backgroundColor: c.backgroundElement, borderColor: c.divider },
+        inset && { padding: 0, borderWidth: 0 },
+      ]}
+    >
       <View style={styles.progressHeader}>
         <View style={styles.progressHeading}>
           <ThemedText
@@ -254,44 +267,74 @@ export function PickupStatus({
     );
   return (
     <View style={{ gap: 16 }}>
-      <CustomerOrderIdentity order={order} />
       <View
         style={{
-          padding: 20,
-          borderRadius: 14,
+          borderRadius: 20,
           borderWidth: 1,
           borderColor: c.divider,
+          overflow: 'hidden',
           backgroundColor: c.backgroundElement,
-          gap: 16,
         }}
       >
-        <CustomerOrderProgress order={order} />
-        {tracking.index >= 0 && (
-          <>
-            <AppButton
-              label={activity ? 'Hide order activity' : 'View order activity'}
-              variant="secondary"
-              onPress={() => setActivity((old) => !old)}
-              style={{ alignSelf: 'flex-start', paddingHorizontal: 16 }}
-            />
-            {activity && <OrderTimeline order={order} />}
-          </>
-        )}
+        <CustomerOrderIdentity order={order} />
+        <View
+          style={{
+            padding: 20,
+            borderTopWidth: 1,
+            borderTopColor: c.divider,
+            backgroundColor: c.backgroundElement,
+            gap: 16,
+          }}
+        >
+          <CustomerOrderProgress order={order} inset />
+          {tracking.index >= 0 && (
+            <>
+              <AppButton
+                label={activity ? 'Hide order activity' : 'View order activity'}
+                variant="secondary"
+                onPress={() => setActivity((old) => !old)}
+                style={{ alignSelf: 'flex-start', paddingHorizontal: 16 }}
+              />
+              {activity && <OrderTimeline order={order} />}
+            </>
+          )}
+        </View>
       </View>
       {pickupCode}
       <View
-        style={{ padding: 16, borderRadius: 16, gap: 12, backgroundColor: c.backgroundElement }}
+        style={{
+          padding: 20,
+          borderRadius: 20,
+          borderWidth: 1,
+          borderColor: c.divider,
+          gap: 14,
+          backgroundColor: c.backgroundElement,
+        }}
       >
-        <View style={{ gap: 4 }}>
-          <ThemedText type="small" themeColor="textSecondary">
-            {tracking.terminal ? 'Pickup details' : 'Pickup time'}
-          </ThemedText>
-          <ThemedText type="card">
-            {pickupLabel({
-              at: order.pickupAt,
-              timezone: order.business?.timezone ?? order.timezone,
-            })}
-          </ThemedText>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 14 }}>
+          <View
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              backgroundColor: c.backgroundSelected,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <AppIcon name="clock" size={22} tintColor={c.text} />
+          </View>
+          <View style={{ gap: 4, flex: 1, minWidth: 0 }}>
+            <ThemedText type="small" themeColor="textSecondary">
+              {tracking.terminal ? 'Pickup details' : 'Pickup time'}
+            </ThemedText>
+            <ThemedText type="card">
+              {pickupLabel({
+                at: order.pickupAt,
+                timezone: order.business?.timezone ?? order.timezone,
+              })}
+            </ThemedText>
+          </View>
         </View>
         {!!order.address && <ThemedText themeColor="textSecondary">{order.address}</ThemedText>}
         {(directions || order.business?.phone) && (
@@ -324,10 +367,7 @@ export function PickupStatus({
           {order.review ? (
             <View style={{ gap: 8 }}>
               <ThemedText type="card">Your verified review</ThemedText>
-              <ThemedText accessibilityLabel={`${order.review.rating} out of 5 stars`}>
-                {'★'.repeat(order.review.rating)}
-                {'☆'.repeat(5 - order.review.rating)}
-              </ThemedText>
+              <RatingLabel rating={order.review.rating} />
               {!!order.review.text && (
                 <ThemedText themeColor="textSecondary">{order.review.text}</ThemedText>
               )}
@@ -370,12 +410,7 @@ export function PickupStatus({
                       justifyContent: 'center',
                     }}
                   >
-                    <ThemedText
-                      type="subtitle"
-                      style={{ color: reviewRating >= rating ? c.accent : c.textSecondary }}
-                    >
-                      ★
-                    </ThemedText>
+                    <AppIcon name="star" size={18} fill={true} />
                   </Pressable>
                 ))}
               </View>
@@ -564,7 +599,10 @@ function supportLabel(type: OrderSupportType) {
 
 const styles = StyleSheet.create({
   progressRoot: {
-    gap: 12,
+    padding: 20,
+    borderRadius: 18,
+    borderWidth: 1,
+    gap: 16,
   },
   progressHeader: {
     flexDirection: 'row',
@@ -581,7 +619,7 @@ const styles = StyleSheet.create({
     minWidth: 48,
     paddingHorizontal: 10,
     paddingVertical: 7,
-    borderRadius: 999,
+    borderRadius: 10,
     alignItems: 'center',
   },
   prepCallout: {

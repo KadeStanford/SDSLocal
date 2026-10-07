@@ -1,3 +1,4 @@
+import { PageHeader } from '@/components/page-header';
 import { offeringSearchQuery } from '@/lib/discovery-search';
 import {
   discoverySuggestions,
@@ -6,7 +7,7 @@ import {
 } from '@/lib/discovery-autocomplete';
 import { DiscoveryAutocomplete } from '@/components/discovery-autocomplete';
 import { CustomerAction } from '@/components/customer-ui';
-import { CustomerBrand } from '@/components/customer-brand';
+
 import { upcomingEventPath } from '@/lib/event-directory';
 import { DiscoveryFiltersSheet } from '@/components/discovery-filters-sheet';
 import { DiscoverySearchBar } from '@/components/discovery-search-bar';
@@ -19,7 +20,7 @@ import { ListLoading, StateNotice } from '@/components/data-state';
 import { hasActiveLoyalty, type BusinessCardData } from '@/components/business-card';
 import { EventCard } from '@/components/event-card';
 import { OfferingSearchResultCard } from '@/components/offering-search-result-card';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import * as Location from 'expo-location';
 import { router, useFocusEffect, useLocalSearchParams, type Href } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -221,7 +222,15 @@ export default function DiscoverScreen() {
       supabase.rpc('get_public_business_discovery_locations'),
     ]);
     const queryError = businessResult.error ?? blockedResult.error;
-    setPartialError(Boolean(eventResult.error || stopResult.error || followingResult.error || hoursResult.error || locationsResult.error));
+    setPartialError(
+      Boolean(
+        eventResult.error ||
+        stopResult.error ||
+        followingResult.error ||
+        hoursResult.error ||
+        locationsResult.error,
+      ),
+    );
     if (requestId !== loadRequestId.current) return;
     setPickupError(
       pickupResult.failed ? 'Order-ahead options could not be checked. Please retry.' : null,
@@ -780,7 +789,7 @@ export default function DiscoverScreen() {
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
                 <CustomerAction label="Back to Home" icon="back" iconOnly onPress={closeBusiness} />
-                <CustomerBrand />
+                <PageHeader />
               </View>
               <PublicBusinessPageContent
                 key={selectedBusinessId}
@@ -948,7 +957,19 @@ export default function DiscoverScreen() {
               />
             </View>
           )}
-          {partialError && <View style={{ gap: 8 }}><ThemedText themeColor="textSecondary">Some event, location or opening-hours details couldn’t load. Business browsing is still available.</ThemedText><AppButton label="Retry missing details" variant="secondary" onPress={() => void loadBusinesses()} /></View>}
+          {partialError && (
+            <View style={{ gap: 8 }}>
+              <ThemedText themeColor="textSecondary">
+                Some event, location or opening-hours details couldn’t load. Business browsing is
+                still available.
+              </ThemedText>
+              <AppButton
+                label="Retry missing details"
+                variant="secondary"
+                onPress={() => void loadBusinesses()}
+              />
+            </View>
+          )}
           {error && (
             <View style={{ gap: Spacing.two }}>
               <StateNotice kind="error" message={error} />

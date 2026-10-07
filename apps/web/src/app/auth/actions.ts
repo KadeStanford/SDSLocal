@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 
 import { getSiteUrl } from '@/lib/supabase/config';
 import { createClient } from '@/lib/supabase/server';
+import { safeAuthNext } from '@/lib/auth-next';
 
 export interface AuthFormState {
   readonly errors?: Record<string, string[]>;
@@ -21,8 +22,7 @@ function formErrors(error: { flatten(): { fieldErrors: Record<string, string[] |
 }
 
 function safeNext(formData: FormData) {
-  const value = String(formData.get('next') ?? '/account');
-  return value.startsWith('/') && !value.startsWith('//') ? value : '/account';
+  return safeAuthNext(String(formData.get('next') ?? '/account'));
 }
 
 /**

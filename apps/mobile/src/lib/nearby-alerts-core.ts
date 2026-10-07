@@ -284,7 +284,9 @@ export function isSafeNotificationUrl(value: unknown): value is string {
   if (value === '/rewards') return true;
   try {
     const parsed = new URL(value, 'https://internal.invalid');
-    if (parsed.origin !== 'https://internal.invalid') return false;
+    if (parsed.origin !== 'https://internal.invalid' || !value.startsWith('/') || value.startsWith('//') || value.includes('\\')) return false;
+    const keys=[...parsed.searchParams.keys()];
+    if(new Set(keys).size!==keys.length || parsed.hash)return false;
     if (parsed.pathname === '/order' || parsed.pathname === '/pickup-order') {
       return (
         !parsed.hash &&
@@ -293,6 +295,9 @@ export function isSafeNotificationUrl(value: unknown): value is string {
           parsed.searchParams.get('orderId') ?? '',
         )
       );
+    }
+    if (parsed.pathname === '/notification' && parsed.searchParams.has('deliveryId')) {
+      return [...parsed.searchParams.keys()].length===1 && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(parsed.searchParams.get('deliveryId')??'');
     }
     if (parsed.pathname === '/notification') {
       return (

@@ -4,6 +4,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   useRef,
@@ -29,8 +30,18 @@ const businessAccessTimeoutMs = 5000;
 
 export function AppModeProvider({ children }: PropsWithChildren) {
   const { session, loading: authLoading } = useAuth();
-  const identity = useRef(session?.user.id); identity.current = session?.user.id;
+  const identity = useRef(session?.user.id);
   const generation = useRef(0);
+  useLayoutEffect(() => {
+    // Capture the request-version ref object used to invalidate pending reads.
+    const generationForCleanup = generation;
+
+    identity.current = session?.user.id;
+    return () => {
+      identity.current = undefined;
+      generationForCleanup.current++;
+    };
+  }, [session?.user.id]);
   const [failedUserId, setFailedUserId] = useState<string | null>(null);
   const [mode, setModeState] = useState<AppMode>('customer');
   const [hydratedUserId, setHydratedUserId] = useState<string | null>(null);
@@ -128,7 +139,9 @@ export function AppModeProvider({ children }: PropsWithChildren) {
       accessError: Boolean(session && failedUserId === session.user.id),
       loading:
         authLoading ||
-        (Boolean(session) && businessAccess?.userId !== session?.user.id && failedUserId !== session?.user.id) ||
+        (Boolean(session) &&
+          businessAccess?.userId !== session?.user.id &&
+          failedUserId !== session?.user.id) ||
         (Boolean(session) && hydratedUserId !== session?.user.id),
     }),
     [

@@ -5,6 +5,7 @@ import type { IdentityPhoto } from '@/lib/business-identity';
 import { useTheme } from '@/hooks/use-theme';
 import { BusinessIdentityRow } from './business-identity-row';
 import { ThemedText } from './themed-text';
+import { AppIcon } from './app-icon';
 
 export function EventDetailHeading({
   title,
@@ -30,32 +31,49 @@ export function EventDetailHeading({
   const [failedImage, setFailedImage] = useState<string | null>(null);
   return (
     <View style={styles.stack}>
-      {image && image !== failedImage && (
-        <View style={styles.hero}>
-          <Pressable
-            accessibilityRole={onOpenPhoto ? 'button' : 'image'}
-            disabled={!onOpenPhoto}
-            accessibilityLabel={`View event photo for ${title}`}
-            onPress={onOpenPhoto}
-            style={{ backgroundColor: colors.backgroundElement }}
-          >
-            <Image
-              source={{ uri: image }}
-              contentFit="cover"
-              onError={() => setFailedImage(image)}
-              style={styles.image}
-            />
-          </Pressable>
-        </View>
-      )}
-      <BusinessIdentityRow name={businessName} photos={photos} size={36} />
-      <ThemedText type="title">{title}</ThemedText>
-      <View style={[styles.facts, { backgroundColor: colors.backgroundElement }]}>
-        <View style={styles.fact}>
-          <ThemedText themeColor="textSecondary" type="small">
-            When
+      <View
+        style={{
+          borderRadius: 20,
+          overflow: 'hidden',
+          borderWidth: 1,
+          borderColor: colors.divider,
+          backgroundColor: colors.backgroundElement,
+        }}
+      >
+        {image && image !== failedImage && (
+          <View style={styles.hero}>
+            <Pressable
+              accessibilityRole={onOpenPhoto ? 'button' : 'image'}
+              disabled={!onOpenPhoto}
+              accessibilityLabel={`View event photo for ${title}`}
+              onPress={onOpenPhoto}
+              style={{ backgroundColor: colors.backgroundElement }}
+            >
+              <Image
+                source={{ uri: image }}
+                contentFit="cover"
+                onError={() => setFailedImage(image)}
+                style={styles.image}
+              />
+            </Pressable>
+          </View>
+        )}
+        <View style={{ padding: 16, gap: 12 }}>
+          <BusinessIdentityRow name={businessName} photos={photos} size={36} />
+          <ThemedText type="title" style={{ fontSize: 26, lineHeight: 32 }}>
+            {title}
           </ThemedText>
-          <ThemedText type="card">{when}</ThemedText>
+        </View>
+      </View>
+      <View style={[styles.facts, { backgroundColor: colors.backgroundElement }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+          <AppIcon name="calendar" size={22} tintColor={colors.accent} />
+          <View style={[styles.fact, { flex: 1 }]}>
+            <ThemedText themeColor="textSecondary" type="small">
+              When
+            </ThemedText>
+            <ThemedText type="card">{when}</ThemedText>
+          </View>
         </View>
         <View style={[styles.fact, styles.location, { borderColor: colors.divider }]}>
           <View
@@ -74,11 +92,20 @@ export function EventDetailHeading({
                 accessibilityRole="button"
                 accessibilityLabel={`Directions to ${where}`}
                 onPress={onDirections}
-                style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 }}
+                style={{
+                  minHeight: 44,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 6,
+                  paddingHorizontal: 10,
+                  borderRadius: 12,
+                  backgroundColor: colors.backgroundSelected,
+                }}
               >
                 <ThemedText type="smallBold" style={{ color: colors.accent }}>
-                  Directions ↗
+                  Directions
                 </ThemedText>
+                <AppIcon name="external-link" size={18} tintColor={colors.accent} />
               </Pressable>
             )}
           </View>
@@ -90,9 +117,9 @@ export function EventDetailHeading({
 }
 const styles = StyleSheet.create({
   stack: { gap: 20 },
-  hero: { borderRadius: 22, overflow: 'hidden' },
-  image: { width: '100%', aspectRatio: 1.6 },
-  facts: { borderRadius: 16, padding: 16, gap: 16 },
+  hero: { overflow: 'hidden' },
+  image: { width: '100%', aspectRatio: 16 / 9 },
+  facts: { borderRadius: 20, padding: 16, gap: 16 },
   fact: { gap: 4 },
   location: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 16 },
 });

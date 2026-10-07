@@ -1,9 +1,11 @@
+import { AppIcon } from '@/components/app-icon';
 import { useState, type ReactNode } from 'react';
 import { Pressable, View, type TextInputProps } from 'react-native';
 import { AppTextInput as TextInput } from '@/components/app-text-input';
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from './themed-text';
 import { BusinessLogo } from './business-logo';
+import { FlowProgress } from './flow-layout';
 
 export function RequestBusinessHeader({
   name,
@@ -14,37 +16,21 @@ export function RequestBusinessHeader({
 }) {
   const c = useTheme();
   return (
-    <View style={{ gap: 20 }}>
-      <View
-        style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
-        accessibilityLabel={review ? 'Step 2 of 2: Review' : 'Step 1 of 2: Details'}
-      >
-        {['Details', 'Review'].map((label, index) => (
-          <View key={label} style={{ flex: 1, gap: 8 }}>
-            <View
-              style={{
-                height: 3,
-                borderRadius: 2,
-                backgroundColor: index === 0 || review ? c.accent : c.divider,
-              }}
-            />
-            <ThemedText
-              type="caption"
-              themeColor={index === 0 || review ? 'accent' : 'textSecondary'}
-            >
-              {index + 1} · {label}
-            </ThemedText>
-          </View>
-        ))}
-      </View>
+    <View
+      style={{
+        borderRadius: 20,
+        backgroundColor: c.backgroundElement,
+        borderWidth: 1,
+        borderColor: c.divider,
+        padding: 16,
+        gap: 18,
+      }}
+    >
       <View
         style={{
-          borderRadius: 18,
-          padding: 16,
+          padding: 0,
           gap: 14,
           backgroundColor: c.backgroundElement,
-          borderWidth: 1,
-          borderColor: c.divider,
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -56,8 +42,19 @@ export function RequestBusinessHeader({
             <ThemedText type="card">{name}</ThemedText>
           </View>
         </View>
-        <View style={{ borderTopWidth: 1, borderTopColor: c.divider, paddingTop: 12 }}>
-          <ThemedText type="small" themeColor="textSecondary">
+        <FlowProgress labels={['Details', 'Review']} current={review ? 1 : 0} />
+        <View
+          style={{
+            borderTopWidth: 1,
+            borderTopColor: c.divider,
+            paddingTop: 12,
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            gap: 8,
+          }}
+        >
+          <AppIcon name="lock" size={17} tintColor={c.textSecondary} />
+          <ThemedText type="small" themeColor="textSecondary" style={{ flex: 1, minWidth: 0 }}>
             Private to this business · Replies to your account email
           </ThemedText>
         </View>
@@ -107,9 +104,13 @@ export function RequestSection({
             backgroundColor: c.backgroundSelected,
           }}
         >
-          <ThemedText type="smallBold" themeColor="accent">
-            {number}
-          </ThemedText>
+          {number === '✓' ? (
+            <AppIcon name="check" size={18} tintColor={c.accent} />
+          ) : (
+            <ThemedText type="smallBold" themeColor="accent">
+              {number}
+            </ThemedText>
+          )}
         </View>
         <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
           <ThemedText type="card">{title}</ThemedText>

@@ -1,0 +1,1460 @@
+{
+  "at": "2026-10-07T21:02:05.278Z",
+  "source": "F:\\BusinessApp\\.codex-tmp\\parish-pass-dark-review",
+  "files": 419,
+  "passed": false,
+  "diagnostics": [
+    {
+      "file": "apps\\mobile\\app.config.ts",
+      "line": 1,
+      "code": 2305,
+      "message": "Module '\"expo/config\"' has no exported member 'ConfigContext'."
+    },
+    {
+      "file": "apps\\mobile\\app.config.ts",
+      "line": 1,
+      "code": 2305,
+      "message": "Module '\"expo/config\"' has no exported member 'ExpoConfig'."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\account.tsx",
+      "line": 206,
+      "code": 7031,
+      "message": "Binding element 'data' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\account.tsx",
+      "line": 264,
+      "code": 7006,
+      "message": "Parameter 'identity' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\account.tsx",
+      "line": 267,
+      "code": 7006,
+      "message": "Parameter 'identity' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\explore.tsx",
+      "line": 301,
+      "code": 7006,
+      "message": "Parameter 'row' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\explore.tsx",
+      "line": 303,
+      "code": 7006,
+      "message": "Parameter 'row' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\orders.tsx",
+      "line": 104,
+      "code": 2769,
+      "message": "No overload matches this call.\n  Overload 1 of 2, '(props: FlatListProps<PickupOrder>): FlatList<PickupOrder>', gave the following error.\n    Type '{ style: { flex: number; }; data: PickupOrder[]; keyExtractor: (o: PickupOrder) => string; renderItem: ({ item }: { item: any; }) => Element; ItemSeparatorComponent: () => Element; ... 5 more ...; ListFooterComponent: Element | null; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<PickupOrder>> & Readonly<FlatListProps<PickupOrder>>'.\n      Property 'style' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<PickupOrder>> & Readonly<FlatListProps<PickupOrder>>'.\n  Overload 2 of 2, '(props: FlatListProps<PickupOrder>, context: any): FlatList<PickupOrder>', gave the following error.\n    Type '{ style: { flex: number; }; data: PickupOrder[]; keyExtractor: (o: PickupOrder) => string; renderItem: ({ item }: { item: any; }) => Element; ItemSeparatorComponent: () => Element; ... 5 more ...; ListFooterComponent: Element | null; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<PickupOrder>> & Readonly<FlatListProps<PickupOrder>>'.\n      Property 'style' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<PickupOrder>> & Readonly<FlatListProps<PickupOrder>>'."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\orders.tsx",
+      "line": 107,
+      "code": 7031,
+      "message": "Binding element 'item' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\rewards.tsx",
+      "line": 455,
+      "code": 7006,
+      "message": "Parameter 'business' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\rewards.tsx",
+      "line": 458,
+      "code": 2345,
+      "message": "Argument of type '{ business_photos: {}; membership_id: string; business_id: string; business_name: string; primary_color: string; program_name: string; reward_description: string; program_type?: \"visits\" | \"points\"; ... 7 more ...; stamps_required?: number; }[]' is not assignable to parameter of type 'SetStateAction<RewardWalletCard[]>'.\n  Type '{ business_photos: {}; membership_id: string; business_id: string; business_name: string; primary_color: string; program_name: string; reward_description: string; program_type?: \"visits\" | \"points\"; ... 7 more ...; stamps_required?: number; }[]' is not assignable to type 'RewardWalletCard[]'.\n    Type '{ business_photos: {}; membership_id: string; business_id: string; business_name: string; primary_color: string; program_name: string; reward_description: string; program_type?: \"visits\" | \"points\"; ... 7 more ...; stamps_required?: number; }' is not assignable to type 'RewardWalletCard' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.\n      Types of property 'business_photos' are incompatible.\n        Type '{}' is missing the following properties from type 'readonly IdentityPhoto[]': length, concat, join, slice, and 26 more."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\rewards.tsx",
+      "line": 465,
+      "code": 7006,
+      "message": "Parameter 'row' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\rewards.tsx",
+      "line": 476,
+      "code": 7006,
+      "message": "Parameter 'row' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\rewards.tsx",
+      "line": 482,
+      "code": 2345,
+      "message": "Argument of type '{ readonly id: string; }[]' is not assignable to parameter of type 'SetStateAction<FollowingBusiness[]>'.\n  Type '{ readonly id: string; }[]' is not assignable to type 'FollowingBusiness[]'.\n    Type '{ readonly id: string; }' is missing the following properties from type 'FollowingBusiness': name, description, category_summary, city, and 6 more."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\rewards.tsx",
+      "line": 498,
+      "code": 7006,
+      "message": "Parameter 'row' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\rewards.tsx",
+      "line": 523,
+      "code": 7006,
+      "message": "Parameter 'row' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\rewards.tsx",
+      "line": 1387,
+      "code": 7031,
+      "message": "Binding element 'data' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\rewards.tsx",
+      "line": 1387,
+      "code": 7031,
+      "message": "Binding element 'error' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\rewards.tsx",
+      "line": 1661,
+      "code": 2769,
+      "message": "No overload matches this call.\n  Overload 1 of 2, '(props: FlatListProps<EventMediaItem>): FlatList<EventMediaItem>', gave the following error.\n    Type '{ data: EventMediaItem[]; extraData: { expandedImage: number | null; loadedAspectRatios: Record<string, number>; }; ref: RefObject<FlatList<EventMediaItem> | null>; ... 17 more ...; renderItem: ({ item: photo }: { ...; }) => Element; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<EventMediaItem>> & Readonly<FlatListProps<EventMediaItem>>'.\n      Property 'onLayout' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<EventMediaItem>> & Readonly<FlatListProps<EventMediaItem>>'.\n  Overload 2 of 2, '(props: FlatListProps<EventMediaItem>, context: any): FlatList<EventMediaItem>', gave the following error.\n    Type '{ data: EventMediaItem[]; extraData: { expandedImage: number | null; loadedAspectRatios: Record<string, number>; }; ref: RefObject<FlatList<EventMediaItem> | null>; ... 17 more ...; renderItem: ({ item: photo }: { ...; }) => Element; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<EventMediaItem>> & Readonly<FlatListProps<EventMediaItem>>'.\n      Property 'onLayout' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<EventMediaItem>> & Readonly<FlatListProps<EventMediaItem>>'."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\rewards.tsx",
+      "line": 1661,
+      "code": 7006,
+      "message": "Parameter 'event' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\rewards.tsx",
+      "line": 1676,
+      "code": 7006,
+      "message": "Parameter 'event' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\(tabs)\\rewards.tsx",
+      "line": 1691,
+      "code": 7031,
+      "message": "Binding element 'photo' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\b\\[slug].tsx",
+      "line": 65,
+      "code": 7031,
+      "message": "Binding element 'data' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\b\\[slug].tsx",
+      "line": 65,
+      "code": 7031,
+      "message": "Binding element 'lookupError' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\book-appointment.tsx",
+      "line": 151,
+      "code": 7031,
+      "message": "Binding element 'data' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\business-new.tsx",
+      "line": 347,
+      "code": 7031,
+      "message": "Binding element 'data' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\business-new.tsx",
+      "line": 347,
+      "code": 7031,
+      "message": "Binding element 'categoryError' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\business-new.tsx",
+      "line": 376,
+      "code": 7031,
+      "message": "Binding element 'data' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\business-new.tsx",
+      "line": 376,
+      "code": 7031,
+      "message": "Binding element 'availabilityError' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\business-reviews.tsx",
+      "line": 189,
+      "code": 2769,
+      "message": "No overload matches this call.\n  Overload 1 of 2, '(props: FlatListProps<MerchantReview>): FlatList<MerchantReview>', gave the following error.\n    Type '{ data: MerchantReview[]; keyExtractor: (review: { id: string; source: string; }) => string; keyboardShouldPersistTaps: \"handled\"; contentContainerStyle: ({ width: \"100%\"; ... 4 more ...; flexGrow: number; } | { ...; })[]; refreshControl: Element; ListHeaderComponent: Element; renderItem: ({ item }: { ...; }) => Ele...' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<MerchantReview>> & Readonly<FlatListProps<MerchantReview>>'.\n      Property 'contentContainerStyle' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<MerchantReview>> & Readonly<FlatListProps<MerchantReview>>'.\n  Overload 2 of 2, '(props: FlatListProps<MerchantReview>, context: any): FlatList<MerchantReview>', gave the following error.\n    Type '{ data: MerchantReview[]; keyExtractor: (review: { id: string; source: string; }) => string; keyboardShouldPersistTaps: \"handled\"; contentContainerStyle: ({ width: \"100%\"; ... 4 more ...; flexGrow: number; } | { ...; })[]; refreshControl: Element; ListHeaderComponent: Element; renderItem: ({ item }: { ...; }) => Ele...' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<MerchantReview>> & Readonly<FlatListProps<MerchantReview>>'.\n      Property 'contentContainerStyle' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<MerchantReview>> & Readonly<FlatListProps<MerchantReview>>'."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\business-reviews.tsx",
+      "line": 216,
+      "code": 7031,
+      "message": "Binding element 'item' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\event-attendees.tsx",
+      "line": 190,
+      "code": 2769,
+      "message": "No overload matches this call.\n  Overload 1 of 2, '(props: FlatListProps<EventAttendee>): FlatList<EventAttendee>', gave the following error.\n    Type '{ data: EventAttendee[]; keyExtractor: (a: EventAttendee) => string; contentInsetAdjustmentBehavior: string; keyboardShouldPersistTaps: \"handled\"; contentContainerStyle: { ...; }; ... 4 more ...; ListFooterComponent: Element | null; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<EventAttendee>> & Readonly<FlatListProps<EventAttendee>>'.\n      Property 'contentInsetAdjustmentBehavior' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<EventAttendee>> & Readonly<FlatListProps<EventAttendee>>'.\n  Overload 2 of 2, '(props: FlatListProps<EventAttendee>, context: any): FlatList<EventAttendee>', gave the following error.\n    Type '{ data: EventAttendee[]; keyExtractor: (a: EventAttendee) => string; contentInsetAdjustmentBehavior: string; keyboardShouldPersistTaps: \"handled\"; contentContainerStyle: { ...; }; ... 4 more ...; ListFooterComponent: Element | null; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<EventAttendee>> & Readonly<FlatListProps<EventAttendee>>'.\n      Property 'contentInsetAdjustmentBehavior' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<EventAttendee>> & Readonly<FlatListProps<EventAttendee>>'."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\event-attendees.tsx",
+      "line": 239,
+      "code": 7031,
+      "message": "Binding element 'item' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\my-appointments.tsx",
+      "line": 258,
+      "code": 18047,
+      "message": "'snapshot' is possibly 'null'."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\my-event-reviews.tsx",
+      "line": 198,
+      "code": 2769,
+      "message": "No overload matches this call.\n  Overload 1 of 2, '(props: FlatListProps<AttendedEvent>): FlatList<AttendedEvent>', gave the following error.\n    Type '{ data: AttendedEvent[]; keyExtractor: (e: AttendedEvent) => string; contentContainerStyle: ({ width: \"100%\"; maxWidth: number; alignSelf: \"center\"; padding: number; gap: number; flexGrow: number; } | { ...; })[]; refreshControl: Element; ListHeaderComponent: Element; renderItem: ({ item }: { ...; }) => Element; Lis...' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<AttendedEvent>> & Readonly<FlatListProps<AttendedEvent>>'.\n      Property 'contentContainerStyle' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<AttendedEvent>> & Readonly<FlatListProps<AttendedEvent>>'.\n  Overload 2 of 2, '(props: FlatListProps<AttendedEvent>, context: any): FlatList<AttendedEvent>', gave the following error.\n    Type '{ data: AttendedEvent[]; keyExtractor: (e: AttendedEvent) => string; contentContainerStyle: ({ width: \"100%\"; maxWidth: number; alignSelf: \"center\"; padding: number; gap: number; flexGrow: number; } | { ...; })[]; refreshControl: Element; ListHeaderComponent: Element; renderItem: ({ item }: { ...; }) => Element; Lis...' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<AttendedEvent>> & Readonly<FlatListProps<AttendedEvent>>'.\n      Property 'contentContainerStyle' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<AttendedEvent>> & Readonly<FlatListProps<AttendedEvent>>'."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\my-event-reviews.tsx",
+      "line": 261,
+      "code": 7031,
+      "message": "Binding element 'item' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\my-service-requests.tsx",
+      "line": 61,
+      "code": 18047,
+      "message": "'snapshot' is possibly 'null'."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\notification.tsx",
+      "line": 193,
+      "code": 7031,
+      "message": "Binding element 'data' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\notification.tsx",
+      "line": 193,
+      "code": 7031,
+      "message": "Binding element 'queryError' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\notification.tsx",
+      "line": 253,
+      "code": 7031,
+      "message": "Binding element 'data' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\notification.tsx",
+      "line": 253,
+      "code": 7031,
+      "message": "Binding element 'queryError' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\service-requests.tsx",
+      "line": 162,
+      "code": 7006,
+      "message": "Parameter 'r' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\service-requests.tsx",
+      "line": 244,
+      "code": 2769,
+      "message": "No overload matches this call.\n  Overload 1 of 2, '(props: FlatListProps<ServiceRequestRow>): FlatList<ServiceRequestRow>', gave the following error.\n    Type '{ data: ServiceRequestRow[]; keyExtractor: (r: ServiceRequestRow) => string; contentContainerStyle: ({ width: \"100%\"; maxWidth: number; alignSelf: \"center\"; padding: number; gap: number; flexGrow: number; } | { ...; })[]; ... 5 more ...; ListFooterComponent: Element | null; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<ServiceRequestRow>> & Readonly<FlatListProps<ServiceRequestRow>>'.\n      Property 'contentContainerStyle' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<ServiceRequestRow>> & Readonly<FlatListProps<ServiceRequestRow>>'.\n  Overload 2 of 2, '(props: FlatListProps<ServiceRequestRow>, context: any): FlatList<ServiceRequestRow>', gave the following error.\n    Type '{ data: ServiceRequestRow[]; keyExtractor: (r: ServiceRequestRow) => string; contentContainerStyle: ({ width: \"100%\"; maxWidth: number; alignSelf: \"center\"; padding: number; gap: number; flexGrow: number; } | { ...; })[]; ... 5 more ...; ListFooterComponent: Element | null; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<ServiceRequestRow>> & Readonly<FlatListProps<ServiceRequestRow>>'.\n      Property 'contentContainerStyle' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<ServiceRequestRow>> & Readonly<FlatListProps<ServiceRequestRow>>'."
+    },
+    {
+      "file": "apps\\mobile\\src\\app\\service-requests.tsx",
+      "line": 297,
+      "code": 7031,
+      "message": "Binding element 'item' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\admin\\moderation-outcome-screen.tsx",
+      "line": 75,
+      "code": 7031,
+      "message": "Binding element 'error' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\appointment-workspace.tsx",
+      "line": 326,
+      "code": 7006,
+      "message": "Parameter 'row' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\appointment-workspace.tsx",
+      "line": 327,
+      "code": 7006,
+      "message": "Parameter 'row' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\business-category-editor.tsx",
+      "line": 60,
+      "code": 7006,
+      "message": "Parameter 'row' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\business-creation-gate.test.tsx",
+      "line": 83,
+      "code": 7006,
+      "message": "Parameter 'reason' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\business-reviews-flow.test.tsx",
+      "line": 239,
+      "code": 7006,
+      "message": "Parameter 'scope' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\business-theme.test.tsx",
+      "line": 23,
+      "code": 7006,
+      "message": "Parameter 'scheme' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\business-theme.test.tsx",
+      "line": 25,
+      "code": 7053,
+      "message": "Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ readonly light: AppTheme; readonly dark: AppTheme; }'."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\business-theme.test.tsx",
+      "line": 26,
+      "code": 7053,
+      "message": "Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ readonly light: AppTheme; readonly dark: AppTheme; }'."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\business-workspace.tsx",
+      "line": 2355,
+      "code": 7006,
+      "message": "Parameter 'result' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\business-workspace.tsx",
+      "line": 2569,
+      "code": 7006,
+      "message": "Parameter 'result' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\discovery-home.test.tsx",
+      "line": 180,
+      "code": 7006,
+      "message": "Parameter 'scheme' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\flow-layout.test.tsx",
+      "line": 71,
+      "code": 7006,
+      "message": "Parameter 'target' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\flow-layout.test.tsx",
+      "line": 71,
+      "code": 7006,
+      "message": "Parameter 'columns' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\input-controls.test.tsx",
+      "line": 56,
+      "code": 7006,
+      "message": "Parameter 'type' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\input-controls.test.tsx",
+      "line": 56,
+      "code": 7006,
+      "message": "Parameter 'keyboardType' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\input-controls.test.tsx",
+      "line": 56,
+      "code": 7006,
+      "message": "Parameter 'autoComplete' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\listing-plans-screen.test.tsx",
+      "line": 134,
+      "code": 7006,
+      "message": "Parameter 'scheme' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\listing-plans-screen.test.tsx",
+      "line": 162,
+      "code": 7006,
+      "message": "Parameter 'reason' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\listing-plans-screen.test.tsx",
+      "line": 201,
+      "code": 7006,
+      "message": "Parameter 'platform' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\listing-plans-screen.test.tsx",
+      "line": 226,
+      "code": 7006,
+      "message": "Parameter 'reason' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\merchant-ui.test.tsx",
+      "line": 133,
+      "code": 7006,
+      "message": "Parameter 'scheme' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\merchant-ui.test.tsx",
+      "line": 224,
+      "code": 7006,
+      "message": "Parameter 'scheme' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\merchant-ui.test.tsx",
+      "line": 291,
+      "code": 7006,
+      "message": "Parameter 'scheme' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\merchant-ui.test.tsx",
+      "line": 390,
+      "code": 7006,
+      "message": "Parameter 'scheme' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\merchant-ui.test.tsx",
+      "line": 481,
+      "code": 7006,
+      "message": "Parameter 'scheme' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\merchant-ui.test.tsx",
+      "line": 541,
+      "code": 7006,
+      "message": "Parameter 'scheme' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\merchant-ui.test.tsx",
+      "line": 616,
+      "code": 7006,
+      "message": "Parameter 'scheme' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\merchant-ui.test.tsx",
+      "line": 746,
+      "code": 7006,
+      "message": "Parameter 'scheme' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\merchant-ui.test.tsx",
+      "line": 840,
+      "code": 7006,
+      "message": "Parameter 'scheme' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pending-email-confirmation.tsx",
+      "line": 62,
+      "code": 7031,
+      "message": "Binding element 'data' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup-navigation.test.tsx",
+      "line": 212,
+      "code": 7006,
+      "message": "Parameter 'signedIn' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup-navigation.test.tsx",
+      "line": 246,
+      "code": 7006,
+      "message": "Parameter 'kind' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup-navigation.test.tsx",
+      "line": 266,
+      "code": 7006,
+      "message": "Parameter 'kind' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup-navigation.test.tsx",
+      "line": 343,
+      "code": 7006,
+      "message": "Parameter 'count' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup-navigation.test.tsx",
+      "line": 400,
+      "code": 7006,
+      "message": "Parameter 'signedIn' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup-navigation.test.tsx",
+      "line": 429,
+      "code": 7006,
+      "message": "Parameter 'path' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup-navigation.test.tsx",
+      "line": 440,
+      "code": 7006,
+      "message": "Parameter 'path' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup-navigation.test.tsx",
+      "line": 473,
+      "code": 7006,
+      "message": "Parameter 'canRefund' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup-navigation.test.tsx",
+      "line": 509,
+      "code": 7006,
+      "message": "Parameter 'status' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup-navigation.test.tsx",
+      "line": 529,
+      "code": 7006,
+      "message": "Parameter '_role' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup-navigation.test.tsx",
+      "line": 529,
+      "code": 7006,
+      "message": "Parameter 'signedIn' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup-navigation.test.tsx",
+      "line": 529,
+      "code": 7006,
+      "message": "Parameter 'mode' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup-navigation.test.tsx",
+      "line": 529,
+      "code": 7006,
+      "message": "Parameter 'count' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup-navigation.test.tsx",
+      "line": 529,
+      "code": 7006,
+      "message": "Parameter 'visible' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup-navigation.test.tsx",
+      "line": 568,
+      "code": 7006,
+      "message": "Parameter 'status' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup-navigation.test.tsx",
+      "line": 621,
+      "code": 7006,
+      "message": "Parameter 'owner' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup\\business-review-section.tsx",
+      "line": 121,
+      "code": 7006,
+      "message": "Parameter 'review' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup\\business-review-section.tsx",
+      "line": 125,
+      "code": 7006,
+      "message": "Parameter 'review' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup\\order-notification-settings.tsx",
+      "line": 29,
+      "code": 7031,
+      "message": "Binding element 'data' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup\\order-notification-settings.tsx",
+      "line": 29,
+      "code": 7031,
+      "message": "Binding element 'error' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup\\pickup-menu.tsx",
+      "line": 226,
+      "code": 2769,
+      "message": "No overload matches this call.\n  Overload 1 of 2, '(props: FlatListProps<MenuRow>): FlatList<MenuRow>', gave the following error.\n    Type '{ ref: RefObject<FlatList<MenuRow> | null>; style: { flex: number; minHeight: number; }; contentContainerStyle: { paddingHorizontal: number; paddingTop: number; paddingBottom: number; }; ... 14 more ...; ListEmptyComponent: Element | null; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<MenuRow>> & Readonly<FlatListProps<MenuRow>>'.\n      Property 'style' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<MenuRow>> & Readonly<FlatListProps<MenuRow>>'.\n  Overload 2 of 2, '(props: FlatListProps<MenuRow>, context: any): FlatList<MenuRow>', gave the following error.\n    Type '{ ref: RefObject<FlatList<MenuRow> | null>; style: { flex: number; minHeight: number; }; contentContainerStyle: { paddingHorizontal: number; paddingTop: number; paddingBottom: number; }; ... 14 more ...; ListEmptyComponent: Element | null; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<MenuRow>> & Readonly<FlatListProps<MenuRow>>'.\n      Property 'style' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<MenuRow>> & Readonly<FlatListProps<MenuRow>>'."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup\\pickup-menu.tsx",
+      "line": 240,
+      "code": 7006,
+      "message": "Parameter 'e' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup\\pickup-menu.tsx",
+      "line": 317,
+      "code": 7031,
+      "message": "Binding element 'item' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup\\pickup-render.test.tsx",
+      "line": 73,
+      "code": 7006,
+      "message": "Parameter 'importOriginal' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup\\pickup-render.test.tsx",
+      "line": 74,
+      "code": 2347,
+      "message": "Untyped function calls may not accept type arguments."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\pickup\\pickup-render.test.tsx",
+      "line": 1069,
+      "code": 7006,
+      "message": "Parameter 'scheme' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\public-business-page.tsx",
+      "line": 278,
+      "code": 7031,
+      "message": "Binding element 'data' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\public-business-page.tsx",
+      "line": 278,
+      "code": 7031,
+      "message": "Binding element 'error' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\public-business-page.tsx",
+      "line": 465,
+      "code": 7006,
+      "message": "Parameter 'event' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\public-business-page.tsx",
+      "line": 2014,
+      "code": 2769,
+      "message": "No overload matches this call.\n  Overload 1 of 2, '(props: FlatListProps<GalleryPhoto>): FlatList<GalleryPhoto>', gave the following error.\n    Type '{ key: string; data: GalleryPhoto[]; numColumns: number; style: { flex: number; }; contentContainerStyle: { padding: number; gap: number; }; columnWrapperStyle: { gap: number; }; keyExtractor: (photo: GalleryPhoto) => string; renderItem: ({ item, index }: { ...; }) => Element; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<GalleryPhoto>> & Readonly<FlatListProps<GalleryPhoto>>'.\n      Property 'style' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<GalleryPhoto>> & Readonly<FlatListProps<GalleryPhoto>>'.\n  Overload 2 of 2, '(props: FlatListProps<GalleryPhoto>, context: any): FlatList<GalleryPhoto>', gave the following error.\n    Type '{ key: string; data: GalleryPhoto[]; numColumns: number; style: { flex: number; }; contentContainerStyle: { padding: number; gap: number; }; columnWrapperStyle: { gap: number; }; keyExtractor: (photo: GalleryPhoto) => string; renderItem: ({ item, index }: { ...; }) => Element; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<GalleryPhoto>> & Readonly<FlatListProps<GalleryPhoto>>'.\n      Property 'style' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<GalleryPhoto>> & Readonly<FlatListProps<GalleryPhoto>>'."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\public-business-page.tsx",
+      "line": 2018,
+      "code": 7031,
+      "message": "Binding element 'item' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\public-business-page.tsx",
+      "line": 2018,
+      "code": 7031,
+      "message": "Binding element 'index' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\public-business-page.tsx",
+      "line": 2049,
+      "code": 2769,
+      "message": "No overload matches this call.\n  Overload 1 of 2, '(props: FlatListProps<GalleryPhoto>): FlatList<GalleryPhoto>', gave the following error.\n    Type '{ data: GalleryPhoto[]; extraData: { viewerIndex: number; loadedAspectRatios: Record<string, number>; }; ref: RefObject<FlatList<GalleryPhoto> | null>; ... 16 more ...; showsHorizontalScrollIndicator: boolean; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<GalleryPhoto>> & Readonly<FlatListProps<GalleryPhoto>>'.\n      Property 'onLayout' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<GalleryPhoto>> & Readonly<FlatListProps<GalleryPhoto>>'.\n  Overload 2 of 2, '(props: FlatListProps<GalleryPhoto>, context: any): FlatList<GalleryPhoto>', gave the following error.\n    Type '{ data: GalleryPhoto[]; extraData: { viewerIndex: number; loadedAspectRatios: Record<string, number>; }; ref: RefObject<FlatList<GalleryPhoto> | null>; ... 16 more ...; showsHorizontalScrollIndicator: boolean; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<GalleryPhoto>> & Readonly<FlatListProps<GalleryPhoto>>'.\n      Property 'onLayout' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<FlatList<GalleryPhoto>> & Readonly<FlatListProps<GalleryPhoto>>'."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\public-business-page.tsx",
+      "line": 2049,
+      "code": 7006,
+      "message": "Parameter 'event' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\public-business-page.tsx",
+      "line": 2064,
+      "code": 7006,
+      "message": "Parameter 'event' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\public-business-page.tsx",
+      "line": 2079,
+      "code": 7031,
+      "message": "Binding element 'item' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\public-business-page.tsx",
+      "line": 2079,
+      "code": 7031,
+      "message": "Binding element 'index' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\components\\service-operations-screen.test.tsx",
+      "line": 77,
+      "code": 7006,
+      "message": "Parameter 'kind' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\hooks\\use-business-activity.ts",
+      "line": 72,
+      "code": 7006,
+      "message": "Parameter 'r' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\hooks\\use-business-activity.ts",
+      "line": 73,
+      "code": 7006,
+      "message": "Parameter 'r' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\admin\\mobile-moderation-client.test.ts",
+      "line": 137,
+      "code": 7006,
+      "message": "Parameter 'call' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\admin\\mobile-moderation-client.test.ts",
+      "line": 139,
+      "code": 7006,
+      "message": "Parameter 'call' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\admin\\mobile-moderation-client.test.ts",
+      "line": 144,
+      "code": 7006,
+      "message": "Parameter 'name' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\admin\\mobile-moderation-client.test.ts",
+      "line": 169,
+      "code": 7006,
+      "message": "Parameter 'name' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\admin\\mobile-moderation-client.test.ts",
+      "line": 206,
+      "code": 7006,
+      "message": "Parameter 'name' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\admin\\mobile-moderation-client.test.ts",
+      "line": 217,
+      "code": 7006,
+      "message": "Parameter 'name' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\admin\\mobile-moderation-client.test.ts",
+      "line": 228,
+      "code": 7006,
+      "message": "Parameter 'name' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\admin\\mobile-moderation-client.test.ts",
+      "line": 361,
+      "code": 7006,
+      "message": "Parameter 'name' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\admin\\mobile-moderation-client.test.ts",
+      "line": 374,
+      "code": 7006,
+      "message": "Parameter 'name' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\business-feature-access.test.ts",
+      "line": 25,
+      "code": 7006,
+      "message": "Parameter 'value' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\business-onboarding.test.ts",
+      "line": 53,
+      "code": 7006,
+      "message": "Parameter 'name' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\business-onboarding.test.ts",
+      "line": 53,
+      "code": 7006,
+      "message": "Parameter 'expected' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\business-review-reply.test.ts",
+      "line": 14,
+      "code": 7006,
+      "message": "Parameter 'source' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\business-review-reply.test.ts",
+      "line": 47,
+      "code": 7006,
+      "message": "Parameter 'patch' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\business-review-reply.test.ts",
+      "line": 62,
+      "code": 7006,
+      "message": "Parameter 'response' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\business-review-summary.test.ts",
+      "line": 45,
+      "code": 7031,
+      "message": "Binding element 'batch' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\business-subscription-access.test.ts",
+      "line": 73,
+      "code": 7006,
+      "message": "Parameter 'url' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\business-tools.test.ts",
+      "line": 11,
+      "code": 7006,
+      "message": "Parameter 'hex' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\business-workspace-config.test.ts",
+      "line": 31,
+      "code": 7006,
+      "message": "Parameter 'businessType' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\color-contrast.test.ts",
+      "line": 13,
+      "code": 7006,
+      "message": "Parameter 'value' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\customer-commitments.test.ts",
+      "line": 10,
+      "code": 7006,
+      "message": "Parameter 'status' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\customer-safety.test.ts",
+      "line": 38,
+      "code": 7006,
+      "message": "Parameter 'target' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\customer-safety.test.ts",
+      "line": 38,
+      "code": 7006,
+      "message": "Parameter 'expected' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\customer-safety.ts",
+      "line": 16,
+      "code": 7006,
+      "message": "Parameter 'row' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\customer-safety.ts",
+      "line": 67,
+      "code": 2345,
+      "message": "Argument of type 'Set<unknown>' is not assignable to parameter of type 'ReadonlySet<string>'.\n  Types of property 'forEach' are incompatible.\n    Type '(callbackfn: (value: unknown, value2: unknown, set: Set<unknown>) => void, thisArg?: any) => void' is not assignable to type '(callbackfn: (value: string, value2: string, set: ReadonlySet<string>) => void, thisArg?: any) => void'.\n      Types of parameters 'callbackfn' and 'callbackfn' are incompatible.\n        Types of parameters 'value' and 'value' are incompatible.\n          Type 'unknown' is not assignable to type 'string'."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\date-input.test.ts",
+      "line": 7,
+      "code": 7006,
+      "message": "Parameter 'value' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\date-input.test.ts",
+      "line": 22,
+      "code": 7006,
+      "message": "Parameter 'value' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\discovery-autocomplete.test.ts",
+      "line": 82,
+      "code": 7006,
+      "message": "Parameter 'query' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\discovery-autocomplete.test.ts",
+      "line": 99,
+      "code": 7006,
+      "message": "Parameter 'query' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\discovery-autocomplete.test.ts",
+      "line": 99,
+      "code": 7006,
+      "message": "Parameter 'id' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\discovery-autocomplete.test.ts",
+      "line": 114,
+      "code": 7006,
+      "message": "Parameter 'query' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\discovery-core.test.ts",
+      "line": 65,
+      "code": 7006,
+      "message": "Parameter 'query' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\discovery-core.test.ts",
+      "line": 238,
+      "code": 7006,
+      "message": "Parameter 'summary' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\discovery-core.test.ts",
+      "line": 238,
+      "code": 7006,
+      "message": "Parameter 'expected' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\discovery-core.test.ts",
+      "line": 359,
+      "code": 7006,
+      "message": "Parameter 'total' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\discovery-core.test.ts",
+      "line": 359,
+      "code": 7006,
+      "message": "Parameter 'previewCount' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\discovery-core.test.ts",
+      "line": 359,
+      "code": 7006,
+      "message": "Parameter 'showSeeAll' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\discovery-core.test.ts",
+      "line": 379,
+      "code": 7006,
+      "message": "Parameter 'count' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\discovery-core.test.ts",
+      "line": 379,
+      "code": 7006,
+      "message": "Parameter 'loading' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\discovery-core.test.ts",
+      "line": 379,
+      "code": 7006,
+      "message": "Parameter 'expected' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\discovery-search.test.ts",
+      "line": 54,
+      "code": 7006,
+      "message": "Parameter 'query' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\discovery-search.test.ts",
+      "line": 70,
+      "code": 7006,
+      "message": "Parameter 'query' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\discovery-search.test.ts",
+      "line": 70,
+      "code": 7006,
+      "message": "Parameter 'id' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\listing-billing-identity.test.ts",
+      "line": 23,
+      "code": 7031,
+      "message": "Binding element 'appUserID' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\listing-store-packages.test.ts",
+      "line": 1,
+      "code": 2614,
+      "message": "Module '\"react-native-purchases\"' has no exported member 'PurchasesPackage'. Did you mean to use 'import PurchasesPackage from \"react-native-purchases\"' instead?"
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\listing-store-packages.test.ts",
+      "line": 1,
+      "code": 2614,
+      "message": "Module '\"react-native-purchases\"' has no exported member 'SubscriptionOption'. Did you mean to use 'import SubscriptionOption from \"react-native-purchases\"' instead?"
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\listing-store-packages.test.ts",
+      "line": 73,
+      "code": 7006,
+      "message": "Parameter 'overrides' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\listing-store-packages.test.ts",
+      "line": 89,
+      "code": 7006,
+      "message": "Parameter 'overrides' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\listing-store-packages.ts",
+      "line": 1,
+      "code": 2614,
+      "message": "Module '\"react-native-purchases\"' has no exported member 'PurchasesPackage'. Did you mean to use 'import PurchasesPackage from \"react-native-purchases\"' instead?"
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\listing-store-packages.ts",
+      "line": 1,
+      "code": 2614,
+      "message": "Module '\"react-native-purchases\"' has no exported member 'SubscriptionOption'. Did you mean to use 'import SubscriptionOption from \"react-native-purchases\"' instead?"
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\listing-store-packages.ts",
+      "line": 40,
+      "code": 7006,
+      "message": "Parameter 'option' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\mobile-oauth.ts",
+      "line": 175,
+      "code": 7006,
+      "message": "Parameter 'identity' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\mobile-oauth.ts",
+      "line": 188,
+      "code": 7006,
+      "message": "Parameter 'identity' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\mobile-oauth.ts",
+      "line": 203,
+      "code": 7006,
+      "message": "Parameter 'identity' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\nearby-alerts-core.test.ts",
+      "line": 70,
+      "code": 7006,
+      "message": "Parameter '_label' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\nearby-alerts-core.test.ts",
+      "line": 70,
+      "code": 7006,
+      "message": "Parameter 'changes' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\nearby-alerts-core.test.ts",
+      "line": 186,
+      "code": 7006,
+      "message": "Parameter 'miles' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\nearby-alerts-core.test.ts",
+      "line": 186,
+      "code": 7006,
+      "message": "Parameter 'meters' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\nearby-alerts-core.test.ts",
+      "line": 379,
+      "code": 7006,
+      "message": "Parameter '_label' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\nearby-alerts-core.test.ts",
+      "line": 379,
+      "code": 7006,
+      "message": "Parameter 'changes' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\nearby-alerts-core.test.ts",
+      "line": 379,
+      "code": 7006,
+      "message": "Parameter 'expected' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\pending-payment.test.ts",
+      "line": 8,
+      "code": 7006,
+      "message": "Parameter 'providerStatus' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\pickup-discovery.test.ts",
+      "line": 35,
+      "code": 7006,
+      "message": "Parameter 'env' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\pickup-discovery.test.ts",
+      "line": 97,
+      "code": 7006,
+      "message": "Parameter 'key' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\pickup-discovery.test.ts",
+      "line": 99,
+      "code": 7053,
+      "message": "Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ capabilities: any; order: any; availability: any; }'."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\pickup-order-flow.test.ts",
+      "line": 112,
+      "code": 7006,
+      "message": "Parameter 'phone' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\pickup-order-flow.test.ts",
+      "line": 121,
+      "code": 7006,
+      "message": "Parameter 'phone' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\pickup-workspace.test.ts",
+      "line": 119,
+      "code": 7006,
+      "message": "Parameter 'patch' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\pickup-workspace.test.ts",
+      "line": 119,
+      "code": 7006,
+      "message": "Parameter 'kind' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\rotating-reward-code.test.ts",
+      "line": 78,
+      "code": 7006,
+      "message": "Parameter 'expiresAt' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\service-request-schema.test.ts",
+      "line": 27,
+      "code": 7006,
+      "message": "Parameter 'type' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\service-request-schema.test.ts",
+      "line": 27,
+      "code": 7006,
+      "message": "Parameter 'answer' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\service-request-schema.test.ts",
+      "line": 47,
+      "code": 7006,
+      "message": "Parameter 'type' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\service-request-schema.test.ts",
+      "line": 47,
+      "code": 7006,
+      "message": "Parameter 'answer' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\service-request-schema.test.ts",
+      "line": 52,
+      "code": 7006,
+      "message": "Parameter 'type' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\square-browser.test.ts",
+      "line": 25,
+      "code": 7006,
+      "message": "Parameter 'host' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\square-browser.test.ts",
+      "line": 44,
+      "code": 7006,
+      "message": "Parameter 'url' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\square-browser.test.ts",
+      "line": 52,
+      "code": 7006,
+      "message": "Parameter 'url' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\square-commerce.ts",
+      "line": 23,
+      "code": 2339,
+      "message": "Property 'data' does not exist on type 'unknown'."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\square-commerce.ts",
+      "line": 23,
+      "code": 2339,
+      "message": "Property 'error' does not exist on type 'unknown'."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\square-pickup-settings.test.ts",
+      "line": 158,
+      "code": 7006,
+      "message": "Parameter 'key' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\square-pickup-settings.test.ts",
+      "line": 158,
+      "code": 7006,
+      "message": "Parameter 'value' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\square-pickup-settings.test.ts",
+      "line": 158,
+      "code": 7006,
+      "message": "Parameter 'message' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\staff-scanner-core.test.ts",
+      "line": 63,
+      "code": 7006,
+      "message": "Parameter 'value' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\staff-scanner-core.test.ts",
+      "line": 66,
+      "code": 7006,
+      "message": "Parameter 'value' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\staff-scanner-core.test.ts",
+      "line": 140,
+      "code": 7006,
+      "message": "Parameter 'message' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\staff-scanner-core.test.ts",
+      "line": 140,
+      "code": 7006,
+      "message": "Parameter 'expected' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\ui-presentation.test.ts",
+      "line": 61,
+      "code": 7006,
+      "message": "Parameter 'name' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\ui-presentation.test.ts",
+      "line": 61,
+      "code": 7006,
+      "message": "Parameter 'expected' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\ui-presentation.test.ts",
+      "line": 118,
+      "code": 7006,
+      "message": "Parameter 'scheme' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\ui-presentation.test.ts",
+      "line": 119,
+      "code": 7053,
+      "message": "Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ readonly light: { readonly text: \"#102D25\"; readonly background: \"#F4F2E9\"; readonly backgroundElement: \"#FFFFFF\"; readonly surfaceElevated: \"#FFFFFF\"; readonly backgroundSelected: \"#DDECE0\"; ... 23 more ...; readonly errorText: \"#761F1F\"; }; readonly dark: { ...; }; }'."
+    },
+    {
+      "file": "apps\\mobile\\src\\lib\\ui-presentation.test.ts",
+      "line": 170,
+      "code": 7006,
+      "message": "Parameter 'variant' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\providers\\auth-provider.tsx",
+      "line": 1,
+      "code": 2305,
+      "message": "Module '\"@supabase/supabase-js\"' has no exported member 'Session'."
+    },
+    {
+      "file": "apps\\mobile\\src\\providers\\auth-provider.tsx",
+      "line": 38,
+      "code": 7031,
+      "message": "Binding element 'data' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\providers\\auth-provider.tsx",
+      "line": 50,
+      "code": 7006,
+      "message": "Parameter '_event' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\providers\\auth-provider.tsx",
+      "line": 50,
+      "code": 7006,
+      "message": "Parameter 'nextSession' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\providers\\auth-readiness-workflow.test.tsx",
+      "line": 2,
+      "code": 2305,
+      "message": "Module '\"@supabase/supabase-js\"' has no exported member 'Session'."
+    },
+    {
+      "file": "apps\\mobile\\src\\providers\\listing-billing-provider.tsx",
+      "line": 163,
+      "code": 7006,
+      "message": "Parameter 'product' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\providers\\nearby-alerts-provider.tsx",
+      "line": 142,
+      "code": 2339,
+      "message": "Property 'status' does not exist on type 'NotificationPermissionsStatus'."
+    },
+    {
+      "file": "apps\\mobile\\src\\providers\\notification-provider.tsx",
+      "line": 1,
+      "code": 2305,
+      "message": "Module '\"@supabase/supabase-js\"' has no exported member 'Session'."
+    },
+    {
+      "file": "apps\\mobile\\src\\providers\\notification-provider.tsx",
+      "line": 52,
+      "code": 2339,
+      "message": "Property 'status' does not exist on type 'NotificationPermissionsStatus'."
+    },
+    {
+      "file": "apps\\mobile\\src\\providers\\notification-provider.tsx",
+      "line": 170,
+      "code": 2339,
+      "message": "Property 'status' does not exist on type 'NotificationPermissionsStatus'."
+    },
+    {
+      "file": "apps\\mobile\\src\\providers\\service-operations-provider.tsx",
+      "line": 54,
+      "code": 7006,
+      "message": "Parameter 'row' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\providers\\service-operations-provider.tsx",
+      "line": 57,
+      "code": 7006,
+      "message": "Parameter 'b' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\providers\\service-operations-provider.tsx",
+      "line": 58,
+      "code": 7006,
+      "message": "Parameter 'a' implicitly has an 'any' type."
+    },
+    {
+      "file": "apps\\mobile\\src\\providers\\service-operations-provider.tsx",
+      "line": 58,
+      "code": 7006,
+      "message": "Parameter 'b' implicitly has an 'any' type."
+    },
+    {
+      "file": "packages\\api-client\\src\\index.ts",
+      "line": 1,
+      "code": 2307,
+      "message": "Cannot find module '@supabase/supabase-js' or its corresponding type declarations."
+    },
+    {
+      "file": "packages\\validation\\src\\index.ts",
+      "line": 1,
+      "code": 2307,
+      "message": "Cannot find module 'zod' or its corresponding type declarations."
+    },
+    {
+      "file": "packages\\validation\\src\\index.ts",
+      "line": 76,
+      "code": 7006,
+      "message": "Parameter 'value' implicitly has an 'any' type."
+    },
+    {
+      "file": "packages\\validation\\src\\index.ts",
+      "line": 83,
+      "code": 7006,
+      "message": "Parameter 'value' implicitly has an 'any' type."
+    },
+    {
+      "file": "packages\\validation\\src\\index.ts",
+      "line": 127,
+      "code": 7006,
+      "message": "Parameter 'value' implicitly has an 'any' type."
+    },
+    {
+      "file": "packages\\validation\\src\\index.ts",
+      "line": 132,
+      "code": 7006,
+      "message": "Parameter 'value' implicitly has an 'any' type."
+    },
+    {
+      "file": "packages\\validation\\src\\index.ts",
+      "line": 175,
+      "code": 7006,
+      "message": "Parameter 'value' implicitly has an 'any' type."
+    },
+    {
+      "file": "packages\\validation\\src\\index.ts",
+      "line": 181,
+      "code": 7006,
+      "message": "Parameter 'value' implicitly has an 'any' type."
+    },
+    {
+      "file": "packages\\validation\\src\\index.ts",
+      "line": 195,
+      "code": 7006,
+      "message": "Parameter 'value' implicitly has an 'any' type."
+    },
+    {
+      "file": "packages\\validation\\src\\index.ts",
+      "line": 195,
+      "code": 7006,
+      "message": "Parameter 'context' implicitly has an 'any' type."
+    },
+    {
+      "file": "packages\\validation\\src\\index.ts",
+      "line": 241,
+      "code": 7006,
+      "message": "Parameter 'value' implicitly has an 'any' type."
+    },
+    {
+      "file": "packages\\validation\\src\\index.ts",
+      "line": 260,
+      "code": 7006,
+      "message": "Parameter 'value' implicitly has an 'any' type."
+    },
+    {
+      "file": "packages\\validation\\src\\index.ts",
+      "line": 264,
+      "code": 7006,
+      "message": "Parameter 'value' implicitly has an 'any' type."
+    },
+    {
+      "file": "packages\\validation\\src\\index.ts",
+      "line": 286,
+      "code": 7006,
+      "message": "Parameter 'value' implicitly has an 'any' type."
+    },
+    {
+      "file": "packages\\validation\\src\\index.ts",
+      "line": 290,
+      "code": 7006,
+      "message": "Parameter 'value' implicitly has an 'any' type."
+    },
+    {
+      "file": "packages\\validation\\src\\index.ts",
+      "line": 290,
+      "code": 7006,
+      "message": "Parameter 'context' implicitly has an 'any' type."
+    },
+    {
+      "file": "packages\\validation\\src\\index.ts",
+      "line": 350,
+      "code": 7006,
+      "message": "Parameter 'value' implicitly has an 'any' type."
+    },
+    {
+      "file": "packages\\validation\\src\\index.ts",
+      "line": 371,
+      "code": 7006,
+      "message": "Parameter 'value' implicitly has an 'any' type."
+    },
+    {
+      "file": "packages\\validation\\src\\index.ts",
+      "line": 371,
+      "code": 7006,
+      "message": "Parameter 'context' implicitly has an 'any' type."
+    },
+    {
+      "file": "packages\\validation\\src\\index.ts",
+      "line": 398,
+      "code": 7006,
+      "message": "Parameter 'value' implicitly has an 'any' type."
+    },
+    {
+      "file": "packages\\validation\\src\\index.ts",
+      "line": 398,
+      "code": 7006,
+      "message": "Parameter 'context' implicitly has an 'any' type."
+    }
+  ]
+}

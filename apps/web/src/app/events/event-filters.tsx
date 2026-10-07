@@ -1,4 +1,5 @@
 'use client';
+import { ActionButton } from '@/components/shared-ui';
 
 import { useState } from 'react';
 
@@ -40,53 +41,75 @@ export function EventFilters({ categories, initial }: EventFiltersProps) {
 
   return (
     <form action="/events" className="event-filter-form">
-      <label>
-        When
-        <select name="range" defaultValue={initial.range}>
-          <option value="upcoming">All upcoming</option>
-          <option value="today">Today</option>
-          <option value="weekend">This weekend</option>
-          <option value="30days">Next 30 days</option>
-        </select>
-      </label>
-      <label>
-        Category
-        <select name="category" defaultValue={initial.category}>
-          <option value="">All categories</option>
-          {categories.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        City
-        <input name="city" defaultValue={initial.city} maxLength={120} placeholder="Clinton" />
-      </label>
-      <label>
-        Distance
-        <select name="radius" defaultValue={initial.radius}>
-          <option value="">Any distance</option>
-          <option value="5">Within 5 miles</option>
-          <option value="10">Within 10 miles</option>
-          <option value="25">Within 25 miles</option>
-          <option value="50">Within 50 miles</option>
-        </select>
-      </label>
+      <fieldset className="event-date-shortcuts">
+        <legend>When</legend>
+        {[
+          ['upcoming', 'All upcoming'],
+          ['today', 'Today'],
+          ['weekend', 'This weekend'],
+          ['30days', 'Next 30 days'],
+        ].map(([value, label]) => (
+          <label key={value}>
+            <input
+              type="radio"
+              name="range"
+              value={value}
+              defaultChecked={initial.range === value}
+            />
+            <span>{label}</span>
+          </label>
+        ))}
+      </fieldset>
+      <details
+        className="event-refine"
+        open={!!(initial.category || initial.city || initial.radius || initial.latitude)}
+      >
+        <summary>Location and categories</summary>
+        <div className="event-refine-fields">
+          <label>
+            Category
+            <select aria-label="Category" name="category" defaultValue={initial.category}>
+              <option value="">All categories</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            City
+            <input
+              aria-label="City"
+              name="city"
+              defaultValue={initial.city}
+              maxLength={120}
+              placeholder="Clinton"
+            />
+          </label>
+          <label>
+            Distance
+            <select aria-label="Distance" name="radius" defaultValue={initial.radius}>
+              <option value="">Any distance</option>
+              <option value="5">Within 5 miles</option>
+              <option value="10">Within 10 miles</option>
+              <option value="25">Within 25 miles</option>
+              <option value="50">Within 50 miles</option>
+            </select>
+          </label>
+        </div>
+        <ActionButton className="button-secondary" type="button" onClick={requestLocation}>
+          Use my location
+        </ActionButton>
+        <p className="field-hint" aria-live="polite">
+          {locationMessage || 'Location is optional; you can search by city.'}
+        </p>
+      </details>
       <input type="hidden" name="lat" value={latitude} />
       <input type="hidden" name="lng" value={longitude} />
       <div className="event-filter-actions">
-        <button className="button" type="submit">
-          Find events
-        </button>
-        <button className="button button-secondary" type="button" onClick={requestLocation}>
-          Use my location
-        </button>
+        <ActionButton type="submit">Find events</ActionButton>
       </div>
-      <p className="field-hint" aria-live="polite">
-        {locationMessage || 'Location is optional; a manual city works without permission.'}
-      </p>
     </form>
   );
 }

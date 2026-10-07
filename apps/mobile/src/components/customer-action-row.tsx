@@ -1,5 +1,5 @@
 import { AppButton } from './app-button';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import { StyleSheet, View } from 'react-native';
 
 import { Brand, Colors, Radius, Spacing } from '@/constants/theme';

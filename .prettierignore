@@ -11,3 +11,5 @@ pnpm-lock.yaml
 .codex-tmp
 .eas
 .eas-appdata
+
+reports/readiness/

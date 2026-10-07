@@ -1,0 +1,68 @@
+{
+  "status": "PREPARED; execution service must recover before integration or runtime acceptance",
+  "latestUserRequest": "Render every available mobile route and every relevant existing mobile gallery state in actual source dark mode; publish a distinct local dark-mode gallery/toggle after the first useful captured batch, then complete coverage. No redesign OTA publication.",
+  "candidateCheckpoint": "c8fdaace793838dec271cda14196b85a818f1b7894c4d5e4fb29e7fff8b07478",
+  "publishedBaseline": {
+    "group": "16899e45-ef46-427c-870a-009ff22a3caf",
+    "channel": "preview",
+    "runtime": "0.1.0",
+    "source": "C:\\Users\\Stanj\\Documents\\Codex\\2026-10-05\\task-4\\parish-pass-combined-release-v1",
+    "manifestSha256": "52edce8caa09b60fa81a66398b548106cfe2e10ef48a6d4d41e3f0c13dbf8ab0"
+  },
+  "sourceIntegration": [
+    "Re-run the corrected structural AST comparison; independently verify all frozen published hashes remain unchanged.",
+    "Archive candidate bytes before changes. Merge security/admin deltas with existing visual edits using the published, approved-design-base, and candidate sources.",
+    "Keep the synthetic entry route/sidebar removed. Do not restore it while copying an older source.",
+    "Require reviewable conflict evidence for account, staff scanning, admin backup/case/queue, and shared design tokens. Preserve authorization, retry, backup, ordering, and payment contracts.",
+    "Recheck runtime 0.1.0, native dependencies/configuration, assets, and exact integrated source identity before any redesign OTA request. No OTA publication in this task."
+  ],
+  "nativePairs": {
+    "coverageRequirement": "ALL mobile file-system routes plus ALL relevant existing mobile gallery states, rather than only the representative areas listed below. Inventory route aliases, authentication branches and native-only/provider states explicitly; none may silently disappear from coverage.",
+    "routeInventoryMethod": "Enumerate actual apps/mobile/src/app routes excluding layouts; reconcile every route with existing mobile-only gallery entries and state setup. Keep web/admin-web entries out of the mobile gallery. Render actual source with authorized existing fixtures and exact brand assets.",
+    "coverageLedgerFields": ["route", "galleryStateKey", "fixture", "theme", "sourceIdentity", "viewport", "readinessGate", "renderedOrBlocked", "blocker", "topCapture", "bottomCapture", "fullPageCaptureWhenValid", "scrollableSourceURL", "verificationLimits"],
+    "galleryDelivery": "Use a clearly labelled Mobile dark mode gallery/toggle on the existing local dashboard. Notify after the first genuinely viewable captured batch, then finish the remaining ledger. Do not add recolored old screenshots or substitute website/admin-web views.",
+    "fullPageEvidence": "Capture actual full-page pixels when the route's document supports it. For nested native scroll containers, provide a scrollable source view and labelled top/lower captures; do not falsely label a clipped viewport as a complete page.",
+    "sourceOfRoutesAndFixtures": "Read actual entries from the current 140-view gallery manifest; reuse their exact fixture data, clock, order, viewport, and state setup. Do not invent new production records or guess route parameters.",
+    "modes": ["light", "dark"],
+    "representativeAreas": [
+      "Discovery with food card, compact service card, category shortcuts, filled status and Following badges",
+      "Business detail/menu and customization modal",
+      "Cart and checkout/contact/disabled action",
+      "Pickup/order status and order action sheet",
+      "Booking steps and interrupted/back navigation",
+      "Service request form and review step",
+      "Account and alerts inbox/outcome details",
+      "Rewards card and code sheet",
+      "Merchant business list/workspace and focused editor",
+      "Merchant pickup/service operations and status controls",
+      "Admin queue, case/evidence/decision/private note, and backup panel",
+      "Loading, empty, error, closed/unavailable, missing-photo/logo, and required/invalid field states"
+    ],
+    "viewportChecks": ["390 default text", "320 narrow", "150% browser text in representative long-name/form/modal states"],
+    "checks": [
+      "Capture matched light/dark pixels and inspect them; a theme provider or successful bundle is insufficient.",
+      "Measure effective rendered text/background and icon/control contrast, including caller style overrides and disabled/loading states.",
+      "Check dark canvas, grouped surfaces, input/placeholder/border, selected categories, status badges, brand mark/wordmark, Back/bell, and focus states.",
+      "Check foreground dialogs/sheets and keyboard-adjacent content for fixed light surfaces with light text.",
+      "Preserve approved composition, business identity/media/order, full-width primary action, and native navigation callbacks.",
+      "Record every exact source change and pair it with before/after evidence. Fix demonstrated regressions without redesigning the approved layouts."
+    ],
+    "limits": "React Native Web evidence cannot establish installed-device Appearance switching, OS Dynamic Type, safe areas, root tabs, keyboard, camera/scan, or real payment/provider behavior. Actual iOS/Android light/dark checks remain separate acceptance gates."
+  },
+  "webChecks": {
+    "scope": "Preserve the existing business-page dark style; do not imply a global website system-dark feature already exists.",
+    "checks": [
+      "Open the actual business route using its existing dark-theme configuration with the same business fixture used for the light capture.",
+      "Inspect shared utility header, brand mark/wordmark, Back/bell, surfaces, text, inputs, icons, and statuses at phone and desktop widths.",
+      "Repair only demonstrated inherited-theme regressions using scoped semantic colors; keep light-mode pixels and layout stable.",
+      "Verify system prefers-color-scheme behavior accurately: fixed-light general web pages must not be reported as automatic dark support."
+    ]
+  },
+  "regressionChecks": [
+    "Run only tests relevant to merged published security/admin deltas and any actual theme change; reuse valid unchanged receipts.",
+    "Check Account Admin access and fail-closed server/client checks, moderation retry/revision/private-note semantics, backup gating, and safe outcome navigation.",
+    "Check form/back draft preservation and ordering/payment contract differences structurally and with existing focused tests.",
+    "Run mobile TypeScript and necessary platform exports on the integrated source when command access resumes; these do not replace installed-device acceptance."
+  ],
+  "resources": "No Docker, paid resources, hosted writes, obsolete previews, commit/push, or redesign OTA publication. One headless browser/context at a time and only necessary focused local previews."
+}

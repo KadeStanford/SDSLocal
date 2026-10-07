@@ -1,5 +1,5 @@
 import { Pressable, ScrollView, View } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import { ThemedText } from './themed-text';
 import { useTheme } from '@/hooks/use-theme';
 import type { DiscoverySuggestion } from '@/lib/discovery-autocomplete';

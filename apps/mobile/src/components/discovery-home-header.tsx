@@ -1,8 +1,8 @@
+import { PageHeader } from '@/components/page-header';
 import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
-import { SymbolView } from 'expo-symbols';
-import { CustomerBrand } from './customer-brand';
-import { ParishPalette } from './parish-brand';
+import { AppIcon as SymbolView } from '@/components/app-icon';
+
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from './themed-text';
 
@@ -20,50 +20,22 @@ export function DiscoveryHomeHeader({
   const c = useTheme();
   return (
     <View style={{ gap: 12 }}>
-      <View
-        style={{ padding: 20, borderRadius: 18, backgroundColor: ParishPalette.evergreen, gap: 22 }}
-      >
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-          }}
-        >
-          <CustomerBrand inverse />
-          {actions}
-        </View>
-        <ThemedText
-          accessibilityRole="header"
-          style={{
-            fontSize: 29,
-            lineHeight: 35,
-            fontWeight: '700',
-            letterSpacing: -0.8,
-            color: ParishPalette.ivory,
-            maxWidth: 250,
-          }}
-        >
-          Discover your parish.
-        </ThemedText>
-        {children}
-      </View>
+      <PageHeader />
       <View
         style={{
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 12,
+          gap: 8,
         }}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
           <SymbolView
-            name="mappin.and.ellipse"
+            name={{ ios: 'mappin.and.ellipse', android: 'location_on', web: 'location_on' }}
             tintColor={c.accent}
-            style={{ width: 17, height: 17 }}
+            style={{ width: 20, height: 20 }}
           />
-          <ThemedText type="small" themeColor="textSecondary" style={{ flexShrink: 1 }}>
+          <ThemedText style={{ flexShrink: 1, fontSize: 19, lineHeight: 25, fontWeight: '600' }}>
             {area}
           </ThemedText>
         </View>
@@ -73,16 +45,22 @@ export function DiscoveryHomeHeader({
           onPress={onChooseArea}
           style={({ pressed }) => ({
             minHeight: 44,
-            paddingHorizontal: 12,
-            paddingVertical: 12,
-            borderRadius: 9,
-            backgroundColor: c.backgroundSelected,
+            paddingHorizontal: 10,
+            paddingVertical: 10,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: c.divider,
+            backgroundColor: c.backgroundElement,
+            justifyContent: 'center',
             opacity: pressed ? 0.7 : 1,
           })}
         >
-          <ThemedText type="smallBold">Change area</ThemedText>
+          <ThemedText style={{ fontSize: 13, lineHeight: 18, fontWeight: '600' }}>
+            Change area
+          </ThemedText>
         </Pressable>
       </View>
+      {children}
     </View>
   );
 }

@@ -1,8 +1,9 @@
+import { PageHeader } from '@/components/page-header';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
-import { CustomerBrand } from './customer-brand';
+import { AppIcon as SymbolView } from '@/components/app-icon';
+
 import { CustomerTabs } from './customer-ui';
 import { AppButton } from './app-button';
 import { BusinessLogo } from './business-logo';
@@ -22,28 +23,51 @@ export function RewardsHeader({
   following: number;
   onView?: ((view: 'wallet' | 'following') => void) | undefined;
 }) {
+  const c = useTheme();
   return (
     <View style={{ gap: 20 }}>
-      <CustomerBrand />
+      <PageHeader />
       <View style={{ gap: 8 }}>
-        <ThemedText accessibilityRole="header" type="title">
-          {view === 'following' ? 'Your local favorites' : 'Your rewards'}
+        <ThemedText
+          accessibilityRole="header"
+          type="title"
+          style={{ fontSize: 28, lineHeight: 34 }}
+        >
+          {view === 'following' ? 'Following' : 'Rewards wallet'}
         </ThemedText>
         <ThemedText themeColor="textSecondary">
           {view === 'following'
-            ? 'The businesses you love, all in one place.'
-            : 'Every visit brings something back.'}
+            ? 'Keep your favorite local places close.'
+            : 'Your visits, your progress, your next reward.'}
         </ThemedText>
       </View>
       {onView && (
-        <CustomerTabs
-          value={view}
-          onChange={onView}
-          options={[
-            { value: 'wallet', label: `Rewards${cards === undefined ? '' : ` · ${cards}`}` },
-            { value: 'following', label: `Following · ${following}` },
-          ]}
-        />
+        <View
+          style={{
+            padding: 12,
+            gap: 12,
+            backgroundColor: c.backgroundElement,
+            borderWidth: 1,
+            borderColor: c.divider,
+            borderRadius: 18,
+          }}
+        >
+          <CustomerTabs
+            value={view}
+            onChange={onView}
+            options={[
+              { value: 'wallet', label: 'Rewards' },
+              { value: 'following', label: 'Following' },
+            ]}
+          />
+          <ThemedText type="small" themeColor="textSecondary">
+            {view === 'wallet'
+              ? cards === undefined
+                ? 'Loading your reward cards'
+                : cards + (cards === 1 ? ' reward card' : ' reward cards')
+              : following + (following === 1 ? ' business followed' : ' businesses followed')}
+          </ThemedText>
+        </View>
       )}
     </View>
   );
@@ -82,25 +106,43 @@ export function FollowingBusinessCard({
       style={{
         borderWidth: 1,
         borderColor: c.divider,
-        borderRadius: 14,
+        borderRadius: 18,
         overflow: 'hidden',
         backgroundColor: c.backgroundElement,
       }}
     >
-      {uri && failed !== uri && (
-        <Image
-          source={{ uri }}
-          contentFit="cover"
-          style={{ width: '100%', aspectRatio: 3 }}
-          onError={() => setFailed(uri)}
-          accessibilityLabel=""
-        />
-      )}
       <View style={{ padding: 18, gap: 16 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <BusinessLogo name={business.name} photos={photos} size={52} decorative />
+          <View
+            style={{
+              width: 88,
+              height: 88,
+              borderRadius: 14,
+              overflow: 'hidden',
+              backgroundColor: c.backgroundSelected,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {uri && failed !== uri ? (
+              <Image
+                source={{ uri }}
+                contentFit="cover"
+                style={{ width: 88, height: 88 }}
+                onError={() => setFailed(uri)}
+                accessibilityLabel=""
+              />
+            ) : (
+              <BusinessLogo name={business.name} photos={photos} size={40} decorative />
+            )}
+          </View>
           <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-            <ThemedText type="card">{business.name}</ThemedText>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <BusinessLogo name={business.name} photos={photos} size={28} decorative />
+              <ThemedText type="card" style={{ flex: 1, minWidth: 0 }}>
+                {business.name}
+              </ThemedText>
+            </View>
             {!!business.category_summary && (
               <ThemedText type="small" themeColor="textSecondary">
                 {business.category_summary.split(',')[0]}

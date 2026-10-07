@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import { MenuSetupTabs } from './menu-workspace-ui';
 import { useMerchantTheme } from '@/hooks/use-merchant-theme';
 import { ThemedText } from './themed-text';

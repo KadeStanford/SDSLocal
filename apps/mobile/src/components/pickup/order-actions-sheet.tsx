@@ -1,3 +1,4 @@
+import { AppIcon } from '@/components/app-icon';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -76,7 +77,7 @@ export function OrderActionsSheet({
             {detail}
           </ThemedText>
         </View>
-        <ThemedText themeColor="textSecondary">›</ThemedText>
+        <AppIcon name="chevron-right" size={18} />
       </View>
     </Pressable>
   );

@@ -29,7 +29,7 @@ vi.mock('react-native', async () => {
   };
 });
 vi.mock('@/hooks/use-theme', () => ({ useTheme: () => themeColors.light }));
-vi.mock('expo-symbols', () => ({ SymbolView: () => null }));
+vi.mock('@/components/app-icon', () => ({ AppIcon: () => null }));
 
 it('keeps paste, autofill, and changing the destination on one accessible input', () => {
   captured.inputs.length = 0;

@@ -3,7 +3,7 @@ import { MerchantFilters } from './merchant-ui';
 import { EventFilterSheet } from './event-filter-sheet';
 import { useState } from 'react';
 import { Image } from 'expo-image';
-import { Pressable, View } from 'react-native';
+import { Pressable, useWindowDimensions, View } from 'react-native';
 import { AppTextInput as TextInput } from '@/components/app-text-input';
 import { useTheme } from '@/hooks/use-theme';
 import {
@@ -29,6 +29,8 @@ export function EventDirectory({
   initialBusinessId?: string;
 }) {
   const c = useTheme();
+  const { width } = useWindowDimensions();
+  const cardWidth = Math.min(720, width - 40);
   const [filter, setFilter] = useState(defaultEventDirectoryFilter);
   const [all, setAll] = useState(Boolean(initialBusinessId));
   const [businessId, setBusinessId] = useState(initialBusinessId);
@@ -167,10 +169,10 @@ export function EventDirectory({
               <BusinessPreviewCarousel
                 label={section.title}
                 count={section.events.length}
-                width={280}
+                width={cardWidth}
               >
                 {section.events.map((event) => (
-                  <View key={event.id} style={{ width: 280 }}>
+                  <View key={event.id} style={{ width: cardWidth }}>
                     <DirectoryEventCard event={event} onOpen={onOpen} />
                   </View>
                 ))}
@@ -232,8 +234,9 @@ export function DirectoryEventCard({
         borderColor: c.border,
         backgroundColor: c.backgroundElement,
         borderRadius: 18,
-        padding: 10,
-        gap: 12,
+        padding: compact ? 14 : 0,
+        overflow: 'hidden',
+        gap: compact ? 12 : 0,
         flexDirection: compact ? 'row' : 'column',
         opacity: pressed ? 0.75 : 1,
       })}
@@ -245,8 +248,8 @@ export function DirectoryEventCard({
           accessibilityLabel={event.title}
           style={
             compact
-              ? { width: 76, height: 86, borderRadius: 10 }
-              : { height: 140, borderRadius: 11 }
+              ? { width: 88, height: 88, borderRadius: 12 }
+              : { width: '100%', aspectRatio: 16 / 9 }
           }
         />
       ) : (
@@ -254,7 +257,7 @@ export function DirectoryEventCard({
           <ThemedText type="card">{dateLabel}</ThemedText>
         </View>
       )}
-      <View style={{ gap: 6, padding: 4, flex: compact ? 1 : undefined, minWidth: 0 }}>
+      <View style={{ gap: 8, padding: compact ? 0 : 16, flex: compact ? 1 : undefined, minWidth: 0 }}>
         <ThemedText type="caption" themeColor="accent">
           {dateLabel} · {time}
         </ThemedText>

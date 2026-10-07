@@ -1,3 +1,4 @@
+import { AppIcon } from '@/components/app-icon';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTheme } from '@/hooks/use-theme';
 import { haptics } from '@/lib/haptics';
@@ -69,9 +70,7 @@ export function RememberSessionToggle({
         ]}
       >
         {value && (
-          <ThemedText accessible={false} style={{ color: c.onAction }}>
-            ✓
-          </ThemedText>
+          <AppIcon name="check" size={18} />
         )}
       </View>
       <View style={styles.copy}>

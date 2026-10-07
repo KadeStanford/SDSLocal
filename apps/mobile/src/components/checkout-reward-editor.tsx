@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, Pressable } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import { commerce } from '@/lib/square-commerce';
 import { money, type CheckoutRewardType, type Product } from '@/lib/square-commerce-core';
 import { useTheme } from '@/hooks/use-theme';

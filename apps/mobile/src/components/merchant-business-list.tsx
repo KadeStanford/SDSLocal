@@ -1,5 +1,7 @@
+import { PageHeader } from '@/components/page-header';
+import { AppIcon } from '@/components/app-icon';
 import { AppButton } from './app-button';
-import { ParishBusinessBrand, BusinessTabs, BusinessSearch } from './business-screen-header';
+import { BusinessTabs, BusinessSearch } from './business-screen-header';
 import { ParishPalette } from './parish-brand';
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
@@ -50,6 +52,7 @@ export function MerchantBusinessList({
   onPlan,
   onStaffScan,
   planMessage,
+  unavailable = false,
 }: {
   businesses: readonly ManagedBusiness[];
   search: string;
@@ -61,6 +64,7 @@ export function MerchantBusinessList({
   onPlan: () => void;
   onStaffScan: () => void;
   planMessage: string;
+  unavailable?: boolean;
 }) {
   const c = useMerchantTheme();
   const insets = useSafeAreaInsets();
@@ -85,19 +89,14 @@ export function MerchantBusinessList({
   };
   return (
     <View style={{ gap: 20 }}>
-      <View
-        style={{ padding: 20, gap: 12, borderRadius: 12, backgroundColor: ParishPalette.evergreen }}
-      >
-        <ParishBusinessBrand inverse />
+      <View style={{ gap: 12 }}>
+        <PageHeader />
+        <ThemedText type="title" style={{ color: c.text, fontSize: 28, lineHeight: 34 }}>
+          Businesses
+        </ThemedText>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
           <View style={{ flex: 1, minWidth: 130, gap: 4 }}>
-            <ThemedText
-              type="title"
-              style={{ color: ParishPalette.ivory, fontSize: 26, lineHeight: 32 }}
-            >
-              Businesses
-            </ThemedText>
-            <ThemedText type="small" style={{ color: ParishPalette.ivory }}>
+            <ThemedText type="small" style={{ color: c.secondary }}>
               Select a business to manage
             </ThemedText>
           </View>
@@ -109,12 +108,12 @@ export function MerchantBusinessList({
               minHeight: 44,
               paddingHorizontal: 14,
               justifyContent: 'center',
-              borderRadius: 8,
+              borderRadius: 12,
               backgroundColor: ParishPalette.mint,
             }}
           >
             <ThemedText type="smallBold" style={{ color: ParishPalette.evergreen }}>
-              + Add business
+              Add business
             </ThemedText>
           </Pressable>
         </View>
@@ -136,83 +135,93 @@ export function MerchantBusinessList({
             <ThemedText type="smallBold" style={{ color: c.secondary }}>
               {group.title} · {group.rows.length}
             </ThemedText>
-            <View style={[s.list, { backgroundColor: c.surface, borderColor: c.border }]}>
-              {group.rows.map((business, index) => (
+            <View style={{ gap: 14 }}>
+              {group.rows.map((business) => (
                 <View
                   key={business.id}
-                  style={[s.row, { borderTopColor: c.border, borderTopWidth: index ? 1 : 0 }]}
+                  style={{
+                    padding: 16,
+                    gap: 14,
+                    borderWidth: 1,
+                    borderRadius: 20,
+                    borderColor: c.border,
+                    backgroundColor: c.surface,
+                  }}
                 >
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`${business.name}, ${getBusinessStatusLabel(business.status)}, ${business.role === 'owner' ? 'manage business' : 'view business'}`}
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`${business.name}, ${getBusinessStatusLabel(business.status)}, ${business.role === 'owner' ? 'manage business' : 'view business'}`}
+                      onPress={() =>
+                        onOpen(business.id, business.role === 'owner' ? null : 'preview')
+                      }
+                      style={({ pressed }) => [s.rowMain, { opacity: pressed ? 0.65 : 1 }]}
+                    >
+                      <MerchantLogo business={business} />
+                      <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
+                        <ThemedText
+                          type="smallBold"
+                          style={{
+                            color: c.text,
+                            fontSize: 20,
+                            lineHeight: 26,
+                          }}
+                        >
+                          {business.name}
+                        </ThemedText>
+                        <View
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            flexWrap: 'wrap',
+                            gap: 6,
+                          }}
+                        >
+                          <ThemedText
+                            type="small"
+                            style={{
+                              color: business.status === 'active' ? c.onAction : c.secondary,
+                              backgroundColor:
+                                business.status === 'active' ? c.success : c.background,
+                              paddingHorizontal: 10,
+                              paddingVertical: 5,
+                              borderRadius: 8,
+                              fontSize: 13,
+                              lineHeight: 18,
+                            }}
+                          >
+                            {getBusinessStatusLabel(business.status)}
+                          </ThemedText>
+                          <ThemedText
+                            type="small"
+                            style={{ color: c.secondary, fontSize: 12, lineHeight: 17 }}
+                          >
+                            · {business.role === 'owner' ? 'Owner' : 'Staff'}
+                          </ThemedText>
+                        </View>
+                      </View>
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Actions for ${business.name}`}
+                      onPress={() => setActionsId(business.id)}
+                      style={s.more}
+                    >
+                      <AppIcon name="ellipsis" size={22} tintColor={c.text} />
+                    </Pressable>
+                  </View>
+                  <AppButton
+                    label={business.role === 'owner' ? 'Manage business' : 'View business'}
                     onPress={() =>
                       onOpen(business.id, business.role === 'owner' ? null : 'preview')
                     }
-                    style={({ pressed }) => [s.rowMain, { opacity: pressed ? 0.65 : 1 }]}
-                  >
-                    <MerchantLogo business={business} />
-                    <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
-                      <ThemedText
-                        type="smallBold"
-                        style={{
-                          color: c.text,
-                          fontSize: 16,
-                          lineHeight: 22,
-                        }}
-                      >
-                        {business.name}
-                      </ThemedText>
-                      <View
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          flexWrap: 'wrap',
-                          gap: 6,
-                        }}
-                      >
-                        <View
-                          style={{
-                            width: 6,
-                            height: 6,
-                            borderRadius: 3,
-                            backgroundColor: business.status === 'active' ? c.success : c.warning,
-                          }}
-                        />
-                        <ThemedText
-                          type="small"
-                          style={{
-                            color: business.status === 'active' ? c.success : c.secondary,
-                            fontSize: 12,
-                            lineHeight: 17,
-                          }}
-                        >
-                          {getBusinessStatusLabel(business.status)}
-                        </ThemedText>
-                        <ThemedText
-                          type="small"
-                          style={{ color: c.secondary, fontSize: 12, lineHeight: 17 }}
-                        >
-                          · {business.role === 'owner' ? 'Owner' : 'Staff'}
-                        </ThemedText>
-                      </View>
-                    </View>
-                  </Pressable>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Actions for ${business.name}`}
-                    onPress={() => setActionsId(business.id)}
-                    style={s.more}
-                  >
-                    <ThemedText style={{ color: c.secondary, fontSize: 24, lineHeight: 28 }}>
-                      ⋯
-                    </ThemedText>
-                  </Pressable>
+                  />
                 </View>
               ))}
             </View>
           </View>
         ))}
-      {!visible.length && (
+      {!visible.length && !unavailable && (
         <View style={{ paddingVertical: 32, gap: 12 }}>
           <ThemedText type="card" style={{ color: c.text }}>
             {businesses.length ? 'No matching businesses' : 'Add your first business'}
@@ -256,7 +265,7 @@ export function MerchantBusinessList({
                 {planMessage}
               </ThemedText>
             </View>
-            <ThemedText style={{ color: c.secondary }}>›</ThemedText>
+            <AppIcon name="chevron-right" size={18} />
           </Pressable>
         </View>
       )}
@@ -360,7 +369,7 @@ function ActionRow({ label, onPress }: { label: string; onPress: () => void }) {
       <ThemedText type="smallBold" style={{ color: c.text }}>
         {label}
       </ThemedText>
-      <ThemedText style={{ color: c.secondary }}>›</ThemedText>
+      <AppIcon name="chevron-right" size={18} />
     </Pressable>
   );
 }
@@ -421,7 +430,7 @@ const s = StyleSheet.create({
   },
   summary: { flexDirection: 'row', borderRadius: 12, padding: 20, gap: 20 },
   stat: { flex: 1, gap: 4 },
-  list: { borderWidth: 1, borderRadius: 12, overflow: 'hidden' },
+  list: { borderWidth: 1, borderRadius: 18, overflow: 'hidden' },
   featured: {
     flexDirection: 'column',
     paddingLeft: 18,
@@ -441,12 +450,12 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: 16,
-    minHeight: 88,
+    paddingVertical: 0,
+    minHeight: 64,
   },
   logo: {
-    width: 48,
-    height: 48,
+    width: 52,
+    height: 52,
     borderWidth: 1,
     borderRadius: 10,
     overflow: 'hidden',
@@ -457,7 +466,7 @@ const s = StyleSheet.create({
   plan: {
     minHeight: 72,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 18,
     padding: 16,
     flexDirection: 'row',
     gap: 12,

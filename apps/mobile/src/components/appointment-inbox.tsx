@@ -1,11 +1,15 @@
+import { Platform } from 'react-native';
+import { Fonts } from '@/constants/theme';
 import { MenuSetupTabs } from './menu-workspace-ui';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { AppIcon as SymbolView } from '@/components/app-icon';
 import { EmptyState } from './data-state';
 import { ThemedText } from './themed-text';
 import { MerchantSearch, MerchantStatus } from './merchant-ui';
 import { useMerchantTheme } from '@/hooks/use-merchant-theme';
+
+const focusedFont = Platform.OS === 'web' ? 'system-ui' : Fonts.sans;
 
 export type AppointmentSummary = {
   id: string;
@@ -54,12 +58,14 @@ export function AppointmentInbox({
   appointments,
   loading,
   blocked,
+  failed = false,
   onRefresh,
   onSelect,
 }: {
   appointments: AppointmentSummary[];
   loading: boolean;
   blocked: boolean;
+  failed?: boolean;
   onRefresh: () => void;
   onSelect: (id: string) => void;
 }) {
@@ -84,8 +90,19 @@ export function AppointmentInbox({
     .sort((a, b) => Date.parse(a.startAt) - Date.parse(b.startAt));
   return (
     <View style={{ gap: 16 }}>
-      <View style={{ padding: 17, borderRadius: 18, backgroundColor: c.surface, gap: 7 }}>
-        <ThemedText type="small" style={{ color: c.secondary }}>
+      <View
+        style={{
+          padding: 16,
+          borderRadius: 20,
+          borderWidth: 1,
+          borderColor: c.border,
+          backgroundColor: c.surface,
+          gap: 12,
+        }}
+      >
+        <ThemedText
+          style={{ fontFamily: focusedFont, fontSize: 20, lineHeight: 26, fontWeight: '700' }}
+        >
           {new Intl.DateTimeFormat(undefined, {
             weekday: 'long',
             month: 'long',
@@ -93,15 +110,40 @@ export function AppointmentInbox({
             timeZone: appointments[0]?.timezone ?? 'America/Chicago',
           }).format(new Date(clockNow))}
         </ThemedText>
-        <ThemedText type="card">
-          {appointments.filter(appointmentNeedsAttention).length
-            ? 'A few things need your attention.'
-            : 'Your schedule, in one place.'}
-        </ThemedText>
-        <ThemedText type="small" style={{ color: c.secondary }}>
-          {appointments.filter(appointmentIsActive).length} active bookings ·{' '}
-          {appointments.filter(appointmentNeedsAttention).length} need attention
-        </ThemedText>
+        {loading && !appointments.length ? (
+          <ThemedText type="small">Loading your schedule…</ThemedText>
+        ) : failed && !appointments.length ? (
+          <ThemedText type="small">Schedule unavailable</ThemedText>
+        ) : (
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            {[
+              { count: appointments.filter(appointmentIsActive).length, label: 'Active bookings' },
+              {
+                count: appointments.filter(appointmentNeedsAttention).length,
+                label: 'Need attention',
+              },
+            ].map((stat) => (
+              <View
+                key={stat.label}
+                style={{
+                  flex: 1,
+                  paddingVertical: 6,
+                  borderRadius: 12,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 8,
+                }}
+              >
+                <ThemedText type="title" style={{ fontSize: 24, lineHeight: 30 }}>
+                  {stat.count}
+                </ThemedText>
+                <ThemedText type="small" style={{ color: c.secondary, flex: 1 }}>
+                  {stat.label}
+                </ThemedText>
+              </View>
+            ))}
+          </View>
+        )}
       </View>
       <MenuSetupTabs
         underline
@@ -173,7 +215,11 @@ export function AppointmentInbox({
             {filter === 'attention' ? 'Waiting for you' : 'Your schedule'}
           </ThemedText>
           <ThemedText type="small" style={{ color: c.secondary }}>
-            {visible.length} bookings
+            {loading && !appointments.length
+              ? 'Loading…'
+              : failed && !appointments.length
+                ? 'Unavailable'
+                : `${visible.length} bookings`}
           </ThemedText>
         </View>
         <Pressable
@@ -201,7 +247,7 @@ export function AppointmentInbox({
           placeholder="Search customer or service"
         />
       )}
-      {!visible.length && !loading && (
+      {!visible.length && !loading && !failed && (
         <EmptyState
           title="No appointments here"
           message="Try another date, filter or search. New bookings appear here."
@@ -227,42 +273,102 @@ export function AppointmentInbox({
                 disabled={blocked}
                 onPress={() => onSelect(row.id)}
                 style={({ pressed }) => ({
-                  flexDirection: 'row',
                   gap: 14,
-                  paddingVertical: 18,
-                  borderTopWidth: 1,
+                  padding: 16,
+                  marginBottom: 12,
+                  borderWidth: 1,
+                  borderRadius: 20,
+                  backgroundColor: c.surface,
                   borderColor: c.border,
                   opacity: pressed ? 0.7 : 1,
                 })}
               >
-                <ThemedText type="smallBold" style={{ width: 66, color: c.secondary }}>
-                  {timeLabel(row)}
-                </ThemedText>
-                <View style={{ flex: 1, gap: 7 }}>
-                  <ThemedText type="smallBold">{row.customerName}</ThemedText>
-                  <ThemedText type="small" style={{ color: c.secondary }}>
-                    {row.serviceName}
-                    {row.resourceName ? ' · ' + row.resourceName : ''}
-                  </ThemedText>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                    paddingBottom: 12,
+                    borderBottomWidth: 1,
+                    borderColor: c.border,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <SymbolView name="clock" size={20} tintColor={c.text} />
+                    <ThemedText
+                      style={{
+                        fontFamily: focusedFont,
+                        fontSize: 20,
+                        lineHeight: 26,
+                        fontWeight: '700',
+                      }}
+                    >
+                      {timeLabel(row)}
+                    </ThemedText>
+                  </View>
                   <MerchantStatus
                     label={
                       row.status === 'requested'
                         ? 'Needs approval'
                         : row.status.replaceAll('_', ' ')
                     }
-                    tone={appointmentNeedsAttention(row) ? 'warning' : 'quiet'}
+                    tone={
+                      appointmentNeedsAttention(row)
+                        ? 'warning'
+                        : ['confirmed', 'checked_in', 'in_service', 'completed'].includes(
+                              row.status,
+                            )
+                          ? 'success'
+                          : 'quiet'
+                    }
                   />
-                  {row.status === 'requested' && (
-                    <ThemedText type="smallBold" themeColor="accent">
-                      Review request
-                    </ThemedText>
-                  )}
                 </View>
-                <SymbolView
-                  name="chevron.right"
-                  tintColor={c.secondary}
-                  style={{ width: 14, height: 14, alignSelf: 'center' }}
-                />
+                <View style={{ flexDirection: 'row', gap: 14, alignItems: 'flex-start' }}>
+                  <View
+                    style={{
+                      width: 52,
+                      minHeight: 52,
+                      padding: 9,
+                      borderRadius: 12,
+                      backgroundColor: c.background,
+                      justifyContent: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    <SymbolView name="calendar" size={22} tintColor={c.text} />
+                  </View>
+                  <View style={{ flex: 1, gap: 7 }}>
+                    <ThemedText type="card">{row.customerName}</ThemedText>
+                    <ThemedText type="small" style={{ color: c.secondary }}>
+                      {row.serviceName}
+                      {row.resourceName ? ' · ' + row.resourceName : ''}
+                    </ThemedText>
+                    {row.status === 'requested' && (
+                      <ThemedText type="smallBold" themeColor="accent">
+                        Review request
+                      </ThemedText>
+                    )}
+                  </View>
+                </View>
+                <View
+                  style={{
+                    minHeight: 48,
+                    paddingHorizontal: 14,
+                    paddingVertical: 12,
+                    borderRadius: 12,
+                    backgroundColor: blocked ? c.background : c.success,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <ThemedText
+                    type="smallBold"
+                    style={{ color: blocked ? c.secondary : c.onAction }}
+                  >
+                    View appointment
+                  </ThemedText>
+                </View>
               </Pressable>
             </View>
           ))}

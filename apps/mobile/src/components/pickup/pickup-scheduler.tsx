@@ -1,3 +1,4 @@
+import { AppIcon } from '@/components/app-icon';
 import { CustomerSurface, CustomerSectionHeading } from '../customer-ui';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
@@ -67,9 +68,7 @@ function PickupChoice({
         </ThemedText>
       </View>
       {opensPicker && (
-        <ThemedText accessibilityElementsHidden importantForAccessibility="no">
-          ›
-        </ThemedText>
+        <AppIcon name="chevron-right" size={18} />
       )}
     </Pressable>
   );

@@ -59,8 +59,8 @@ vi.mock('./swipe-back-view', () => ({
   }),
 }));
 vi.mock('expo-router', () => ({ router: { push: vi.fn() }, useFocusEffect: () => {} }));
-vi.mock('expo-symbols', async () => ({
-  SymbolView: (await import('../test/visual-symbol')).VisualSymbol,
+vi.mock('@/components/app-icon', async () => ({
+  AppIcon: (await import('../test/visual-symbol')).VisualSymbol,
 }));
 vi.mock('expo-image', () => ({
   Image: ({

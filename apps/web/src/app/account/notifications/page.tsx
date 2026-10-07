@@ -1,3 +1,8 @@
+import { SurfacePanel, ActionButton } from '@/components/shared-ui';
+import { PageHeader } from '@/components/page-header';
+
+import { AppIcon } from '@/components/app-icon';
+
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
@@ -48,15 +53,29 @@ export default async function NotificationPreferencesPage({
 
   return (
     <main className="page-shell">
-      <nav className="topbar">
-        <Link className="brand" href="/">
-          Parish Pass
-        </Link>
+      <PageHeader backHref="/account" backLabel="Back" />
+      <nav className="parish-page-links" aria-label="Page links">
         <div className="nav-actions">
-          <Link href="/account">Account</Link>
-          <Link href="/following">Following</Link>
-          <Link href="/events">Events</Link>
-          <Link href="/rewards">Rewards</Link>
+          <Link href="/account">
+            <AppIcon name="circle-user-round" size={18} />
+            Account
+          </Link>
+          <Link href="/account/moderation">
+            <AppIcon name="bell" size={18} />
+            Account updates
+          </Link>
+          <Link href="/following">
+            <AppIcon name="heart" size={18} />
+            Following
+          </Link>
+          <Link href="/events">
+            <AppIcon name="calendar-days" size={18} />
+            Events
+          </Link>
+          <Link href="/rewards">
+            <AppIcon name="gift" size={18} />
+            Rewards
+          </Link>
         </div>
       </nav>
 
@@ -73,7 +92,7 @@ export default async function NotificationPreferencesPage({
       {typeof query.error === 'string' && <p className="notice-error">{query.error}</p>}
       {error && <p className="notice-error">{error.message}</p>}
 
-      <section className="panel notification-preferences-panel">
+      <SurfacePanel className="notification-preferences-panel">
         {settings.length ? (
           settings.map((business) => (
             <div className="notification-business" key={business.business_id}>
@@ -99,7 +118,9 @@ export default async function NotificationPreferencesPage({
                       <option value="enabled">Enabled</option>
                       <option value="muted">Muted</option>
                     </select>
-                    <button className="button button-secondary">Save</button>
+                    <ActionButton className="button-secondary" type="submit">
+                      Save
+                    </ActionButton>
                   </form>
                 ))}
               </div>
@@ -113,7 +134,7 @@ export default async function NotificationPreferencesPage({
             </span>
           </div>
         )}
-      </section>
+      </SurfacePanel>
     </main>
   );
 }

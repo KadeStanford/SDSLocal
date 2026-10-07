@@ -98,14 +98,20 @@ async function rememberGuestOrder(access: OrderAccess) {
 }
 export async function readGuestOrderAccess(): Promise<OrderAccess[]> {
   const recent = await readOrderAccess();
-  if (recent?.orderId && !recent.customerId) await rememberGuestOrder(recent);
-  const raw: unknown = JSON.parse((await readSecure(guestIndexKey)) ?? '[]');
-  if (!Array.isArray(raw)) return [];
+  const recentGuest = recent?.orderId && !recent.customerId ? recent : null;
+  if (recentGuest) await rememberGuestOrder(recentGuest).catch(() => {});
+  let raw: unknown = [];
+  try {
+    raw = JSON.parse((await readSecure(guestIndexKey)) ?? '[]');
+  } catch {
+    // A damaged index must not discard the independently stored recent proof.
+  }
+  const ids = Array.isArray(raw) ? raw.filter((id): id is string => typeof id === 'string') : [];
+  if (recentGuest?.orderId && !ids.includes(recentGuest.orderId)) ids.unshift(recentGuest.orderId);
   const orders = await Promise.all(
-    raw
-      .filter((id): id is string => typeof id === 'string')
+    [...new Set(ids)]
       .slice(0, 100)
-      .map((id) => readOrderAccess(id)),
+      .map((id) => (id === recentGuest?.orderId ? recentGuest : readOrderAccess(id))),
   );
   return orders.filter((access): access is OrderAccess =>
     Boolean(access?.orderId && !access.customerId),
