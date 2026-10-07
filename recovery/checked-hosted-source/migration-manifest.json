@@ -1,0 +1,30 @@
+[
+  {
+    "name": "20261006000100_admin_moderation_workspace.sql",
+    "sha256": "8dec0ad5077c0f981932297832615da682bba6104e64b8f8ba52b93a8d7258ee"
+  },
+  {
+    "name": "20261006000200_moderation_outcome_notifications.sql",
+    "sha256": "e37c32baafa1f2738a333f19dfa7a078ed465e738bdbfe0c2bec759616636b29"
+  },
+  {
+    "name": "20261006000300_validated_business_submission.sql",
+    "sha256": "012eefd5c5d77bb98f8645df844fd6482e0bce80290d6faa7ed0113f128f3339"
+  },
+  {
+    "name": "20261006000400_account_deletion_customer_ugc.sql",
+    "sha256": "256260af7db20d761d660e844c6380ce4eb80282e4c4476981dcfea26d61b968"
+  },
+  {
+    "name": "20261006000500_account_deletion_provider_safety.sql",
+    "sha256": "3bd0dc61639ff791aa90cf3ce942fee588cb0487dbd22f36df4ee3036fdcaa96"
+  },
+  {
+    "name": "20261007000100_moderation_backup.sql",
+    "sha256": "843b68e3217b8a2c5f1a5c2abfbe923e29bc32f31ee8ff121eb9e7c6373c9dc5"
+  },
+  {
+    "name": "20261007000200_moderation_backup_schedule.sql",
+    "sha256": "e69952fd571b2b289c36dfd3efeed2f0fa91b937f160568113919b02f54a898d"
+  }
+]

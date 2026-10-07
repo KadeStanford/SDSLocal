@@ -1,0 +1,779 @@
+{
+  "capturedDate": "2026-10-07",
+  "project": "lgddhdexvwclfrnzjtly",
+  "purpose": "Source recovery only; no runtime secrets, database rows or deployment actions.",
+  "uniqueSourceFiles": 46,
+  "functionSourceFiles": 130,
+  "functions": [
+    {
+      "slug": "business-media-upload-intent",
+      "version": 1,
+      "verify_jwt": true,
+      "entrypoint": "business-media-upload-intent/index.ts",
+      "files": [
+        {
+          "path": "business-media-upload-intent/index.ts",
+          "sha256": "3ad5e30744298571d88a5eef1375125bf5febbb873c2d33a86cf2024b058999a",
+          "bytes": 4104
+        }
+      ]
+    },
+    {
+      "slug": "delete-account",
+      "version": 17,
+      "verify_jwt": true,
+      "entrypoint": "source/index.ts",
+      "files": [
+        {
+          "path": "source/index.ts",
+          "sha256": "0fd39be4b949b71f7595da834e8e9da9d0964489f5f576b64f154bbdb4781f48",
+          "bytes": 7990
+        },
+        {
+          "path": "_shared/account-deletion.ts",
+          "sha256": "8f84f100a33f71dad43b3f1b68a311022770235fb9839083f8e8d57c79d4cbc4",
+          "bytes": 2218
+        }
+      ]
+    },
+    {
+      "slug": "finalize-business-image",
+      "version": 12,
+      "verify_jwt": true,
+      "entrypoint": "finalize-business-image/index.ts",
+      "files": [
+        {
+          "path": "finalize-business-image/index.ts",
+          "sha256": "0d68c0028a2d47cd861bc3f2d41a45561b48fce5f187d0d2ba92896b753ccee2",
+          "bytes": 16319
+        }
+      ]
+    },
+    {
+      "slug": "loyalty-token",
+      "version": 16,
+      "verify_jwt": true,
+      "entrypoint": "functions/loyalty-token/index.ts",
+      "files": [
+        {
+          "path": "functions/loyalty-token/index.ts",
+          "sha256": "e9c5fbf1faf2c9a9c54c4f6a36d3846725f0bf2169733209cc4233d527f6291e",
+          "bytes": 3554
+        },
+        {
+          "path": "functions/_shared/business-obligation-access.ts",
+          "sha256": "ab7e07d634de03235f983f604b18a38ee91c6d9e34177497152e414b8d7dfbfd",
+          "bytes": 628
+        },
+        {
+          "path": "functions/_shared/loyalty-token.ts",
+          "sha256": "c961ee3af3a75885990e4d6a8d8b2230919c59cc94e3da0cc845aa9cab29fc7e",
+          "bytes": 3413
+        }
+      ]
+    },
+    {
+      "slug": "loyalty-transact",
+      "version": 15,
+      "verify_jwt": true,
+      "entrypoint": "functions/loyalty-transact/index.ts",
+      "files": [
+        {
+          "path": "functions/loyalty-transact/index.ts",
+          "sha256": "2be0b85ba53d55c0c225710a77f133cf49155fcb215bd46eb54b1f35b303017e",
+          "bytes": 21667
+        },
+        {
+          "path": "functions/_shared/business-obligation-access.ts",
+          "sha256": "ab7e07d634de03235f983f604b18a38ee91c6d9e34177497152e414b8d7dfbfd",
+          "bytes": 628
+        },
+        {
+          "path": "functions/_shared/loyalty-token.ts",
+          "sha256": "c961ee3af3a75885990e4d6a8d8b2230919c59cc94e3da0cc845aa9cab29fc7e",
+          "bytes": 3413
+        },
+        {
+          "path": "functions/_shared/loyalty-preview-authorization.ts",
+          "sha256": "754f144b440176c57dd4eecae07937ead30a69e2880dd1ed5824b12270c3b2f0",
+          "bytes": 1049
+        }
+      ]
+    },
+    {
+      "slug": "media-cleanup",
+      "version": 12,
+      "verify_jwt": true,
+      "entrypoint": "media-cleanup/index.ts",
+      "files": [
+        {
+          "path": "media-cleanup/index.ts",
+          "sha256": "48e575aa44cf46d5297ba58f68ad60348e060224236bf28d147fc615daa9a397",
+          "bytes": 3839
+        }
+      ]
+    },
+    {
+      "slug": "notification-dispatch",
+      "version": 15,
+      "verify_jwt": true,
+      "entrypoint": "notification-dispatch/index.ts",
+      "files": [
+        {
+          "path": "notification-dispatch/index.ts",
+          "sha256": "4bae5f5f406312b6e4e2bd77ab72e500968ab789af23b8ce6dc08aa47b813987",
+          "bytes": 11011
+        }
+      ]
+    },
+    {
+      "slug": "revenuecat-webhook",
+      "version": 1,
+      "verify_jwt": false,
+      "entrypoint": "index.ts",
+      "files": [
+        {
+          "path": "index.ts",
+          "sha256": "7a2db24eb6e38f052cd1b79939a5ca982e2fccc15e6303e28e7a60d13a188a4d",
+          "bytes": 8279
+        }
+      ]
+    },
+    {
+      "slug": "square-commerce",
+      "version": 51,
+      "verify_jwt": false,
+      "entrypoint": "functions/square-commerce/index.ts",
+      "files": [
+        {
+          "path": "functions/square-commerce/index.ts",
+          "sha256": "4d9b1b3a01103de6315a0d3831afbd270492a6b23a1a87ba301b93e8e95c083d",
+          "bytes": 93
+        },
+        {
+          "path": "functions/_shared/square-runtime.ts",
+          "sha256": "5c4935657e0f09accc3ead9aa2d5a3353f8d830ef4331dd6b531ca5e19b004c2",
+          "bytes": 5178
+        },
+        {
+          "path": "functions/_shared/square-service.ts",
+          "sha256": "0814c7d081671ad3adcb43a1211d1fb11a4b772eab654a88499b2d5e18e5db79",
+          "bytes": 69994
+        },
+        {
+          "path": "functions/_shared/item-refunds.ts",
+          "sha256": "040b70d9cc3e854ad9949fa006ffa2e942b35d6632e1d478bae73da946d40224",
+          "bytes": 3768
+        },
+        {
+          "path": "functions/_shared/square-security.ts",
+          "sha256": "1365c23df18277528da5873900239a43e3f6f2c983e5722cbabe13df8eac1585",
+          "bytes": 8788
+        },
+        {
+          "path": "functions/_shared/business-feature-access.ts",
+          "sha256": "1495eb3f3d8496dfe898de768c36f8ea886faa258f6819a0f2e7d04de7826c88",
+          "bytes": 1492
+        },
+        {
+          "path": "functions/_shared/appointment-operations.ts",
+          "sha256": "ffc16cf7507c1e01d9f42143f7260b19bc2ad2f379e671dea3c3f2b81884c159",
+          "bytes": 48378
+        },
+        {
+          "path": "functions/_shared/pickup-operations.ts",
+          "sha256": "8e19905950380151e1b3d15646077c2d0c4431647170d48c3ea29e0016da75d9",
+          "bytes": 49680
+        },
+        {
+          "path": "functions/_shared/checkout-rewards.ts",
+          "sha256": "471b87eb66d2bc7c39a01f7ead4e62b774e6bd237c1744abadd294f42edb7278",
+          "bytes": 5623
+        },
+        {
+          "path": "functions/_shared/pickup-short-code.ts",
+          "sha256": "961eb89d12367dddb6de67eb194143ec6bf114986ae37d230c744f288d40df83",
+          "bytes": 1093
+        },
+        {
+          "path": "functions/_shared/square-domain.ts",
+          "sha256": "82b51f3dbdb021d09746bfe85301b241281e6c8f493dc66c9e562bedf1c2afca",
+          "bytes": 19525
+        },
+        {
+          "path": "functions/_shared/order-support.ts",
+          "sha256": "ff5bd3f3e5180870519c5124a71545853dff4bbed297c144313274ead6a9fd06",
+          "bytes": 2261
+        },
+        {
+          "path": "functions/_shared/order-review.ts",
+          "sha256": "9932c3adc6d78cef8dae45ecaa305d00c69c6d51ad87b04de24acab17f582164",
+          "bytes": 1551
+        },
+        {
+          "path": "functions/_shared/event-review.ts",
+          "sha256": "3cadfbea7cb57de3965a3dbf6cac28e90ad4417daab7b8acc0972db817a0c90a",
+          "bytes": 350
+        },
+        {
+          "path": "functions/_shared/appointment-scheduling.ts",
+          "sha256": "c76b653b4f7a4752c5d8d65134e1e92016ad14a8b882b25d8c227ef69f0a0c1f",
+          "bytes": 6009
+        },
+        {
+          "path": "functions/_shared/payment-money.ts",
+          "sha256": "96815909aff836ede720a276c2deb5cce0a1255695b4e91af3a47af256c168bb",
+          "bytes": 3397
+        },
+        {
+          "path": "functions/_shared/square-client.ts",
+          "sha256": "2af06c1973ee18e095ddd61dd4d9acb0966794f7e2db1cd47b4b441ab2433b5b",
+          "bytes": 3524
+        },
+        {
+          "path": "functions/_shared/stripe-service.ts",
+          "sha256": "dd346c9b5d9e485fe1cc904c9bb630c7aa1c5f4335cf94b71003fcf6a0021f9c",
+          "bytes": 62312
+        },
+        {
+          "path": "functions/_shared/stripe-order-state.ts",
+          "sha256": "020aff86a2da062ce56d602c3edd43690eb9c19b32e04491dce1339d9ff82796",
+          "bytes": 6753
+        },
+        {
+          "path": "functions/_shared/stripe-client.ts",
+          "sha256": "6c9398b9016dd03eac673fcf47298b0542427bda7b61d2a8760907188bca3f40",
+          "bytes": 6652
+        },
+        {
+          "path": "functions/_shared/commerce-routing.ts",
+          "sha256": "ce93625b995a99f4ebce79679e6c8216d8355ed7d806e0a5f5853828390e0171",
+          "bytes": 1553
+        }
+      ]
+    },
+    {
+      "slug": "square-maintenance",
+      "version": 21,
+      "verify_jwt": false,
+      "entrypoint": "functions/square-maintenance/index.ts",
+      "files": [
+        {
+          "path": "functions/square-maintenance/index.ts",
+          "sha256": "ca3b9a386019e0ede88c5daf148c822e9de245065ef69d0c3464ba7bd77ac8a0",
+          "bytes": 3362
+        },
+        {
+          "path": "functions/_shared/square-runtime.ts",
+          "sha256": "5c4935657e0f09accc3ead9aa2d5a3353f8d830ef4331dd6b531ca5e19b004c2",
+          "bytes": 5178
+        },
+        {
+          "path": "functions/_shared/square-service.ts",
+          "sha256": "b9a37d4f8b8130a2ba30685584f16cf033527b3bc0e008c7907da225370c80f1",
+          "bytes": 69692
+        },
+        {
+          "path": "functions/_shared/item-refunds.ts",
+          "sha256": "040b70d9cc3e854ad9949fa006ffa2e942b35d6632e1d478bae73da946d40224",
+          "bytes": 3768
+        },
+        {
+          "path": "functions/_shared/square-security.ts",
+          "sha256": "1365c23df18277528da5873900239a43e3f6f2c983e5722cbabe13df8eac1585",
+          "bytes": 8788
+        },
+        {
+          "path": "functions/_shared/appointment-operations.ts",
+          "sha256": "ffc16cf7507c1e01d9f42143f7260b19bc2ad2f379e671dea3c3f2b81884c159",
+          "bytes": 48378
+        },
+        {
+          "path": "functions/_shared/pickup-operations.ts",
+          "sha256": "8e19905950380151e1b3d15646077c2d0c4431647170d48c3ea29e0016da75d9",
+          "bytes": 49680
+        },
+        {
+          "path": "functions/_shared/checkout-rewards.ts",
+          "sha256": "471b87eb66d2bc7c39a01f7ead4e62b774e6bd237c1744abadd294f42edb7278",
+          "bytes": 5623
+        },
+        {
+          "path": "functions/_shared/pickup-short-code.ts",
+          "sha256": "961eb89d12367dddb6de67eb194143ec6bf114986ae37d230c744f288d40df83",
+          "bytes": 1093
+        },
+        {
+          "path": "functions/_shared/square-domain.ts",
+          "sha256": "82b51f3dbdb021d09746bfe85301b241281e6c8f493dc66c9e562bedf1c2afca",
+          "bytes": 19525
+        },
+        {
+          "path": "functions/_shared/order-support.ts",
+          "sha256": "ff5bd3f3e5180870519c5124a71545853dff4bbed297c144313274ead6a9fd06",
+          "bytes": 2261
+        },
+        {
+          "path": "functions/_shared/order-review.ts",
+          "sha256": "9932c3adc6d78cef8dae45ecaa305d00c69c6d51ad87b04de24acab17f582164",
+          "bytes": 1551
+        },
+        {
+          "path": "functions/_shared/event-review.ts",
+          "sha256": "3cadfbea7cb57de3965a3dbf6cac28e90ad4417daab7b8acc0972db817a0c90a",
+          "bytes": 350
+        },
+        {
+          "path": "functions/_shared/appointment-scheduling.ts",
+          "sha256": "c76b653b4f7a4752c5d8d65134e1e92016ad14a8b882b25d8c227ef69f0a0c1f",
+          "bytes": 6009
+        },
+        {
+          "path": "functions/_shared/payment-money.ts",
+          "sha256": "96815909aff836ede720a276c2deb5cce0a1255695b4e91af3a47af256c168bb",
+          "bytes": 3397
+        },
+        {
+          "path": "functions/_shared/square-client.ts",
+          "sha256": "2af06c1973ee18e095ddd61dd4d9acb0966794f7e2db1cd47b4b441ab2433b5b",
+          "bytes": 3524
+        },
+        {
+          "path": "functions/_shared/stripe-service.ts",
+          "sha256": "87a2fcb1bdf320e3b555082e3c27a9cc579dba111f450540b5f1d1b7829621a1",
+          "bytes": 62010
+        },
+        {
+          "path": "functions/_shared/stripe-order-state.ts",
+          "sha256": "020aff86a2da062ce56d602c3edd43690eb9c19b32e04491dce1339d9ff82796",
+          "bytes": 6753
+        },
+        {
+          "path": "functions/_shared/stripe-client.ts",
+          "sha256": "6c9398b9016dd03eac673fcf47298b0542427bda7b61d2a8760907188bca3f40",
+          "bytes": 6652
+        },
+        {
+          "path": "functions/_shared/commerce-routing.ts",
+          "sha256": "ce93625b995a99f4ebce79679e6c8216d8355ed7d806e0a5f5853828390e0171",
+          "bytes": 1553
+        },
+        {
+          "path": "functions/_shared/stripe-webhook-config.ts",
+          "sha256": "7283f5c1ade6511ee3a71cdb5c787e5ee69bb6de847ee2b0d17f064c08f2dd90",
+          "bytes": 2310
+        }
+      ]
+    },
+    {
+      "slug": "square-oauth-callback",
+      "version": 16,
+      "verify_jwt": false,
+      "entrypoint": "functions/square-oauth-callback/index.ts",
+      "files": [
+        {
+          "path": "functions/square-oauth-callback/index.ts",
+          "sha256": "98becae5b1ba65e2e7accb453ee6caf860f7913bcc890996f99267911a3732e1",
+          "bytes": 1598
+        },
+        {
+          "path": "functions/_shared/square-runtime.ts",
+          "sha256": "1b5f8c2cea00c72419f75f69d489e4c78e6f96212c01ec832db2bb7a963e3102",
+          "bytes": 5079
+        },
+        {
+          "path": "functions/_shared/square-service.ts",
+          "sha256": "b9a37d4f8b8130a2ba30685584f16cf033527b3bc0e008c7907da225370c80f1",
+          "bytes": 69692
+        },
+        {
+          "path": "functions/_shared/item-refunds.ts",
+          "sha256": "040b70d9cc3e854ad9949fa006ffa2e942b35d6632e1d478bae73da946d40224",
+          "bytes": 3768
+        },
+        {
+          "path": "functions/_shared/square-security.ts",
+          "sha256": "1365c23df18277528da5873900239a43e3f6f2c983e5722cbabe13df8eac1585",
+          "bytes": 8788
+        },
+        {
+          "path": "functions/_shared/appointment-operations.ts",
+          "sha256": "ffc16cf7507c1e01d9f42143f7260b19bc2ad2f379e671dea3c3f2b81884c159",
+          "bytes": 48378
+        },
+        {
+          "path": "functions/_shared/pickup-operations.ts",
+          "sha256": "4745e5aef70a0bb067adc9367a62e7214054bf211dc2babe96894a17a70beef1",
+          "bytes": 48531
+        },
+        {
+          "path": "functions/_shared/checkout-rewards.ts",
+          "sha256": "471b87eb66d2bc7c39a01f7ead4e62b774e6bd237c1744abadd294f42edb7278",
+          "bytes": 5623
+        },
+        {
+          "path": "functions/_shared/square-domain.ts",
+          "sha256": "82b51f3dbdb021d09746bfe85301b241281e6c8f493dc66c9e562bedf1c2afca",
+          "bytes": 19525
+        },
+        {
+          "path": "functions/_shared/order-support.ts",
+          "sha256": "ff5bd3f3e5180870519c5124a71545853dff4bbed297c144313274ead6a9fd06",
+          "bytes": 2261
+        },
+        {
+          "path": "functions/_shared/order-review.ts",
+          "sha256": "9932c3adc6d78cef8dae45ecaa305d00c69c6d51ad87b04de24acab17f582164",
+          "bytes": 1551
+        },
+        {
+          "path": "functions/_shared/event-review.ts",
+          "sha256": "3cadfbea7cb57de3965a3dbf6cac28e90ad4417daab7b8acc0972db817a0c90a",
+          "bytes": 350
+        },
+        {
+          "path": "functions/_shared/appointment-scheduling.ts",
+          "sha256": "c76b653b4f7a4752c5d8d65134e1e92016ad14a8b882b25d8c227ef69f0a0c1f",
+          "bytes": 6009
+        },
+        {
+          "path": "functions/_shared/payment-money.ts",
+          "sha256": "96815909aff836ede720a276c2deb5cce0a1255695b4e91af3a47af256c168bb",
+          "bytes": 3397
+        },
+        {
+          "path": "functions/_shared/square-client.ts",
+          "sha256": "2af06c1973ee18e095ddd61dd4d9acb0966794f7e2db1cd47b4b441ab2433b5b",
+          "bytes": 3524
+        },
+        {
+          "path": "functions/_shared/stripe-service.ts",
+          "sha256": "94bcb3b23420ba586343170a61b76c4171c7f702dfbdbe913d2070bad22d7e83",
+          "bytes": 61930
+        },
+        {
+          "path": "functions/_shared/stripe-order-state.ts",
+          "sha256": "c16bab41c77e4092cedfea42eac9800903e7675d74106aa6f0d735f09b6ea466",
+          "bytes": 5952
+        },
+        {
+          "path": "functions/_shared/stripe-client.ts",
+          "sha256": "6c9398b9016dd03eac673fcf47298b0542427bda7b61d2a8760907188bca3f40",
+          "bytes": 6652
+        },
+        {
+          "path": "functions/_shared/commerce-routing.ts",
+          "sha256": "ce93625b995a99f4ebce79679e6c8216d8355ed7d806e0a5f5853828390e0171",
+          "bytes": 1553
+        }
+      ]
+    },
+    {
+      "slug": "square-webhook",
+      "version": 18,
+      "verify_jwt": false,
+      "entrypoint": "functions/square-webhook/index.ts",
+      "files": [
+        {
+          "path": "functions/square-webhook/index.ts",
+          "sha256": "137100f349999237ab279a9c75de6492a197d4c6acdf3568e1bdbc312644e738",
+          "bytes": 1455
+        },
+        {
+          "path": "functions/_shared/square-runtime.ts",
+          "sha256": "5c4935657e0f09accc3ead9aa2d5a3353f8d830ef4331dd6b531ca5e19b004c2",
+          "bytes": 5178
+        },
+        {
+          "path": "functions/_shared/square-service.ts",
+          "sha256": "b9a37d4f8b8130a2ba30685584f16cf033527b3bc0e008c7907da225370c80f1",
+          "bytes": 69692
+        },
+        {
+          "path": "functions/_shared/item-refunds.ts",
+          "sha256": "040b70d9cc3e854ad9949fa006ffa2e942b35d6632e1d478bae73da946d40224",
+          "bytes": 3768
+        },
+        {
+          "path": "functions/_shared/square-security.ts",
+          "sha256": "1365c23df18277528da5873900239a43e3f6f2c983e5722cbabe13df8eac1585",
+          "bytes": 8788
+        },
+        {
+          "path": "functions/_shared/appointment-operations.ts",
+          "sha256": "ffc16cf7507c1e01d9f42143f7260b19bc2ad2f379e671dea3c3f2b81884c159",
+          "bytes": 48378
+        },
+        {
+          "path": "functions/_shared/pickup-operations.ts",
+          "sha256": "8e19905950380151e1b3d15646077c2d0c4431647170d48c3ea29e0016da75d9",
+          "bytes": 49680
+        },
+        {
+          "path": "functions/_shared/checkout-rewards.ts",
+          "sha256": "471b87eb66d2bc7c39a01f7ead4e62b774e6bd237c1744abadd294f42edb7278",
+          "bytes": 5623
+        },
+        {
+          "path": "functions/_shared/pickup-short-code.ts",
+          "sha256": "961eb89d12367dddb6de67eb194143ec6bf114986ae37d230c744f288d40df83",
+          "bytes": 1093
+        },
+        {
+          "path": "functions/_shared/square-domain.ts",
+          "sha256": "82b51f3dbdb021d09746bfe85301b241281e6c8f493dc66c9e562bedf1c2afca",
+          "bytes": 19525
+        },
+        {
+          "path": "functions/_shared/order-support.ts",
+          "sha256": "ff5bd3f3e5180870519c5124a71545853dff4bbed297c144313274ead6a9fd06",
+          "bytes": 2261
+        },
+        {
+          "path": "functions/_shared/order-review.ts",
+          "sha256": "9932c3adc6d78cef8dae45ecaa305d00c69c6d51ad87b04de24acab17f582164",
+          "bytes": 1551
+        },
+        {
+          "path": "functions/_shared/event-review.ts",
+          "sha256": "3cadfbea7cb57de3965a3dbf6cac28e90ad4417daab7b8acc0972db817a0c90a",
+          "bytes": 350
+        },
+        {
+          "path": "functions/_shared/appointment-scheduling.ts",
+          "sha256": "c76b653b4f7a4752c5d8d65134e1e92016ad14a8b882b25d8c227ef69f0a0c1f",
+          "bytes": 6009
+        },
+        {
+          "path": "functions/_shared/payment-money.ts",
+          "sha256": "96815909aff836ede720a276c2deb5cce0a1255695b4e91af3a47af256c168bb",
+          "bytes": 3397
+        },
+        {
+          "path": "functions/_shared/square-client.ts",
+          "sha256": "2af06c1973ee18e095ddd61dd4d9acb0966794f7e2db1cd47b4b441ab2433b5b",
+          "bytes": 3524
+        },
+        {
+          "path": "functions/_shared/stripe-service.ts",
+          "sha256": "87a2fcb1bdf320e3b555082e3c27a9cc579dba111f450540b5f1d1b7829621a1",
+          "bytes": 62010
+        },
+        {
+          "path": "functions/_shared/stripe-order-state.ts",
+          "sha256": "020aff86a2da062ce56d602c3edd43690eb9c19b32e04491dce1339d9ff82796",
+          "bytes": 6753
+        },
+        {
+          "path": "functions/_shared/stripe-client.ts",
+          "sha256": "6c9398b9016dd03eac673fcf47298b0542427bda7b61d2a8760907188bca3f40",
+          "bytes": 6652
+        },
+        {
+          "path": "functions/_shared/commerce-routing.ts",
+          "sha256": "ce93625b995a99f4ebce79679e6c8216d8355ed7d806e0a5f5853828390e0171",
+          "bytes": 1553
+        }
+      ]
+    },
+    {
+      "slug": "stripe-checkout-return",
+      "version": 11,
+      "verify_jwt": false,
+      "entrypoint": "functions/stripe-checkout-return/index.ts",
+      "files": [
+        {
+          "path": "functions/stripe-checkout-return/index.ts",
+          "sha256": "7806013897e19f58873bee595d62837efab18ba838ec8cb0cf79d114442b4b1b",
+          "bytes": 1138
+        },
+        {
+          "path": "functions/_shared/square-security.ts",
+          "sha256": "1365c23df18277528da5873900239a43e3f6f2c983e5722cbabe13df8eac1585",
+          "bytes": 8788
+        }
+      ]
+    },
+    {
+      "slug": "stripe-oauth-callback",
+      "version": 17,
+      "verify_jwt": false,
+      "entrypoint": "functions/stripe-oauth-callback/index.ts",
+      "files": [
+        {
+          "path": "functions/stripe-oauth-callback/index.ts",
+          "sha256": "544a70fcffa2efd43811308296f0bbf7b15f78b637a0d659e6a2d50d5c20294c",
+          "bytes": 4474
+        },
+        {
+          "path": "functions/_shared/square-security.ts",
+          "sha256": "1365c23df18277528da5873900239a43e3f6f2c983e5722cbabe13df8eac1585",
+          "bytes": 8788
+        },
+        {
+          "path": "functions/_shared/stripe-client.ts",
+          "sha256": "6c9398b9016dd03eac673fcf47298b0542427bda7b61d2a8760907188bca3f40",
+          "bytes": 6652
+        },
+        {
+          "path": "functions/_shared/stripe-service.ts",
+          "sha256": "94bcb3b23420ba586343170a61b76c4171c7f702dfbdbe913d2070bad22d7e83",
+          "bytes": 61930
+        },
+        {
+          "path": "functions/_shared/checkout-rewards.ts",
+          "sha256": "471b87eb66d2bc7c39a01f7ead4e62b774e6bd237c1744abadd294f42edb7278",
+          "bytes": 5623
+        },
+        {
+          "path": "functions/_shared/item-refunds.ts",
+          "sha256": "040b70d9cc3e854ad9949fa006ffa2e942b35d6632e1d478bae73da946d40224",
+          "bytes": 3768
+        },
+        {
+          "path": "functions/_shared/stripe-order-state.ts",
+          "sha256": "c16bab41c77e4092cedfea42eac9800903e7675d74106aa6f0d735f09b6ea466",
+          "bytes": 5952
+        },
+        {
+          "path": "functions/_shared/payment-money.ts",
+          "sha256": "96815909aff836ede720a276c2deb5cce0a1255695b4e91af3a47af256c168bb",
+          "bytes": 3397
+        },
+        {
+          "path": "functions/_shared/pickup-operations.ts",
+          "sha256": "4745e5aef70a0bb067adc9367a62e7214054bf211dc2babe96894a17a70beef1",
+          "bytes": 48531
+        },
+        {
+          "path": "functions/_shared/square-domain.ts",
+          "sha256": "82b51f3dbdb021d09746bfe85301b241281e6c8f493dc66c9e562bedf1c2afca",
+          "bytes": 19525
+        },
+        {
+          "path": "functions/_shared/order-support.ts",
+          "sha256": "ff5bd3f3e5180870519c5124a71545853dff4bbed297c144313274ead6a9fd06",
+          "bytes": 2261
+        },
+        {
+          "path": "functions/_shared/order-review.ts",
+          "sha256": "9932c3adc6d78cef8dae45ecaa305d00c69c6d51ad87b04de24acab17f582164",
+          "bytes": 1551
+        },
+        {
+          "path": "functions/_shared/event-review.ts",
+          "sha256": "3cadfbea7cb57de3965a3dbf6cac28e90ad4417daab7b8acc0972db817a0c90a",
+          "bytes": 350
+        }
+      ]
+    },
+    {
+      "slug": "stripe-webhook",
+      "version": 15,
+      "verify_jwt": false,
+      "entrypoint": "functions/stripe-webhook/index.ts",
+      "files": [
+        {
+          "path": "functions/stripe-webhook/index.ts",
+          "sha256": "56425b1efaf6f5c6de76865702ef4ced696e89ef9e22f583c530bfb7f6cafa67",
+          "bytes": 1788
+        },
+        {
+          "path": "functions/_shared/square-security.ts",
+          "sha256": "1365c23df18277528da5873900239a43e3f6f2c983e5722cbabe13df8eac1585",
+          "bytes": 8788
+        },
+        {
+          "path": "functions/_shared/stripe-client.ts",
+          "sha256": "6c9398b9016dd03eac673fcf47298b0542427bda7b61d2a8760907188bca3f40",
+          "bytes": 6652
+        },
+        {
+          "path": "functions/_shared/stripe-service.ts",
+          "sha256": "87a2fcb1bdf320e3b555082e3c27a9cc579dba111f450540b5f1d1b7829621a1",
+          "bytes": 62010
+        },
+        {
+          "path": "functions/_shared/checkout-rewards.ts",
+          "sha256": "471b87eb66d2bc7c39a01f7ead4e62b774e6bd237c1744abadd294f42edb7278",
+          "bytes": 5623
+        },
+        {
+          "path": "functions/_shared/item-refunds.ts",
+          "sha256": "040b70d9cc3e854ad9949fa006ffa2e942b35d6632e1d478bae73da946d40224",
+          "bytes": 3768
+        },
+        {
+          "path": "functions/_shared/stripe-order-state.ts",
+          "sha256": "020aff86a2da062ce56d602c3edd43690eb9c19b32e04491dce1339d9ff82796",
+          "bytes": 6753
+        },
+        {
+          "path": "functions/_shared/payment-money.ts",
+          "sha256": "96815909aff836ede720a276c2deb5cce0a1255695b4e91af3a47af256c168bb",
+          "bytes": 3397
+        },
+        {
+          "path": "functions/_shared/pickup-operations.ts",
+          "sha256": "8e19905950380151e1b3d15646077c2d0c4431647170d48c3ea29e0016da75d9",
+          "bytes": 49680
+        },
+        {
+          "path": "functions/_shared/pickup-short-code.ts",
+          "sha256": "961eb89d12367dddb6de67eb194143ec6bf114986ae37d230c744f288d40df83",
+          "bytes": 1093
+        },
+        {
+          "path": "functions/_shared/square-domain.ts",
+          "sha256": "82b51f3dbdb021d09746bfe85301b241281e6c8f493dc66c9e562bedf1c2afca",
+          "bytes": 19525
+        },
+        {
+          "path": "functions/_shared/order-support.ts",
+          "sha256": "ff5bd3f3e5180870519c5124a71545853dff4bbed297c144313274ead6a9fd06",
+          "bytes": 2261
+        },
+        {
+          "path": "functions/_shared/order-review.ts",
+          "sha256": "9932c3adc6d78cef8dae45ecaa305d00c69c6d51ad87b04de24acab17f582164",
+          "bytes": 1551
+        },
+        {
+          "path": "functions/_shared/event-review.ts",
+          "sha256": "3cadfbea7cb57de3965a3dbf6cac28e90ad4417daab7b8acc0972db817a0c90a",
+          "bytes": 350
+        },
+        {
+          "path": "functions/_shared/square-runtime.ts",
+          "sha256": "5c4935657e0f09accc3ead9aa2d5a3353f8d830ef4331dd6b531ca5e19b004c2",
+          "bytes": 5178
+        },
+        {
+          "path": "functions/_shared/square-service.ts",
+          "sha256": "b9a37d4f8b8130a2ba30685584f16cf033527b3bc0e008c7907da225370c80f1",
+          "bytes": 69692
+        },
+        {
+          "path": "functions/_shared/appointment-operations.ts",
+          "sha256": "ffc16cf7507c1e01d9f42143f7260b19bc2ad2f379e671dea3c3f2b81884c159",
+          "bytes": 48378
+        },
+        {
+          "path": "functions/_shared/appointment-scheduling.ts",
+          "sha256": "c76b653b4f7a4752c5d8d65134e1e92016ad14a8b882b25d8c227ef69f0a0c1f",
+          "bytes": 6009
+        },
+        {
+          "path": "functions/_shared/square-client.ts",
+          "sha256": "2af06c1973ee18e095ddd61dd4d9acb0966794f7e2db1cd47b4b441ab2433b5b",
+          "bytes": 3524
+        },
+        {
+          "path": "functions/_shared/commerce-routing.ts",
+          "sha256": "ce93625b995a99f4ebce79679e6c8216d8355ed7d806e0a5f5853828390e0171",
+          "bytes": 1553
+        }
+      ]
+    }
+  ]
+}
