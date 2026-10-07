@@ -28,7 +28,7 @@ import { useAppMode } from '@/providers/app-mode-provider';
 import { isSafeNotificationUrl } from '@/lib/nearby-alerts-core';
 import { AppButton } from './app-button';
 
-type AlertRow = DismissibleAlertRow & { url: string };
+type AlertRow = DismissibleAlertRow & { url: string; moderation_outcome?: unknown };
 
 /** Compact native entry point for the alerts inbox without adding another tab. */
 export function AlertsButton() {
@@ -55,10 +55,10 @@ export function AlertsButton() {
     const { data, error: queryError } = await supabase
       .from('notification_deliveries')
       .select(
-        'id, entity_type, entity_id, title, body, created_at, read_at, url, order_status, order_audience',
+        'id, entity_type, entity_id, title, body, created_at, read_at, url, order_status, order_audience, moderation_outcome',
       )
       .eq('user_id', session.user.id)
-      .or('status.eq.sent,entity_type.eq.pickup_order')
+      .or('status.eq.sent,entity_type.eq.pickup_order,inbox_available_at.not.is.null')
       .is('dismissed_at', null)
       .order('created_at', { ascending: false })
       .limit(100);
@@ -81,6 +81,11 @@ export function AlertsButton() {
   }, [loadAlerts, open]);
 
   async function markRead(row: AlertRow) {
+    if (row.moderation_outcome) {
+      setOpen(false);
+      router.push(`/moderation-outcome?deliveryId=${encodeURIComponent(row.id)}` as never);
+      return;
+    }
     setSelected(row);
     if (row.read_at) return;
     void haptics.selection();

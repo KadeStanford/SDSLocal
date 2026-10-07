@@ -4,19 +4,13 @@ import { useTheme } from '@/hooks/use-theme';
 export function DatePickerControl({
   value,
   onChange,
-  minimumDate,
-  maximumDate,
 }: {
   value: Date;
-  minimumDate?: Date | undefined;
-  maximumDate?: Date | undefined;
   onChange: (date: Date) => void;
 }) {
   const c = useTheme();
   return (
     <input
-      min={minimumDate ? dateInputValue(minimumDate) : undefined}
-      max={maximumDate ? dateInputValue(maximumDate) : undefined}
       type="date"
       aria-label="Choose a date"
       value={dateInputValue(value)}

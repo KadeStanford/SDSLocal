@@ -57,24 +57,10 @@ export async function appointmentAccess(businessId: string): Promise<Appointment
   return access;
 }
 
-export async function readGuestAppointmentIds(): Promise<string[]> {
-  try { const value = JSON.parse((await readValue(keyPrefix + '.guest-index')) ?? '[]'); return Array.isArray(value) ? value.filter(id => typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id)) : []; } catch { return []; }
-}
-let indexWrite = Promise.resolve();
 export async function saveAppointmentAccess(access: AppointmentAccess) {
   await writeValue(`${keyPrefix}.business.${access.businessId}`, JSON.stringify(access));
   if (access.appointmentId)
     await writeValue(`${keyPrefix}.appointment.${access.appointmentId}`, JSON.stringify(access));
-  if (access.appointmentId) {
-    const { data } = await supabase.auth.getSession();
-    if (!data.session) {
-      indexWrite = indexWrite.catch(() => {}).then(async () => {
-        const ids = await readGuestAppointmentIds();
-        await writeValue(keyPrefix + '.guest-index', JSON.stringify([...new Set([access.appointmentId!, ...ids])].slice(0, 100)));
-      });
-      await indexWrite;
-    }
-  }
 }
 
 export async function readAppointmentAccess(

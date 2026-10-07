@@ -157,7 +157,7 @@ export function NotificationProvider({ children }: PropsWithChildren) {
       .from('notification_deliveries')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', session.user.id)
-      .or('status.eq.sent,entity_type.eq.pickup_order')
+      .or('status.eq.sent,entity_type.eq.pickup_order,inbox_available_at.not.is.null')
       .is('read_at', null)
       .is('dismissed_at', null);
     if (!error) setUnreadCount(count ?? 0);

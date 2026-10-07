@@ -148,7 +148,6 @@ export default function DiscoverScreen() {
     typeof params.businessId === 'string' ? params.businessId : null,
   );
   const [loading, setLoading] = useState(true);
-  const [partialError, setPartialError] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const discoverScrollRef = useRef<ScrollView>(null);
   const discoverScrollOffset = useRef(0);
@@ -220,8 +219,14 @@ export default function DiscoverScreen() {
         .select('business_id, day_of_week, opens_at, closes_at, is_closed'),
       supabase.rpc('get_public_business_discovery_locations'),
     ]);
-    const queryError = businessResult.error ?? blockedResult.error;
-    setPartialError(Boolean(eventResult.error || stopResult.error || followingResult.error || hoursResult.error || locationsResult.error));
+    const queryError =
+      businessResult.error ??
+      eventResult.error ??
+      stopResult.error ??
+      followingResult.error ??
+      blockedResult.error ??
+      hoursResult.error ??
+      locationsResult.error;
     if (requestId !== loadRequestId.current) return;
     setPickupError(
       pickupResult.failed ? 'Order-ahead options could not be checked. Please retry.' : null,
@@ -948,7 +953,6 @@ export default function DiscoverScreen() {
               />
             </View>
           )}
-          {partialError && <View style={{ gap: 8 }}><ThemedText themeColor="textSecondary">Some event, location or opening-hours details couldn’t load. Business browsing is still available.</ThemedText><AppButton label="Retry missing details" variant="secondary" onPress={() => void loadBusinesses()} /></View>}
           {error && (
             <View style={{ gap: Spacing.two }}>
               <StateNotice kind="error" message={error} />

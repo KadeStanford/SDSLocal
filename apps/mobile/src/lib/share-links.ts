@@ -2,7 +2,7 @@ const loopbackHosts = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1']);
 
 export const publicSharingUnavailableCopy = {
   title: 'Public sharing is temporarily unavailable',
-  body: 'Try again later. Parish Pass needs a secure public business link before QR materials can be created.',
+  body: 'Try again later. SDS Local needs a secure public business link before QR materials can be created.',
 } as const;
 
 export function normalizePublicBaseUrl(value: string | undefined) {

@@ -1,4 +1,3 @@
-import { PublicationRequirements } from '@/components/publication-requirements';
 import { inputPresets } from '@/lib/input-presets';
 import { ParishBusinessBrand } from '@/components/business-screen-header';
 import { BackPill } from '@/components/back-pill';
@@ -595,7 +594,6 @@ function BusinessSetupWorkspace({
           )}
 
           <FlowProgress labels={['Identity', 'Business', 'Location', 'Review']} current={step} />
-          {step === 0 && <PublicationRequirements />}
 
           <View style={styles.formCard}>
             {step === 0 && (

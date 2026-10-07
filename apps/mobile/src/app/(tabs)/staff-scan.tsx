@@ -15,7 +15,7 @@ import { randomUUID } from 'expo-crypto';
 import { SymbolView } from 'expo-symbols';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { PickupScanPanel } from '@/components/pickup/pickup-scan-panel';
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   AppState,
@@ -115,11 +115,29 @@ function StaffScanScreen() {
   const [activityOpen, setActivityOpen] = useState(false);
   const [activityLoading, setActivityLoading] = useState(false);
   const [expiredQueuedCount, setExpiredQueuedCount] = useState(0);
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [log, setLog] = useState<ScanLog[]>([]);
+  const [storedActivityError, setActivityError] = useState<string | null>(null);
+  const [storedStats, setStats] = useState<Stats | null>(null);
+  const [storedLog, setLog] = useState<ScanLog[]>([]);
+  const [activityContext, setActivityContext] = useState<string | null>(null);
+  const currentActivityContext = session?.user.id && selectedId ? `${session.user.id}:${selectedId}` : null;
+  const stats = currentActivityContext && activityContext === currentActivityContext ? storedStats : null;
+  const log = currentActivityContext && activityContext === currentActivityContext ? storedLog : [];
+  const activityError = currentActivityContext && activityContext === currentActivityContext ? storedActivityError : null;
   const [workflow, setWorkflow] = useState<'pickup' | 'rewards'>('pickup');
   const captured = useRef(false);
   const submitting = useRef(false);
+  const activityIdentity = useRef(session?.user.id ?? null);
+  const activityBusiness = useRef(selectedId);
+  const activityVersion = useRef(0);
+  useLayoutEffect(() => {
+    activityIdentity.current = session?.user.id ?? null;
+    activityBusiness.current = selectedId;
+    activityVersion.current++;
+    return () => {
+      activityIdentity.current = null;
+      activityBusiness.current = null;
+    };
+  }, [session?.user.id, selectedId]);
   const business = businesses.find(({ id }) => id === selectedId) ?? null;
   const action = business?.programType ? actionFor(business.programType, redeeming) : null;
   const featureAccess = useBusinessFeatureAccess(business?.id);
@@ -215,7 +233,13 @@ function StaffScanScreen() {
 
   const loadActivity = useCallback(async () => {
     if (!session || !selectedId) return;
+    const request = ++activityVersion.current;
+    const isCurrent = () =>
+      request === activityVersion.current &&
+      activityIdentity.current === session.user.id &&
+      activityBusiness.current === selectedId;
     setActivityLoading(true);
+    setActivityError(null);
     const from = new Date();
     from.setHours(0, 0, 0, 0);
     const args = {
@@ -223,12 +247,15 @@ function StaffScanScreen() {
       p_from: from.toISOString(),
       p_to: new Date().toISOString(),
     };
-    const [sr, lr] = await Promise.all([
-      supabase.rpc('get_business_scan_stats', args),
-      supabase.rpc('list_business_scan_log', { ...args, p_limit: 20 }),
-    ]);
-    const row = Array.isArray(sr.data) ? sr.data[0] : sr.data;
-    if (!sr.error)
+    try {
+      const [sr, lr] = await Promise.all([
+        supabase.rpc('get_business_scan_stats', args),
+        supabase.rpc('list_business_scan_log', { ...args, p_limit: 20 }),
+      ]);
+      if (!isCurrent()) return;
+      if (sr.error || lr.error) throw new Error('Activity unavailable');
+      setActivityContext(`${session.user.id}:${selectedId}`);
+      const row = Array.isArray(sr.data) ? sr.data[0] : sr.data;
       setStats({
         completedScans: num(row?.completed_scans),
         failedScans: num(row?.failed_scans),
@@ -236,8 +263,17 @@ function StaffScanScreen() {
         pointsIssued: num(row?.points_issued),
         rewardsRedeemed: num(row?.rewards_redeemed),
       });
-    if (!lr.error) setLog((lr.data ?? []) as ScanLog[]);
-    setActivityLoading(false);
+      setLog((lr.data ?? []) as ScanLog[]);
+    } catch {
+      if (isCurrent()) {
+        setActivityContext(`${session.user.id}:${selectedId}`);
+        setStats(null);
+        setLog([]);
+        setActivityError('Scan activity could not load. Reopen activity to retry.');
+      }
+    } finally {
+      if (isCurrent()) setActivityLoading(false);
+    }
   }, [selectedId, session]);
 
   useFocusEffect(
@@ -683,6 +719,7 @@ function StaffScanScreen() {
                   />
                 )}
               </View>
+              {!!activityError && <ThemedText themeColor="textSecondary">{activityError}</ThemedText>}
               <Activity
                 open={activityOpen}
                 loading={activityLoading}
@@ -1294,4 +1331,9 @@ const styles = StyleSheet.create({
   },
 });
 
-export default withBusinessTheme(StaffScanScreen);
+function StaffScanRoute() {
+  const { session } = useAuth();
+  // Discard scan previews and private activity when the authenticated account changes.
+  return <StaffScanScreen key={session?.user.id ?? 'guest'} />;
+}
+export default withBusinessTheme(StaffScanRoute);

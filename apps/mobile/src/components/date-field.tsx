@@ -13,16 +13,12 @@ export function DateField({
   onChange,
   disabled = false,
   required = false,
-  minimumDate,
-  maximumDate,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
   required?: boolean;
-  minimumDate?: string;
-  maximumDate?: string;
 }) {
   const c = useTheme();
   const [open, setOpen] = useState(false);
@@ -42,7 +38,7 @@ export function DateField({
         accessibilityState={{ disabled, expanded: open }}
         disabled={disabled}
         onPress={() => {
-          setDraft(date ?? (minimumDate ? parseDateInput(minimumDate) : null) ?? new Date());
+          setDraft(date ?? new Date());
           setOpen(true);
         }}
         style={({ pressed }) => ({
@@ -75,7 +71,7 @@ export function DateField({
             <MerchantButton
               brand
               label="Use this date"
-              disabled={disabled || Boolean(minimumDate && dateInputValue(draft) < minimumDate) || Boolean(maximumDate && dateInputValue(draft) > maximumDate)}
+              disabled={disabled}
               onPress={() => {
                 onChange(dateInputValue(draft));
                 setOpen(false);
@@ -96,9 +92,7 @@ export function DateField({
           </View>
         }
       >
-        {open && <DatePickerControl
-          minimumDate={minimumDate ? parseDateInput(minimumDate) ?? undefined : undefined}
-          maximumDate={maximumDate ? parseDateInput(maximumDate) ?? undefined : undefined} value={draft} onChange={setDraft} />}
+        {open && <DatePickerControl value={draft} onChange={setDraft} />}
       </MerchantSheet>
     </>
   );

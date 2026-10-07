@@ -50,6 +50,8 @@ export default function AuthCallbackScreen() {
     async function complete(value?: string | null) {
       if (!active || handled.current) return;
       const callback = parseCallbackUrl(value ?? (await Linking.getInitialURL()));
+      // A URL event or screen cleanup may have won while the initial URL was pending.
+      if (!active || handled.current) return;
 
       if (callback.error) {
         handled.current = true;
@@ -59,8 +61,10 @@ export default function AuthCallbackScreen() {
 
       if (!callback.code && (!callback.accessToken || !callback.refreshToken)) {
         const { data } = await supabase.auth.getSession();
-        if (active && data.session) router.replace('/account');
-        else if (active) {
+        if (!active || handled.current) return;
+        handled.current = true;
+        if (data.session) router.replace('/account');
+        else {
           handled.current = true;
           setError('This confirmation link is missing its sign-in details. Request a new one.');
         }
@@ -105,7 +109,10 @@ export default function AuthCallbackScreen() {
         >
           {error ? (
             <>
-              <BackPill label="Return to sign in or resend confirmation" onPress={() => router.replace('/account')} />
+              <BackPill
+                label="Return to sign in or resend confirmation"
+                onPress={() => router.replace('/account')}
+              />
               <ThemedText type="title" accessibilityRole="header">
                 Sign-in needs attention
               </ThemedText>

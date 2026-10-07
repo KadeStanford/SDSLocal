@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 
@@ -34,14 +34,9 @@ export function BusinessAnalyticsCard({ businessId }: { readonly businessId: str
   const colors = useTheme();
   const [rows, setRows] = useState<DailyAnalyticsRow[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const [loadError, setLoadError] = useState(false);
-  const request = useRef(0);
   const [expanded, setExpanded] = useState(false);
 
   const load = useCallback(async () => {
-    const generation = ++request.current;
-    setLoaded(false);
-    setLoadError(false);
     const since = new Date(Date.now() - 29 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
     const { data, error } = await supabase
       .from('analytics_daily')
@@ -50,8 +45,6 @@ export function BusinessAnalyticsCard({ businessId }: { readonly businessId: str
       )
       .eq('business_id', businessId)
       .gte('metric_date', since);
-    if (generation !== request.current) return;
-    setLoadError(Boolean(error));
     setRows(error ? [] : ((data ?? []) as DailyAnalyticsRow[]));
     setLoaded(true);
   }, [businessId]);
@@ -59,7 +52,6 @@ export function BusinessAnalyticsCard({ businessId }: { readonly businessId: str
   useFocusEffect(
     useCallback(() => {
       void load();
-      return () => { request.current += 1; };
     }, [load]),
   );
 
@@ -130,13 +122,6 @@ export function BusinessAnalyticsCard({ businessId }: { readonly businessId: str
         <ThemedText themeColor="textSecondary" type="small">
           Loading insights…
         </ThemedText>
-      ) : loadError ? (
-        <View style={{ gap: 12 }}>
-          <ThemedText themeColor="textSecondary">Insights couldn’t load. Your totals are unavailable right now.</ThemedText>
-          <Pressable accessibilityRole="button" onPress={() => void load()} style={{ minHeight: 44, justifyContent: 'center' }}>
-            <ThemedText style={{ color: colors.accent }}>Retry insights</ThemedText>
-          </Pressable>
-        </View>
       ) : (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three }}>
           {metricCopy

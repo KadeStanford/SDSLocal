@@ -36,6 +36,7 @@ import { useAuth } from '@/providers/auth-provider';
 import { useNotifications } from '@/providers/notification-provider';
 import { useAppMode } from '@/providers/app-mode-provider';
 import { isSafeNotificationUrl } from '@/lib/nearby-alerts-core';
+import { MobileModerationOutcomeScreen } from '@/components/admin/moderation-outcome-screen';
 
 interface EventRow {
   id: string;
@@ -97,6 +98,7 @@ interface AlertRow {
   created_at: string;
   read_at: string | null;
   dismissed_at: string | null;
+  moderation_outcome?: unknown;
   order_status?: string | null;
   order_audience?: 'customer' | 'business' | null;
 }
@@ -144,10 +146,10 @@ export default function NotificationTargetScreen() {
     const { data, error: queryError } = await supabase
       .from('notification_deliveries')
       .select(
-        'id, notification_type, entity_type, entity_id, title, body, url, status, created_at, read_at, dismissed_at, order_status, order_audience',
+        'id, notification_type, entity_type, entity_id, title, body, url, status, created_at, read_at, dismissed_at, order_status, order_audience, moderation_outcome',
       )
       .eq('user_id', session.user.id)
-      .or('status.eq.sent,entity_type.eq.pickup_order')
+      .or('status.eq.sent,entity_type.eq.pickup_order,inbox_available_at.not.is.null')
       .is('dismissed_at', null)
       .order('created_at', { ascending: false })
       .limit(100);
@@ -176,7 +178,7 @@ export default function NotificationTargetScreen() {
       void supabase
         .from('notification_deliveries')
         .select(
-          'id, notification_type, entity_type, entity_id, title, body, url, status, created_at, read_at, dismissed_at, order_status, order_audience',
+          'id, notification_type, entity_type, entity_id, title, body, url, status, created_at, read_at, dismissed_at, order_status, order_audience, moderation_outcome',
         )
         .eq('id', deliveryId)
         .maybeSingle()
@@ -198,7 +200,7 @@ export default function NotificationTargetScreen() {
               }
             }
             setDelivery(row);
-            if (!row.read_at) {
+            if (!row.read_at && !row.moderation_outcome) {
               void supabase
                 .from('notification_deliveries')
                 .update({ read_at: new Date().toISOString() })
@@ -315,6 +317,10 @@ export default function NotificationTargetScreen() {
   }
 
   async function openAlert(row: AlertRow) {
+    if (row.moderation_outcome) {
+      router.push(`/moderation-outcome?deliveryId=${encodeURIComponent(row.id)}` as never);
+      return;
+    }
     if (!row.read_at) {
       const readAt = new Date().toISOString();
       setAlerts((current) =>
@@ -383,6 +389,10 @@ export default function NotificationTargetScreen() {
         </SwipeBackView>
       </BusinessThemeProvider>
     );
+  }
+
+  if (delivery?.moderation_outcome && deliveryId) {
+    return <MobileModerationOutcomeScreen deliveryId={deliveryId} />;
   }
 
   if (loading) {

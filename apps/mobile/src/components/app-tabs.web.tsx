@@ -1,4 +1,3 @@
-import { BusinessAccessRecovery } from './business-access-recovery';
 import { publicShareBaseUrl } from '@/lib/share-links';
 import { router, usePathname } from 'expo-router';
 import { useEffect, useSyncExternalStore } from 'react';
@@ -30,7 +29,7 @@ const subscribeHydration = () => () => undefined;
 
 export default function AppTabs() {
   const { session } = useAuth();
-  const { mode, hasBusinessAccess, accessError, refreshBusinessAccess } = useAppMode();
+  const { mode, hasBusinessAccess } = useAppMode();
   const businessMode = Boolean(session && mode === 'business' && hasBusinessAccess);
   const pickup = usePickupWorkspace();
   const requestCount = pickup.businesses.reduce((n, b) => n + (b.counts?.requests ?? 0), 0);
@@ -50,7 +49,6 @@ export default function AppTabs() {
           : '/explore',
       );
   }, [pathname, pickup.loading, pickup.error, showOrders, businessMode]);
-  if (accessError) return <BusinessAccessRecovery onRetry={refreshBusinessAccess} />;
   return (
     <Tabs>
       <TabSlot style={{ height: '100%' }} />

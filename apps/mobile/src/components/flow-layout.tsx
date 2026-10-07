@@ -10,14 +10,12 @@ export function FlowSection({
   children,
   collapsible = false,
   initiallyOpen = false,
-  inset = false,
 }: {
   title: string;
   description?: string;
   children: ReactNode;
   collapsible?: boolean;
   initiallyOpen?: boolean;
-  inset?: boolean;
 }) {
   const c = useTheme();
   const [open, setOpen] = useState(initiallyOpen);
@@ -36,11 +34,11 @@ export function FlowSection({
   return (
     <View
       style={{
-        backgroundColor: inset ? 'transparent' : c.backgroundElement,
+        backgroundColor: c.backgroundElement,
         borderColor: c.divider,
-        borderWidth: inset ? 0 : 1,
-        borderRadius: inset ? 0 : 18,
-        padding: inset ? 0 : 18,
+        borderWidth: 1,
+        borderRadius: 18,
+        padding: 18,
         gap: 16,
       }}
     >

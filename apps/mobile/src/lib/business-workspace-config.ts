@@ -206,12 +206,11 @@ export function workspaceSectionLabel(
   if (section === 'preview') return 'Page preview';
   if (section !== 'offerings')
     return sections.find((item) => item.key === section)?.label ?? section;
-  return businessType === 'food_drink' || businessType === 'mobile' ? 'Menu' : businessType === 'services' ? 'Services' : businessType === 'retail' ? 'Products' : 'Offerings';
+  return businessType === 'food_drink' || businessType === 'mobile' ? 'Menu' : 'Services';
 }
 
 export function workspaceOfferingTerminology(businessType?: BusinessType | null) {
   const menu = businessType === 'food_drink' || businessType === 'mobile';
-  if (!menu && businessType !== 'services') return { item: businessType === 'retail' ? 'product' : 'offering', items: businessType === 'retail' ? 'products' : 'offerings', section: 'category', sections: 'categories' };
   return menu
     ? { item: 'menu item', items: 'menu', section: 'menu category', sections: 'menu categories' }
     : {

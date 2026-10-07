@@ -1,4 +1,3 @@
-import { DateField } from '@/components/date-field';
 import { BackPill } from '@/components/back-pill';
 import { CustomerBrand } from '@/components/customer-brand';
 import { FlowIdentity } from '@/components/flow-layout';
@@ -340,8 +339,7 @@ export default function AppointmentScreen() {
             <AppChrome />
             <CustomerBrand />
             <BackPill label="Back to business" onPress={() => router.back()} />
-            <MerchantButton label="All my appointments" secondary onPress={() => router.replace('/my-appointments' as never)} />
-          <MerchantHeading
+            <MerchantHeading
               title={appointment ? statusLabel(appointment.status) : 'Your appointment'}
               subtitle={appointment ? 'Your booking status' : 'Checking your booking'}
             />
@@ -494,7 +492,6 @@ export default function AppointmentScreen() {
               {rescheduling && appointment ? (
                 <View style={{ gap: Spacing.two }}>
                   <ThemedText type="subtitle">Choose a new time</ThemedText>
-                  <DateField label="New appointment date" required value={scheduleDate} minimumDate={localDateAtZone(new Date(), appointment.timezone)} onChange={next => { setLoadingSlots(true); setError(''); setSlots([]); setScheduleDate(next); }} />
                   <ThemedText themeColor="textSecondary" type="small">
                     Times are shown in {appointment.timezone}. Your current appointment stays
                     reserved until a new time is confirmed.

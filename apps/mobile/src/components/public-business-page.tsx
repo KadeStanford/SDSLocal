@@ -318,8 +318,6 @@ export function PublicBusinessPageContent({
   const [viewerScrollX] = useState(() => new Animated.Value(0));
   const viewerListRef = useRef<FlatList<GalleryPhoto>>(null);
   const [loading, setLoading] = useState(true);
-  const [loadAttempt, setLoadAttempt] = useState(0);
-  const [partialError, setPartialError] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const pageWidth = viewerWidth || windowWidth;
 
@@ -432,19 +430,23 @@ export function PublicBusinessPageContent({
         if (!active) return;
         const firstError = [
           businessResult.error,
-
-
-
-
-
-
+          photoResult.error,
+          sectionResult.error,
+          itemResult.error,
+          eventResult.error,
+          loyaltyResult.error,
+          hourResult.error,
           followResult.error,
           savesResult.error,
           membershipResult.error,
           ownerResult.error,
-
+          locationResult.error &&
+          !/function .*get_business_location_stops.*does not exist/i.test(
+            locationResult.error.message,
+          )
+            ? locationResult.error
+            : null,
         ].find(Boolean);
-        setPartialError(Boolean(photoResult.error || sectionResult.error || itemResult.error || eventResult.error || loyaltyResult.error || hourResult.error || locationResult.error));
         if (firstError)
           setError(userMessageFromError(firstError, 'We could not load this business page.'));
         else if (!businessResult.data) setError('This business page is unavailable.');
@@ -502,7 +504,7 @@ export function PublicBusinessPageContent({
     return () => {
       active = false;
     };
-  }, [businessId, preview, session, loadAttempt]);
+  }, [businessId, preview, session]);
 
   const resolvedPhotos = useMemo<GalleryPhoto[]>(
     () =>
@@ -805,7 +807,6 @@ export function PublicBusinessPageContent({
     return (
       <View style={styles.errorCard}>
         <ThemedText style={styles.errorText}>{error ?? 'Business unavailable.'}</ThemedText>
-        <AppButton label="Retry business page" onPress={() => { setError(null); setLoading(true); setLoadAttempt(n => n + 1); }} />
       </View>
     );
 
@@ -945,7 +946,6 @@ export function PublicBusinessPageContent({
 
   return (
     <View style={styles.page}>
-      {partialError && <View style={{ gap: 10, padding: 16 }}><ThemedText>Some photos, offerings, events or hours are unavailable right now.</ThemedText><AppButton label="Retry missing details" variant="secondary" onPress={() => { setError(null); setLoadAttempt(n => n + 1); }} /></View>}
       {(preview || business.status !== 'active') && (
         <View style={[styles.previewBanner, { backgroundColor: colors.infoSurface }]}>
           <ThemedText style={{ color: colors.infoText }} type="smallBold">
@@ -1239,8 +1239,6 @@ export function PublicBusinessPageContent({
           <ThemedText themeColor="textSecondary" type="small">
             Finish the action you started below.
           </ThemedText>
-          {resumeAction === 'report_review' && <AppButton label="Continue review report" onPress={() => setDetailsPanel('reviews')} />}
-          {resumeAction === 'report_offering' && resumeTargetId && <AppButton label="Continue item report" onPress={() => requestReport({ type: 'offering_item', businessId: business.id, offeringItemId: resumeTargetId, label: items.find(item => item.id === resumeTargetId)?.name ?? 'Item' })} />}
         </View>
       ) : null}
       {actionMessage ? (
@@ -1363,6 +1361,12 @@ export function PublicBusinessPageContent({
                     label={session ? 'Report item' : 'Sign in to report item'}
                     variant="secondary"
                     onPress={() => {
+                      if (!session) {
+                        setDetailsPanel(null);
+                        setMenuOptionsItem(null);
+                        router.push('/auth' as never);
+                        return;
+                      }
                       requestReport({
                         type: 'offering_item',
                         businessId: business.id,
@@ -1814,7 +1818,6 @@ export function PublicBusinessPageContent({
       <BusinessReviewSection
         key={`${business.id}:preview`}
         businessId={business.id}
-        businessName={business.name}
         preview={preview}
         summary={reviewSummary.id === business.id ? reviewSummary.summary : null}
         summaryError={reviewSummary.id === business.id && reviewSummary.error}
@@ -1831,8 +1834,6 @@ export function PublicBusinessPageContent({
             hideHeading
             key={business.id}
             businessId={business.id}
-            businessName={business.name}
-            resumeReportId={resumeAction === 'report_review' ? resumeTargetId : undefined}
             preview={preview}
             summary={reviewSummary.id === business.id ? reviewSummary.summary : null}
             summaryError={reviewSummary.id === business.id && reviewSummary.error}

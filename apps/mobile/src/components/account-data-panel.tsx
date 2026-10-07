@@ -1,5 +1,3 @@
-import { HelpPolicyLinks } from './help-policy-links';
-import { MerchantButton } from './merchant-ui';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
@@ -42,7 +40,6 @@ export function AccountDataPanel() {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const [impact, setImpact] = useState<AccountDeletionImpact | null>(null);
-  const [bookingBlocker, setBookingBlocker] = useState(false);
   const [confirmation, setConfirmation] = useState('');
   const [loadingImpact, setLoadingImpact] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -59,7 +56,6 @@ export function AccountDataPanel() {
         data && typeof data === 'object' ? (data as { impact?: unknown }).impact : null,
       );
       if (!parsed) throw new Error('Invalid deletion impact response.');
-      setBookingBlocker(Array.isArray(data?.blockers) && data.blockers.includes('appointments'));
       setImpact(parsed);
     } catch {
       setErrorMessage('We could not check what deletion would affect. Please try again.');
@@ -87,7 +83,7 @@ export function AccountDataPanel() {
   }
 
   async function deleteAccount() {
-    if (!session || bookingBlocker || !canConfirmAccountDeletion(confirmation, deleting)) return;
+    if (!session || !canConfirmAccountDeletion(confirmation, deleting)) return;
     setDeleting(true);
     setErrorMessage(null);
     const userId = session.user.id;
@@ -97,10 +93,7 @@ export function AccountDataPanel() {
           'delete-account',
           { method: 'DELETE', body: { confirmation } },
         );
-        if (error) {
-          try { const detail = await error.context?.json(); if (detail?.blockers?.includes('appointments')) { setBookingBlocker(true); throw new Error('BOOKING_BLOCKER'); } } catch (cause) { if (cause instanceof Error && cause.message === 'BOOKING_BLOCKER') throw cause; }
-          throw error;
-        }
+        if (error) throw error;
         return { deleted: data?.deleted === true };
       }, [
         () => Notifications.dismissAllNotificationsAsync(),
@@ -116,10 +109,10 @@ export function AccountDataPanel() {
       router.replace('/explore');
       void haptics.success();
       Alert.alert('Account deleted', 'Your Parish Pass account has been deleted.');
-    } catch (cause) {
+    } catch {
       void haptics.error();
       setErrorMessage(
-        cause instanceof Error && cause.message === 'BOOKING_BLOCKER' ? 'Resolve your active appointments or outstanding booking payments first.' : 'Account deletion did not complete. Your account is still available. Use support if retrying does not help.',
+        'Account deletion did not complete. You are still signed in and can safely try again.',
       );
       setDeleting(false);
     }
@@ -140,8 +133,7 @@ export function AccountDataPanel() {
         </View>
       )}
 
-      {bookingBlocker && <View style={{ gap: 12 }}><ThemedText type="subtitle">Finish your appointments first</ThemedText><ThemedText>Cancel or complete active bookings and resolve outstanding payments or refunds. Contact the business about payment issues.</ThemedText><MerchantButton label="Open my appointments" onPress={() => router.push('/my-appointments' as never)} /><MerchantButton label="Recheck deletion eligibility" secondary onPress={() => void loadImpact()} /><HelpPolicyLinks /></View>}
-      {impact && !bookingBlocker && (
+      {impact && (
         <View style={styles.impactCard}>
           <ThemedText type="subtitle">What will happen</ThemedText>
           {listingBilling.summary?.canPublish ? (

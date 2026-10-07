@@ -72,8 +72,8 @@ export function BusinessQrPoster({ visible, onClose, business, logoUri }: Busine
     setBusy('share');
     try {
       await Share.share({
-        title: `${business.name} on Parish Pass`,
-        message: `Visit ${business.name} on Parish Pass:\n${url}`,
+        title: `${business.name} on SDS Local`,
+        message: `Visit ${business.name} on SDS Local:\n${url}`,
         url,
       });
       void haptics.success();
@@ -108,7 +108,7 @@ export function BusinessQrPoster({ visible, onClose, business, logoUri }: Busine
         .qr { width: 260px; height: 260px; margin: 30px auto 22px; }
         .cta { margin: 0; color: ${primary}; font-size: 24px; font-weight: 700; }
         .url { margin-top: 22px; color: #687a72; font-size: 12px; word-break: break-all; }
-      </style></head><body><main class="poster"><section class="paper">${logo || `<div class="mark">${escapeHtml(business.name.slice(0, 1).toUpperCase())}</div>`}<h1>${escapeHtml(business.name)}</h1><p>Scan to view our page, offerings, events, and rewards.</p><img class="qr" src="${qrDataUrl}" alt="QR code" /><p class="cta">Open Parish Pass</p><p class="url">${escapeHtml(url)}</p></section></main></body></html>`;
+      </style></head><body><main class="poster"><section class="paper">${logo || `<div class="mark">${escapeHtml(business.name.slice(0, 1).toUpperCase())}</div>`}<h1>${escapeHtml(business.name)}</h1><p>Scan to view our page, offerings, events, and rewards.</p><img class="qr" src="${qrDataUrl}" alt="QR code" /><p class="cta">Open SDS Local</p><p class="url">${escapeHtml(url)}</p></section></main></body></html>`;
       await Print.printAsync({ html });
       void haptics.success();
       setNotice('Poster sent to the print dialog.');
@@ -176,7 +176,7 @@ export function BusinessQrPoster({ visible, onClose, business, logoUri }: Busine
                     style={[styles.posterCta, { color: business.primaryColor }]}
                     type="smallBold"
                   >
-                    Open Parish Pass
+                    Open SDS Local
                   </ThemedText>
                 </View>
                 <View style={styles.actions}>

@@ -28,6 +28,10 @@ dist-web/
 .codex/
 .codex-tmp/
 EmergencyBackup/
+
+# Hosted source recovery bundles remain private
+recovery/deployed-functions/
+recovery/backend-cutover/
 .eas/
 .eas-cli-home/
 apps/.eas-userdata/

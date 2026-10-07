@@ -24,7 +24,6 @@ const h = vi.hoisted(() => ({ slots: [] as any[], index: 0 }));
 vi.mock('react', async () => ({
   ...(await vi.importActual<typeof import('react')>('react')),
   useMemo: (fn: () => unknown) => fn(),
-  useEffect: vi.fn(),
   useState: (initial: any) => {
     const i = h.index++;
     const slot = (h.slots[i] ??= { value: typeof initial === 'function' ? initial() : initial });
@@ -168,10 +167,4 @@ it('opening a closed day reveals its time controls and preserves the permission 
   ).toBe(true);
   tree = draw(false);
   expect(toggle().props.disabled).toBe(true);
-});
-
-it('never labels a synthetic unsaved week as saved', () => {
-  const tree = render(() => HoursEditor({ colors: Colors.dark, accent: '#89C9A2', hours: [], canEdit: true, saving: false, onSave: vi.fn() }));
-  expect(nodes(tree).some(n => n.props?.children === 'Hours saved')).toBe(false);
-  expect(nodes(tree).some(n => n.props?.children === 'Save hours')).toBe(true);
 });

@@ -1,4 +1,3 @@
-import { savePendingAuthIntent } from '@/lib/auth-intents';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, View } from 'react-native';
 import { AppTextInput as TextInput } from '@/components/app-text-input';
@@ -39,12 +38,8 @@ export function BusinessReviewSection({
   layout = 'full',
   onSeeAll,
   hideHeading = false,
-  resumeReportId,
-  businessName = 'this business',
 }: {
   businessId: string;
-  businessName?: string;
-  resumeReportId?: string | undefined;
   preview?: boolean;
   summary?: BusinessReviewSummary | null;
   summaryError?: boolean;
@@ -59,7 +54,7 @@ export function BusinessReviewSection({
   const [loading, setLoading] = useState(true);
   const [reviewLimit, setReviewLimit] = useState(5);
   const [error, setError] = useState('');
-  const [reportId, setReportId] = useState<string | null>(resumeReportId ?? null);
+  const [reportId, setReportId] = useState<string | null>(null);
   const [reason, setReason] = useState<(typeof reportReasons)[number][0] | null>(null);
   const [details, setDetails] = useState('');
   const [sending, setSending] = useState(false);
@@ -284,7 +279,7 @@ export function BusinessReviewSection({
               label="Sign in to report"
               variant="tertiary"
               style={{ alignSelf: 'flex-start', paddingHorizontal: 0 }}
-              onPress={() => { savePendingAuthIntent({ kind: 'report_review', businessId, businessName, targetId: review.id }); router.push('/account' as never); }}
+              onPress={() => router.push('/auth' as never)}
             />
           )}
         </View>

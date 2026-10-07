@@ -1,6 +1,3 @@
-import { DateField } from '@/components/date-field';
-import { useAuth } from '@/providers/auth-provider';
-import { supabase } from '@/lib/supabase';
 import { FlowSection, FlowIdentity, FlowProgress } from '@/components/flow-layout';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -49,7 +46,6 @@ type BookableBusiness = {
     cancellationCutoffMinutes: number;
     cancellationTerms: string;
     publicInstructions: string;
-    bookingHorizonDays: number;
   };
   services: BookableService[];
 };
@@ -102,11 +98,6 @@ function depositLabel(service: BookableService) {
 }
 
 export default function BookAppointmentScreen() {
-  const { session } = useAuth();
-  const contactEdited = useRef({ name: false, phone: false, email: false });
-  const nameInput = useRef<import('@/components/app-text-input').AppTextInputHandle>(null);
-  const phoneInput = useRef<import('@/components/app-text-input').AppTextInputHandle>(null);
-  const emailInput = useRef<import('@/components/app-text-input').AppTextInputHandle>(null);
   const { businessId } = useLocalSearchParams<{ businessId?: string }>();
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
@@ -129,15 +120,6 @@ export default function BookAppointmentScreen() {
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
-  useEffect(() => {
-    let active = true;
-    if (!session) return;
-    if (!contactEdited.current.email) setCustomerEmail(session.user.email ?? '');
-    void supabase.from('profiles').select('display_name').eq('id', session.user.id).maybeSingle().then(({ data }) => {
-      if (active && !contactEdited.current.name) setCustomerName(data?.display_name ?? '');
-    });
-    return () => { active = false; };
-  }, [session?.user.id]);
   const [notes, setNotes] = useState('');
   const merchantColors = useMerchantTheme();
   const [stage, setStage] = useState<'service' | 'time' | 'contact'>('service');
@@ -433,7 +415,6 @@ export default function BookAppointmentScreen() {
                     ) : null}
                     <View style={{ gap: Spacing.two }}>
                       <ThemedText type="subtitle">Choose a time</ThemedText>
-                      <DateField label="Appointment date" required value={date} minimumDate={dateForZone(catalog.settings.timezone)} maximumDate={dateForZone(catalog.settings.timezone, catalog.settings.bookingHorizonDays ?? 60)} onChange={next => { setDate(next); setSelectedSlot(null); }} />
                       <View
                         style={{
                           flexDirection: 'row',
@@ -454,7 +435,6 @@ export default function BookAppointmentScreen() {
                         </ThemedText>
                         <AppButton
                           label="Later day"
-                          disabled={date >= dateForZone(catalog.settings.timezone, catalog.settings.bookingHorizonDays ?? 60)}
                           variant="secondary"
                           onPress={() => shiftDate(1)}
                         />
@@ -502,8 +482,7 @@ export default function BookAppointmentScreen() {
                           accessibilityLabel="Your name"
                           autoComplete="name"
                           maxLength={100}
-                          ref={nameInput}
-                          onChangeText={value => { contactEdited.current.name = true; setCustomerName(value); }}
+                          onChangeText={setCustomerName}
                           placeholder="Name"
                           placeholderTextColor={colors.textSecondary}
                           style={inputStyle(theme, colors)}
@@ -516,8 +495,7 @@ export default function BookAppointmentScreen() {
                           autoComplete="tel"
                           keyboardType="phone-pad"
                           maxLength={32}
-                          ref={phoneInput}
-                          onChangeText={value => { contactEdited.current.phone = true; setCustomerPhone(value); }}
+                          onChangeText={setCustomerPhone}
                           placeholder="Phone number"
                           placeholderTextColor={colors.textSecondary}
                           style={inputStyle(theme, colors)}
@@ -532,8 +510,7 @@ export default function BookAppointmentScreen() {
                           autoCapitalize="none"
                           autoCorrect={false}
                           maxLength={254}
-                          ref={emailInput}
-                          onChangeText={value => { contactEdited.current.email = true; setCustomerEmail(value); }}
+                          onChangeText={setCustomerEmail}
                           placeholder="Email address"
                           placeholderTextColor={colors.textSecondary}
                           style={inputStyle(theme, colors)}
@@ -560,9 +537,15 @@ export default function BookAppointmentScreen() {
                       label="Review appointment"
                       disabled={!selectedService || !selectedSlot || saving}
                       onPress={() => {
-                        if (customerName.trim().length < 2) { setError('Enter your name using at least 2 characters.'); nameInput.current?.focus(); return; }
-                        if (customerPhone.replace(/\D/g, '').length < 7) { setError('Enter a phone number the business can use to reach you.'); phoneInput.current?.focus(); return; }
-                        if (customerEmail.trim() && !/^\S+@\S+\.\S+$/.test(customerEmail.trim())) { setError('Check your email address, or leave it blank.'); emailInput.current?.focus(); return; }
+                        if (
+                          customerName.trim().length < 2 ||
+                          customerPhone.replace(/\D/g, '').length < 7
+                        ) {
+                          setError(
+                            'Enter your name and a phone number the business can use to reach you.',
+                          );
+                          return;
+                        }
                         setError('');
                         setReviewing(true);
                       }}

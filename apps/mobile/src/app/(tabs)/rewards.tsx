@@ -1,4 +1,3 @@
-import { personalEventScope } from '@/lib/customer-commitments';
 import { EventsViewSwitch } from '@/components/events-view-switch';
 import { RewardsWalletList } from '@/components/reward-wallet';
 import { EventDirectory } from '@/components/event-directory';
@@ -298,7 +297,7 @@ export function CalendarScreen() {
 function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalendar?: boolean }) {
   const bottomPadding = useScreenBottomPadding();
   const { session, loading: authLoading } = useAuth();
-  const params = useLocalSearchParams<{ scope?: string; view?: string; eventId?: string; businessId?: string }>();
+  const params = useLocalSearchParams<{ scope?: string; eventId?: string; businessId?: string }>();
   const nearbyAlerts = useNearbyAlerts();
   const pathname = usePathname();
   // Native tabs can briefly report a group-prefixed pathname while mounting.
@@ -312,7 +311,6 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
   const [cards, setCards] = useState<WalletCard[]>([]);
   const [reminders, setReminders] = useState<Record<string, ReminderPreference>>({});
   const [followedEvents, setFollowedEvents] = useState<FollowedEvent[]>([]);
-  useEffect(() => { if (params.view === 'following') setView('following'); }, [params.view]);
   const [followingBusinesses, setFollowingBusinesses] = useState<FollowingBusiness[]>([]);
   const [selectedFollowingBusiness, setSelectedFollowingBusiness] =
     useState<FollowingBusiness | null>(null);
@@ -481,8 +479,7 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
           }
         } else {
           const businessIds = businesses.map((business) => business.id);
-          const savedIds = (eventsResult.data ?? []).map(row => row.event_id);
-          if (!personalEventScope(businessIds, savedIds)) {
+          if (!businessIds.length) {
             setFollowedEvents([]);
           } else {
             const followedResult = await supabase
@@ -490,7 +487,7 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
               .select(
                 'id, title, description, starts_at, ends_at, address_text, location_mode, timezone, age_note, capacity_text, rsvp_limit, external_url, media_assets(storage_path, status, alt_text, width, height), event_photos(id, caption, display_order, media_assets(storage_path, status, alt_text, width, height)), businesses!inner(id, name, primary_color, business_photos(role, media_assets(storage_path, status)))',
               )
-              .or(personalEventScope(businessIds, savedIds))
+              .in('business_id', businessIds)
               .eq('is_published', true)
               .is('archived_at', null)
               .gte('starts_at', new Date().toISOString())
@@ -886,7 +883,7 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
                         : calendarOnly
                           ? allUpcoming
                             ? 'Browse public events by date.'
-                            : 'Saved events and events from businesses you follow.'
+                            : 'Events from businesses you follow.'
                           : 'Keep your loyalty cards and favorite businesses close by.'}
                     </ThemedText>
                   </View>
@@ -994,7 +991,7 @@ function RewardsScreenContent({ forceCalendar = false }: { readonly forceCalenda
                     You are not following any businesses yet
                   </ThemedText>
                   <ThemedText style={[styles.noticeText, { color: colors.textSecondary }]}>
-                    Follow a business from Home and it will appear here.
+                    Follow a business from Discover and it will appear here.
                   </ThemedText>
                 </View>
               )
@@ -1771,7 +1768,7 @@ function RewardsDestinationUnderlay({
                     : calendarOnly
                       ? allUpcoming
                         ? 'Browse public events by date.'
-                        : 'Saved events and events from businesses you follow.'
+                        : 'Events from businesses you follow.'
                       : 'Keep your loyalty cards and favorite businesses close by.'}
                 </ThemedText>
               </View>

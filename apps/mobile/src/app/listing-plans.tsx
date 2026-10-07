@@ -1,4 +1,3 @@
-import { PublicationRequirements } from '@/components/publication-requirements';
 import { FlowSection } from '@/components/flow-layout';
 import { MerchantButton, MerchantStatus } from '@/components/merchant-ui';
 import { useMerchantTheme } from '@/hooks/use-merchant-theme';
@@ -211,7 +210,6 @@ export function ListingPlansWorkspace({
               onPress={() => void refresh()}
             />
           ) : null}
-          <PublicationRequirements />
           {continuationError ? <StateNotice kind="error" message={continuationError} /> : null}
           {summary && !summary.billingEnabled ? (
             <StateNotice message="Subscriptions are not open yet. During preview, you can set up your business without a subscription." />

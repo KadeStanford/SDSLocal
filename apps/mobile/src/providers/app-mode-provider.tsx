@@ -6,7 +6,6 @@ import {
   useEffect,
   useMemo,
   useState,
-  useRef,
 } from 'react';
 
 import { supabase } from '@/lib/supabase';
@@ -20,7 +19,6 @@ interface AppModeContextValue {
   readonly refreshBusinessAccess: () => Promise<boolean>;
   readonly hasBusinessAccess: boolean;
   readonly loading: boolean;
-  readonly accessError: boolean;
 }
 
 const AppModeContext = createContext<AppModeContextValue | null>(null);
@@ -29,9 +27,6 @@ const businessAccessTimeoutMs = 5000;
 
 export function AppModeProvider({ children }: PropsWithChildren) {
   const { session, loading: authLoading } = useAuth();
-  const identity = useRef(session?.user.id); identity.current = session?.user.id;
-  const generation = useRef(0);
-  const [failedUserId, setFailedUserId] = useState<string | null>(null);
   const [mode, setModeState] = useState<AppMode>('customer');
   const [hydratedUserId, setHydratedUserId] = useState<string | null>(null);
   const [businessAccess, setBusinessAccess] = useState<{
@@ -40,7 +35,6 @@ export function AppModeProvider({ children }: PropsWithChildren) {
   } | null>(null);
 
   const refreshBusinessAccess = useCallback(async () => {
-    const request = ++generation.current;
     const userId = session?.user.id;
     if (!userId) {
       setBusinessAccess(null);
@@ -58,14 +52,12 @@ export function AppModeProvider({ children }: PropsWithChildren) {
           .limit(1),
         new Promise<null>((resolve) => setTimeout(() => resolve(null), businessAccessTimeoutMs)),
       ]);
-      if (!result || result.error) throw new Error('Access check unavailable');
-      hasAccess = Boolean(result.data?.length);
+      hasAccess = Boolean(result && 'data' in result && result.data?.length);
     } catch {
-      if (identity.current === userId && generation.current === request) setFailedUserId(userId);
-      return false;
+      // A temporarily unreachable API should not leave AppTabs waiting
+      // forever. The next auth refresh or explicit business refresh retries it.
+      hasAccess = false;
     }
-    if (identity.current !== userId || generation.current !== request) return false;
-    setFailedUserId(null);
     setBusinessAccess({ userId, hasAccess });
     if (!hasAccess) setModeState('customer');
     return hasAccess;
@@ -125,15 +117,13 @@ export function AppModeProvider({ children }: PropsWithChildren) {
         setModeState(nextMode === 'business' && !hasBusinessAccess ? 'customer' : nextMode),
       refreshBusinessAccess,
       hasBusinessAccess,
-      accessError: Boolean(session && failedUserId === session.user.id),
       loading:
         authLoading ||
-        (Boolean(session) && businessAccess?.userId !== session?.user.id && failedUserId !== session?.user.id) ||
+        (Boolean(session) && businessAccess?.userId !== session?.user.id) ||
         (Boolean(session) && hydratedUserId !== session?.user.id),
     }),
     [
       authLoading,
-      failedUserId,
       businessAccess?.userId,
       hasBusinessAccess,
       hydratedUserId,

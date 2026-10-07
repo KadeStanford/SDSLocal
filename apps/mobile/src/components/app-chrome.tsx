@@ -1,4 +1,3 @@
-import { ThemedText } from './themed-text';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
@@ -63,7 +62,6 @@ export function AppChrome({
             tintColor={colors.text}
             style={{ width: 25, height: 25 }}
           />
-          <ThemedText type="small">Account</ThemedText>
         </Pressable>
       )}
       <AlertsButton />

@@ -1,5 +1,5 @@
 import type { Ref } from 'react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { View } from 'react-native';
 import { AppTextInput as TextInput, type AppTextInputHandle } from '@/components/app-text-input';
 import { SymbolView } from 'expo-symbols';
@@ -15,7 +15,6 @@ export function EmailCodeVerification({
   onSubmit,
   inputRef,
   disabled = false,
-  onResend,
 }: {
   email: string;
   value: string;
@@ -24,11 +23,8 @@ export function EmailCodeVerification({
   onSubmit: () => void;
   inputRef: Ref<AppTextInputHandle>;
   disabled?: boolean;
-  onResend?: () => void;
 }) {
   const c = useTheme();
-  const [seconds, setSeconds] = useState(60);
-  useEffect(() => { const timer = setInterval(() => setSeconds(n => Math.max(0, n - 1)), 1000); return () => clearInterval(timer); }, []);
   const [focused, setFocused] = useState(false);
   return (
     <View style={{ gap: 28 }}>
@@ -136,7 +132,6 @@ export function EmailCodeVerification({
             ]}
           />
         </View>
-        {onResend && <CustomerAction label={seconds ? `Resend in ${seconds}s` : "Resend code"} disabled={disabled || seconds > 0} onPress={() => { setSeconds(60); onResend(); }} />}
         <ThemedText type="small" themeColor="textSecondary">
           You can paste the full code or use autofill.
         </ThemedText>

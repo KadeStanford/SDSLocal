@@ -3,7 +3,7 @@ import { DateTimePicker } from '@expo/ui/community/datetime-picker';
 import { BusinessLogo } from './business-logo';
 import { BusinessWorkspaceSheet } from './business-workspace-sheet';
 import { SymbolView } from 'expo-symbols';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -526,7 +526,6 @@ export function BusinessManage({
 }
 
 export function HoursEditor({
-  onDirtyChange,
   colors,
   accent,
   hours,
@@ -539,7 +538,6 @@ export function HoursEditor({
   readonly hours: readonly WorkspaceHour[];
   readonly canEdit: boolean;
   readonly saving: boolean;
-  readonly onDirtyChange?: (dirty: boolean) => void;
   readonly onSave: (hours: readonly WorkspaceHour[]) => Promise<boolean>;
 }) {
   const scheme = useColorScheme();
@@ -550,10 +548,7 @@ export function HoursEditor({
     null,
   );
 
-  const missingDays = new Set(hours.map((row) => row.day_of_week)).size < 7;
-  const dirty = missingDays || hasUnsavedChanges(initial, draft);
-  useEffect(() => { onDirtyChange?.(hasUnsavedChanges(initial, draft)); }, [initial, draft, onDirtyChange]);
-  useEffect(() => { setDraft(initial); }, [initial]);
+  const dirty = hasUnsavedChanges(initial, draft);
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   function updateDay(day: number, patch: Partial<WorkspaceHour>) {
@@ -578,7 +573,7 @@ export function HoursEditor({
           WEEKLY SCHEDULE
         </ThemedText>
         <ThemedText themeColor="textSecondary" type="small">
-          {missingDays ? 'Hours are not saved yet. Set your week, including closed days, then save.' : 'Your week at a glance. Tap a day to change its times.'}
+          Your week at a glance. Tap a day to change its times.
         </ThemedText>
       </View>
       <View

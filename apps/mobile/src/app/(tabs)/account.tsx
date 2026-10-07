@@ -1,5 +1,4 @@
-import { HelpPolicyLinks } from '@/components/help-policy-links';
-import { PendingEmailConfirmation } from '@/components/pending-email-confirmation';
+import {AccountAdminEntry} from '@/components/admin/account-admin-entry';
 import { ChoicePicker } from '@/components/choice-picker';
 import { inputPresets } from '@/lib/input-presets';
 import { FlowSection } from '@/components/flow-layout';
@@ -150,8 +149,6 @@ export default function AccountScreen({ standalone = false }: { standalone?: boo
   const [googleLinkedThisSession, setGoogleLinkedThisSession] = useState(false);
   const [appleLinkedThisSession, setAppleLinkedThisSession] = useState(false);
   const [appleAuthAvailable, setAppleAuthAvailable] = useState(false);
-  const [pendingEmail, setPendingEmail] = useState(() => globalThis.localStorage.getItem('parish:pending-confirmation-email') ?? '');
-  useEffect(() => { if (session) { setPendingEmail(''); globalThis.localStorage.removeItem('parish:pending-confirmation-email'); } }, [session]);
   const [authNotice, setAuthNotice] = useState<AuthNoticeState | null>(null);
   const [authFieldErrors, setAuthFieldErrors] = useState<Record<string, string>>({});
   const [city, setCity] = useState('');
@@ -445,9 +442,6 @@ export default function AccountScreen({ standalone = false }: { standalone?: boo
         });
         if (error) throw error;
         if (!data.session) {
-          setPendingEmail(input.email);
-          globalThis.localStorage.setItem('parish:pending-confirmation-email', input.email);
-          globalThis.localStorage.setItem('parish:confirmation-resend-after', String(Date.now() + 60000));
           setAuthNotice({
             kind: 'info',
             message: 'Check your email and use the confirmation link to finish signing up.',
@@ -483,7 +477,7 @@ export default function AccountScreen({ standalone = false }: { standalone?: boo
       const { error } = await supabase
         .from('profiles')
         .update({
-          display_name: input.displayName,
+          display_name: input.displayName || null,
           city: input.city ?? null,
           region_code: input.regionCode ?? null,
           postal_code: input.postalCode ?? null,
@@ -837,6 +831,7 @@ export default function AccountScreen({ standalone = false }: { standalone?: boo
                         },
                       ]}
                     >
+                      <AccountAdminEntry />
                       <AccountSettingsRow
                         label="Profile"
                         detail="Name, city, and location"
@@ -872,7 +867,6 @@ export default function AccountScreen({ standalone = false }: { standalone?: boo
                       />
                     </View>
 
-                    <HelpPolicyLinks />
                     <ThemedText type="smallBold">Your customer activity</ThemedText>
                     <View
                       style={[
@@ -883,8 +877,6 @@ export default function AccountScreen({ standalone = false }: { standalone?: boo
                         },
                       ]}
                     >
-                      <AccountSettingsRow label="My appointments" detail="Upcoming, past, reschedule and cancellation" onPress={() => router.push('/my-appointments' as never)} />
-                      <AccountSettingsRow label="Following" detail="Businesses you follow" onPress={() => router.push({ pathname: '/rewards', params: { view: 'following' } } as never)} />
                       <AccountSettingsRow
                         label="My service requests"
                         detail="Check quote and consultation request status"
@@ -1038,7 +1030,7 @@ export default function AccountScreen({ standalone = false }: { standalone?: boo
                   </>
                 )}
 
-                {accountSection === 'privacy-safety' && <><HelpPolicyLinks /><BlockedBusinessesPanel /></>}
+                {accountSection === 'privacy-safety' && <BlockedBusinessesPanel />}
 
                 {accountSection === 'sign-in-methods' && (
                   <View
@@ -1146,8 +1138,6 @@ export default function AccountScreen({ standalone = false }: { standalone?: boo
                   </View>
                 )}
               </View>
-            ) : pendingEmail ? (
-              <PendingEmailConfirmation email={pendingEmail} onChangeEmail={() => { setPendingEmail(''); globalThis.localStorage.removeItem('parish:pending-confirmation-email'); setMode('sign-in'); setAuthNotice(null); }} />
             ) : (
               <>
                 <View
@@ -1243,7 +1233,7 @@ export default function AccountScreen({ standalone = false }: { standalone?: boo
                   {authNotice && <AuthNotice notice={authNotice} />}
                   {mode === 'sign-up' && (
                     <Field
-                      label="Display name (optional)"
+                      label="Display name"
                       {...inputPresets.name}
                       value={displayName}
                       onChangeText={setDisplayName}
@@ -1276,7 +1266,6 @@ export default function AccountScreen({ standalone = false }: { standalone?: boo
                   )}
                   {mode === 'email-code' && (
                     <EmailCodeVerification
-                      onResend={() => void requestEmailCode()}
                       email={email}
                       value={emailCode}
                       onChange={changeEmailCode}
@@ -1587,18 +1576,15 @@ function AccountOverviewUnderlay({
                 onPress={() => undefined}
               />
             </View>
-            <HelpPolicyLinks />
-                    <ThemedText type="smallBold">Your customer activity</ThemedText>
+            <ThemedText type="smallBold">Your customer activity</ThemedText>
             <View
               style={[
                 styles.settingsGroup,
                 { backgroundColor: accountColors.surface, borderColor: accountColors.border },
               ]}
             >
-              <AccountSettingsRow label="My appointments" detail="Upcoming, past, reschedule and cancellation" onPress={() => router.push('/my-appointments' as never)} />
-              <AccountSettingsRow label="Following" detail="Businesses you follow" onPress={() => router.push({ pathname: '/rewards', params: { view: 'following' } } as never)} />
               <AccountSettingsRow
-                        label="My service requests"
+                label="My service requests"
                 detail="Check quote and consultation request status"
                 onPress={() => undefined}
               />

@@ -1,4 +1,3 @@
-import { BusinessAccessRecovery } from './business-access-recovery';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { BusinessColors } from './business-theme';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
@@ -17,7 +16,7 @@ import { useBusinessActivity } from '@/hooks/use-business-activity';
 export default function AppTabs() {
   const scheme = useColorScheme();
   const { session } = useAuth();
-  const { mode, hasBusinessAccess, accessError, refreshBusinessAccess } = useAppMode();
+  const { mode, hasBusinessAccess } = useAppMode();
   const colors = (session && mode === 'business' ? BusinessColors : Colors)[
     scheme === 'unspecified' ? 'light' : scheme
   ];
@@ -55,7 +54,6 @@ export default function AppTabs() {
     }
   }, [pathname, pickup.loading, pickup.error, showOrders, session, mode]);
 
-  if (accessError) return <BusinessAccessRecovery onRetry={refreshBusinessAccess} />;
   return (
     <NativeTabs
       backgroundColor={colors.background}

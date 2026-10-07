@@ -74,9 +74,13 @@ export function parseCustomerAuthIntent(value: unknown): AuthIntent | null {
   }
   const businessName = cleanLabel(candidate.businessName);
   if (!businessName) return null;
-  const needsTarget = ['event_reminder', 'event_rsvp', 'report_event', 'report_offering', 'report_review'].includes(
-    candidate.kind,
-  );
+  const needsTarget = [
+    'event_reminder',
+    'event_rsvp',
+    'report_event',
+    'report_offering',
+    'report_review',
+  ].includes(candidate.kind);
   const targetId =
     typeof candidate.targetId === 'string' && uuidPattern.test(candidate.targetId)
       ? candidate.targetId
